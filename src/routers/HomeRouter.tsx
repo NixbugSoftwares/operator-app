@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 
 const Home=lazy(() => import("../screens/home/home"));
+const About=lazy(() => import("../screens/about/about"));
 const LoadingIndicator = memo(() => (
   <div
     style={{
@@ -25,10 +26,14 @@ const HomeRouter: React.FC = () => {
     <Suspense fallback={<LoadingIndicator />}>
       <Routes>
         <Route path="/home" element={<Home />} />
+        <Route path="/about" element={<About/>} />
+
+
         <Route
           path="*"
           element={<Navigate to="/home" replace />}
         />
+       
       </Routes>
     </Suspense>
   );

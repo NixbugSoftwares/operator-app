@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { User } from "../types/type";
 import { RootState } from "../store/Store";
-// import commonApi from "../utils/commonApi";
+import commonApi from "../utils/commonApi";
 
 // Define a type for the slice state
 type status = "idle" | "loading";
@@ -11,15 +11,15 @@ interface AppState {
   status: status | "idle" | "loading";
   loggedIn: boolean;
   loggedUser?: User;
-//   user: User | null;
+  user: User | null;
   logincreds: {
     email: string;
     password: string;
   };
-//   accounts: any[];
-//   list: [];
-//   error: null;
-//   roles: any[];
+  accounts: any[];
+  list: [];
+  error: null;
+  roles: any[];
 }
 
 // Define the initial state
@@ -27,7 +27,11 @@ const initialState: AppState = {
   splash: true,
   status: "idle",
   loggedIn: false,
-//   user: null,
+  user: null,
+  accounts: [],
+  list: [],
+  error: null,
+  roles: [],
   logincreds: {
     email: "",
     password: "",
@@ -37,6 +41,25 @@ const initialState: AppState = {
 //   error: null,
 //   roles: [],
 };
+
+//Logout API
+export const logoutApi = createAsyncThunk(
+  "token",
+  async (data: any, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "delete",
+        "/token",
+        data,
+        true,
+        "application/json"
+      );
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(error?.response?.data?.message || "Logout failed");
+    }
+  }
+);
 
 
 
@@ -61,7 +84,7 @@ export const appSlice = createSlice({
       state.loggedUser = undefined;
     },
     setLoggedUser: (state, action) => {
-    //   state.loggedUser = action.payload;
+      state.loggedUser = action.payload;
     },
 
     setLoginCreds: (state, action) => {

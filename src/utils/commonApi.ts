@@ -2,8 +2,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import moment from "moment";
 import localStorageHelper from "./localStorageHelper";
-// import commonHelper from "./commonHelper";
-export const base_URL = "http://192.168.0.134:8080"; //base URL
+export const base_URL = "http://192.168.0.134:8080/operator"; //base URL
 
 //******************************************************Token **************************************** */
 const getAuthToken = async () => {
