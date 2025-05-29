@@ -24,14 +24,14 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { loginSchema } from "./validations/authValidation";
 import {userLoggedIn} from "../../slices/appSlice";
 import { showSuccessToast, showErrorToast } from "../../common/toastMessageHelper";
-
+import localStorageHelper from "../../utils/localStorageHelper";
 interface ILoginFormInputs {
-  company_id: number | null;
+  company_id: number | null | undefined;
   username: string;
   password: string;
 }
 
-interface CompanyOption {
+interface Company {
   id: number;
   name: string;
 }
@@ -39,7 +39,7 @@ interface CompanyOption {
 const LoginPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { loading, error } = useAppSelector(selectAuth);
-  const [companies, setCompanies] = useState<CompanyOption[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -87,20 +87,14 @@ const LoginPage: React.FC = () => {
   
       const response = await dispatch(LoginApi(formData)).unwrap();
       if (response?.access_token) {
-        const expiresAt = Date.now() + response.expires_in * 1000;
-        localStorage.setItem("@token", response.access_token);
-        localStorage.setItem("@token_expires", expiresAt.toString());
-
-        const user: any = {
-          operator_id: response.operator_id,
-      }
-      if (response.operator_id) {
-        showSuccessToast("Login successful!");
-      }
-      localStorage.setItem("@user", JSON.stringify(user));
-      dispatch(userLoggedIn(user));
-       
-        
+        const user = {username: data?.username, userId: response?.operator_id};
+        const access_token = response?.access_token;
+        const expiresAt = Date.now() + response?.expires_in * 1000;
+         localStorageHelper.storeItem("@token", access_token);
+         localStorageHelper.storeItem("@token_expires", expiresAt);
+         localStorageHelper.storeItem("@user", user);
+        dispatch(userLoggedIn(user));
+        showSuccessToast("Login successful");
       }
     } catch (error: any) {
       console.error("Login Error:", error);

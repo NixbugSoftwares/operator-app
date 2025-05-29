@@ -1,27 +1,42 @@
 import React, { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../store/Hooks";
 import localStorageHelper from "../utils/localStorageHelper";
-import { getLoggedIn, userLoggedIn } from "../slices/appSlice";
+import { getLoggedIn, userLoggedIn, userLoggedOut } from "../slices/appSlice";
 import { AuthRouter, HomeRouter } from "../routers";
 
 const AppRouter: React.FC = () => {
   const dispatch = useAppDispatch();
   const loggedIn = useAppSelector(getLoggedIn);
   const [loading, setLoading] = useState(true);
-
+ 
+  useEffect(() => {
+    console.log("logggedinnnnn+++++++++++++++", loggedIn);
+    console.log("loadingggggggggggggggg");
+    
   const checkUserLoggedIn = () => {
     const userData = localStorageHelper.getItem("@user");
-    console.log("userData", userData);
-    
     if (userData) {
       dispatch(userLoggedIn(userData));
+    } else {
+      dispatch(userLoggedOut()); 
     }
-
     setLoading(false);
   };
-  useEffect(() => {
+
+  // Initial check
+  checkUserLoggedIn();
+
+  // Listen to storage events
+  const handleStorageChange = () => {
     checkUserLoggedIn();
-  }, []);
+  };
+
+  window.addEventListener('storage', handleStorageChange);
+  
+  return () => {
+    window.removeEventListener('storage', handleStorageChange);
+  };
+}, [dispatch]);
 
   if (loading) return <div>Loading...</div>;
 

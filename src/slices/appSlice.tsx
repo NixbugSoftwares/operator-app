@@ -13,6 +13,7 @@ interface AppState {
   loggedUser?: User;
   user: User | null;
   logincreds: {
+    company_id: number;
     email: string;
     password: string;
   };
@@ -33,13 +34,11 @@ const initialState: AppState = {
   error: null,
   roles: [],
   logincreds: {
+    company_id: 0,
     email: "",
     password: "",
   },
-//   accounts: [],
-//   list: [],
-//   error: null,
-//   roles: [],
+
 };
 
 //Logout API
@@ -57,6 +56,39 @@ export const logoutApi = createAsyncThunk(
       return response;
     } catch (error: any) {
       return rejectWithValue(error?.response?.data?.message || "Logout failed");
+    }
+  }
+);
+
+
+// Operatos Account
+export const operatorListApi = createAsyncThunk(
+  "/Account",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "get",
+        "/account",
+        {},
+        true,
+        "application/json"
+      );
+      console.log("Full API Response==================>", response);
+
+      if (Array.isArray(response)) {
+        return response;
+      }
+
+      if (!response || !response.data) {
+        throw new Error("Invalid response format");
+      }
+
+      return response.data;
+    } catch (error: any) {
+      console.log("Error fetching company list=====================>", error);
+      return rejectWithValue(
+        error?.response?.data?.message || "Failed to fetch Account list"
+      );
     }
   }
 );
