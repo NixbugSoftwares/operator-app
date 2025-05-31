@@ -6,7 +6,7 @@ import {
   Navigate,
 } from "react-router-dom";
 
-const Home=lazy(() => import("../screens/operatorAccounts/home"));
+const Operators=lazy(() => import("../screens/operatorAccounts/operator"));
 const Hyy =lazy(() => import("../screens/operatorAccounts/hy"));
 const LoadingIndicator = memo(() => (
   <div
@@ -25,13 +25,11 @@ const HomeRouter: React.FC = () => {
   return (
     <Suspense fallback={<LoadingIndicator />}>
       <Routes>
-        <Route path="/home" element={<Home />} />
+        <Route path="/operators" element={<Operators />} />
         <Route path="/hyy" element={<Hyy/>} />
-        
-
         <Route
           path="*"
-          element={<Navigate to="/home" replace />}
+          element={<Navigate to="/operators" replace />}
         />
        
       </Routes>

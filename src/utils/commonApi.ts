@@ -21,7 +21,7 @@ const getAuthToken = async () => {
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    console.log("getAuthtokenresponse=====>", response.data);
+    // console.log("getAuthtokenresponse=====>", response.data);
     
     const data = response?.data;
     const createdOn = new Date(data?.created_on).getTime(); 
@@ -45,8 +45,8 @@ const prepareHeaders = async (tokenNeeded: boolean) => {
     let AuthToken = await localStorageHelper.getItem("@token");
     const tokenExpiry = await localStorageHelper.getItem("@token_expires");
 
-    console.log('Authtoken======>', AuthToken);
-    console.log('AuthtokenExpiry======>', tokenExpiry); 
+    // console.log('Authtoken======>', AuthToken);
+    // console.log('AuthtokenExpiry======>', tokenExpiry); 
 
     if (!AuthToken) {
       console.log('Token not found');
@@ -62,8 +62,8 @@ const prepareHeaders = async (tokenNeeded: boolean) => {
       throw new Error('Invalid token expiry timestamp');
     }
     const now = Date.now();
-    // const oneHourBeforeExpiry = tokenExpiryNumber - 3600 * 1000; // 1 hour before expiry
-    const oneHourBeforeExpiry = tokenExpiryNumber - 60 * 1000;
+    const oneHourBeforeExpiry = tokenExpiryNumber - 3600 * 1000; // 1 hour before expiry
+    // const oneHourBeforeExpiry = tokenExpiryNumber - 60 * 1000;// 1 min before expiry
     if (now>= tokenExpiryNumber) {
       console.log('Token expired, please login again.');
     }else if (now >= oneHourBeforeExpiry) {
@@ -71,12 +71,12 @@ const prepareHeaders = async (tokenNeeded: boolean) => {
       console.log('Token about to expire, refreshing...');
        await getAuthToken();
     } else {
-      console.log('Token still valid, no refresh needed.');
+      // console.log('Token still valid, no refresh needed.');
     }
 
     AuthToken= await localStorageHelper.getItem("@token");
 
-    console.log('Authtoken from getAuthtoken=======>', AuthToken);
+    // console.log('Authtoken from getAuthtoken=======>', AuthToken);
     headers["Authorization"] = `Bearer ${AuthToken}`;
 
 
@@ -89,7 +89,7 @@ const prepareHeaders = async (tokenNeeded: boolean) => {
 
 const handleResponse = async (response: any) => {
   const responseData = response?.data;
-  console.log("response====================>", response);
+  // console.log("response====================>", response);
 
   if (responseData?.access_token) {
      localStorageHelper.storeItem("@token", responseData?.access_token);
@@ -138,7 +138,7 @@ const apiCall = async (
   tokenNeeded: boolean = true,
   contentType: string = "application/json"
 ) => {
-  console.log(route);
+  console.log("routeeeeee====>",  route);
   console.log("method===========>", method);
   try {
     const headers = await prepareHeaders(tokenNeeded);
