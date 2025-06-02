@@ -70,7 +70,7 @@ export const logoutApi = createAsyncThunk(
 );
 
 
-// *************************************************Operatos Account*****************************************************************
+// *************************************************Operators Account*****************************************************************
 
 //Get Operator List
 export const operatorListApi = createAsyncThunk(
@@ -135,56 +135,77 @@ export const operatorCreationApi = createAsyncThunk(
 );
 
 //Update Operator
-export const accountupdationApi = createAsyncThunk(
+export const operatorUpdationApi = createAsyncThunk(
   "/executive/account",
   async (
-    { formData }: { accountId: number; formData: URLSearchParams },
+    { formData }: { accountId: number; formData: FormData },
     { rejectWithValue }
   ) => {
     try {
       const response = await commonApi.apiCall(
         "patch",
-        `/executive/account`,
+        `/account`,
         formData,
         true,
-        "application/x-www-form-urlencoded" // Use the correct content type
+        "application/x-www-form-urlencoded" 
       );
       return response;
     } catch (error: any) {
       console.error("Backend Error Response:", error.response?.data); // Log the full error response
       return rejectWithValue(
-        error?.response?.data?.message || "Account update failed"
+        error?.response?.data?.message || "Operator account update failed"
       );
     }
   }
 );
 
 
+//Delete operator
+export const accountDeleteApi = createAsyncThunk(
+  "account/delete",
+  async (data: FormData, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "delete",
+        "/account",
+        data,
+        true,
+        "application/x-www-form-urlencoded"
+      );
+
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(
+        error?.response?.data?.message || "Account deletion failed"
+      );
+    }
+  }
+);
+
 // ************************************************Operator Roles*******************************************************************
 
-
-
-export const operatorRoleListApi = createAsyncThunk(
+//Fetch Operator Roles
+export const operatorRoleListApi = createAsyncThunk<any[], number | undefined>(
   "role",
-  async (_, { rejectWithValue }) => {
+  async (assignedRoleId, { rejectWithValue }) => {
     try {
       const response = await commonApi.apiCall(
         "get",
         "/role",
-        {},
+        {}, 
         true,
         "application/json"
       );
-      console.log("Full API Response==================>", response);
-      if (Array.isArray(response)) {
-        return response;
-      }
-      if (!response || !response.data) {
-        throw new Error("Invalid response format");
-      }
-      return response.data; 
+      
+      // If no roleId provided, return all roles
+      if (!assignedRoleId) return response;
+      
+      // If roleId provided, filter for that specific role
+      const matchedRole = response.find(
+        (role: { id: number }) => role.id === assignedRoleId
+      );
+      return matchedRole ? [matchedRole] : [];
     } catch (error: any) {
-      console.log("Error fetching role=====================>", error);
       return rejectWithValue(
         error?.response?.data?.message || "Failed to fetch Role"
       );
@@ -196,18 +217,45 @@ export const operatorRoleListApi = createAsyncThunk(
 
 
 //*******************************************Operator role mapping APIS*************************************************************
+
+//fetch operator role mapping
+export const fetchRoleMappingApi = createAsyncThunk(
+  "account/role",
+  async (operator_id: number, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "get",
+        "/account/role", 
+        {operator_id}, 
+        true,
+        "application/json"
+      );
+      
+      // Handle case where response is an array (like your Postman example)
+      if (Array.isArray(response) && response.length > 0) {
+        return response[0]; // Return first mapping (assuming one operator has one role)
+      }
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(
+        error?.response?.data?.message || "Failed to fetch role mapping"
+      );
+    }
+  }
+);
+
 //role assign API
 export const operatorRoleAssignApi = createAsyncThunk(
   "account/role",
   async (
-    { executive_id, role_id }: { executive_id: number; role_id: number },
+    { operator_id, role_id }: { operator_id: number; role_id: number },
     { rejectWithValue }
   ) => {
     try {
       const response = await commonApi.apiCall(
         "post",
         "/account/role",
-        { executive_id, role_id },
+        { operator_id, role_id },
         true,
         "application/x-www-form-urlencoded"
       );
@@ -222,6 +270,35 @@ export const operatorRoleAssignApi = createAsyncThunk(
   }
 );
 
+//role assign update
+export const roleAssignUpdateApi = createAsyncThunk(
+  "/executive/account/role",
+  async (
+    { id, role_id }: { id: number; role_id: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      const formData = new FormData();
+      formData.append("id", id.toString());
+      formData.append("role_id", role_id.toString());
+
+      const response = await commonApi.apiCall(
+        "patch",
+        "/account/role",
+        formData,
+        true,
+        "application/x-www-form-urlencoded" 
+      );
+      console.log("Role Assignment Update Response:", response);
+      return response;
+    } catch (error: any) {
+      console.error("Backend Error Response:", error.response?.data); 
+      return rejectWithValue(
+        error?.response?.data?.message || "Role assign failed"
+      );
+    }
+  }
+);
 
 
 

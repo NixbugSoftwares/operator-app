@@ -22,7 +22,7 @@ import { useAppDispatch, useAppSelector } from "../../store/Hooks";
 import { LoginApi, companyListApi, selectAuth } from "../../slices/authSlice";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { loginSchema } from "./validations/authValidation";
-import {userLoggedIn} from "../../slices/appSlice";
+import {userLoggedIn,fetchRoleMappingApi, operatorRoleListApi, } from "../../slices/appSlice";
 import { showSuccessToast, showErrorToast } from "../../common/toastMessageHelper";
 import localStorageHelper from "../../utils/localStorageHelper";
 interface ILoginFormInputs {
@@ -74,33 +74,63 @@ const LoginPage: React.FC = () => {
   }, [dispatch]);
 
   const handleLogin: SubmitHandler<ILoginFormInputs> = async (data) => {
-    try {
-      if (!data.company_id) {
-        showErrorToast("Please select a company");
-        return;
+  try {
+    if (!data.company_id) {
+      showErrorToast("Please select a company");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("company_id", data.company_id.toString());
+    formData.append("username", data.username);
+    formData.append("password", data.password);
+
+    const response = await dispatch(LoginApi(formData)).unwrap();
+    
+    if (response?.access_token) {
+      // Store auth info
+      const user = { username: data?.username, userId: response?.operator_id };
+      const access_token = response?.access_token;
+      const expiresAt = Date.now() + response?.expires_in * 1000;
+      localStorageHelper.storeItem("@token", access_token);
+      localStorageHelper.storeItem("@token_expires", expiresAt);
+      localStorageHelper.storeItem("@user", user);
+      dispatch(userLoggedIn(user));
+      showSuccessToast("Login successful");
+
+      // Fetch role mapping
+      const roleResponse = await dispatch(
+        fetchRoleMappingApi(response.operator_id)
+      ).unwrap();
+      
+      if (!roleResponse) {
+        throw new Error("No role mapping found for this user");
       }
 
-      const formData = new FormData();
-      formData.append("company_id", data.company_id.toString());
-      formData.append("username", data.username);
-      formData.append("password", data.password);
-  
-      const response = await dispatch(LoginApi(formData)).unwrap();
-      if (response?.access_token) {
-        const user = {username: data?.username, userId: response?.operator_id};
-        const access_token = response?.access_token;
-        const expiresAt = Date.now() + response?.expires_in * 1000;
-         localStorageHelper.storeItem("@token", access_token);
-         localStorageHelper.storeItem("@token_expires", expiresAt);
-         localStorageHelper.storeItem("@user", user);
-        dispatch(userLoggedIn(user));
-        showSuccessToast("Login successful");
+      const assignedRole = {
+        id: roleResponse?.id,
+        userId: roleResponse?.operator_id,
+        roleId: roleResponse?.role_id,
+      };
+      
+      localStorage.setItem("@assignedRole", JSON.stringify(assignedRole));
+
+      // Fetch role details
+      const roleListingResponse = await dispatch(
+        operatorRoleListApi(assignedRole.roleId)
+      ).unwrap();
+      
+      if (roleListingResponse.length > 0) {
+        localStorage.setItem("@roleDetails", JSON.stringify(roleListingResponse[0]));
+      } else {
+        showErrorToast("Role details not found");
       }
-    } catch (error: any) {
-      console.error("Login Error:", error);
-      showErrorToast(error.message || "Login failed");
     }
-  };
+  } catch (error: any) {
+    console.error("Login Error:", error);
+    showErrorToast(error.message || "Login failed");
+  }
+};
 
   return (
     <Container component="main" maxWidth="xs" sx={{ mb: 10 }}>

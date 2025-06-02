@@ -37,6 +37,8 @@ const LogoutConfirmationModal: React.FC<LogoutConfirmationModalProps> = ({
   
         localStorageHelper.clearStorage();
         localStorageHelper.removeStoredItem("@user");
+        localStorageHelper.removeStoredItem("@roleDetails");
+        localStorageHelper.removeStoredItem("@assignedRole");
         commonHelper.logout();
         dispatch(userLoggedOut());
       } catch (error) {

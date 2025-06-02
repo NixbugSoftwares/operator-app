@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-// import { accountFormSchema } from "../auth/validations/authValidation";
+import { accountFormSchema } from "../auth/validations/authValidation";
 import {
   Box,
   TextField,
@@ -25,16 +25,17 @@ import {
   showErrorToast,
   showSuccessToast,
 } from "../../common/toastMessageHelper";
+
+
 // Account creation form interface
 interface IAccountFormInputs {
   username: string;
   password: string;
-  fullName?: string;
-  phoneNumber?: string;
-  email?: string;
-  gender?: number;
-  role: number;
-  roleAssignmentId?: number;
+  fullName?: string;  
+  phoneNumber?: string;  
+  email?: string;  
+  gender?: number;  
+  role: number;  
 }
 
 interface IAccountCreationFormProps {
@@ -65,7 +66,7 @@ const AccountForm: React.FC<IAccountCreationFormProps> = ({
     control,
     formState: { errors },
   } = useForm<IAccountFormInputs>({
-    // resolver: yupResolver(accountFormSchema),
+    resolver: yupResolver(accountFormSchema),
     defaultValues: {
       gender: 4,
     },
@@ -89,54 +90,58 @@ const AccountForm: React.FC<IAccountCreationFormProps> = ({
   };
 
   const handleAccountCreation: SubmitHandler<IAccountFormInputs> = async (
-    data
-  ) => {
-    try {
-      setLoading(true);
+  data
+) => {
+  try {
+    setLoading(true);
 
-      const formData = new FormData();
-      formData.append("username", data.username);
-      formData.append("password", data.password);
-      formData.append("gender", data.gender?.toString() || "");
+    console.log("Data being sent:", data); 
 
-      if (data.fullName) {
-        formData.append("full_name", data.fullName);
-      }
-      if (data.phoneNumber) {
-        formData.append("phone_number", `+91${data.phoneNumber}`);
-      }
-      if (data.email) {
-        formData.append("email_id", data.email);
-      }
+    const formData = new FormData();
+    formData.append("username", data.username);
+    formData.append("password", data.password);
+    formData.append("gender", data.gender?.toString() || "");
 
-      //  Create account
-      const accountResponse = await dispatch(
-        operatorCreationApi(formData)
-      ).unwrap();
-      if (accountResponse?.id) {
-        const roleResponse = await dispatch(
-          operatorRoleAssignApi({
-            executive_id: accountResponse.id,
-            role_id: data.role,
-          })
-        ).unwrap();
-
-        if (roleResponse?.id && roleResponse?.role_id) {
-          showSuccessToast("Account and role assigned successfully!");
-          refreshList("refresh");
-          onClose();
-        } else {
-          throw new Error("Account created, but role assignment failed!");
-        }
-      } else {
-        throw new Error("Account creation failed!");
-      }
-    } catch (error: any) {
-      throw error;
-    } finally {
-      setLoading(false);
+    if (data.fullName) {
+      formData.append("full_name", data.fullName);
     }
-  };
+    if (data.phoneNumber) {
+      formData.append("phone_number", `+91${data.phoneNumber}`);
+    }
+    if (data.email) {
+      formData.append("email_id", data.email);
+    }
+
+    console.log("FormData being sent:", formData); 
+    //  Create account
+    const accountResponse = await dispatch(
+      operatorCreationApi(formData)
+    ).unwrap();
+    if (accountResponse?.id) {
+      const roleResponse = await dispatch(
+        operatorRoleAssignApi({
+          operator_id: accountResponse.id,
+          role_id: data.role,
+        })
+      ).unwrap();
+
+      if (roleResponse?.id && roleResponse?.role_id) {
+        showSuccessToast("Account and role assigned successfully!");
+        refreshList("refresh");
+        onClose();
+      } else {
+        throw new Error("Account created, but role assignment failed!");
+      }
+    } else {
+      throw new Error("Account creation failed!");
+    }
+ } catch (error: any) {
+  showErrorToast(error?.message || "An error occurred");
+}
+finally {
+    setLoading(false);
+  }
+};
 
   return (
     <Container component="main" maxWidth="xs">
