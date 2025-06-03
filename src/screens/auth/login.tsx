@@ -25,7 +25,7 @@ import { loginSchema } from "./validations/authValidation";
 import {
   userLoggedIn,
   fetchRoleMappingApi,
-  operatorRoleListApi,
+  loginUserAssignedRoleApi,
   setRoleDetails,
 } from "../../slices/appSlice";
 import {
@@ -128,7 +128,7 @@ const LoginPage: React.FC = () => {
         localStorage.setItem("@assignedRole", JSON.stringify(assignedRole));
 
         const roleListingResponse = await dispatch(
-          operatorRoleListApi(assignedRole.roleId)
+          loginUserAssignedRoleApi(assignedRole.roleId)
         ).unwrap();
 
         console.log("roleDetails", roleListingResponse[0]);

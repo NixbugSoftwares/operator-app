@@ -34,7 +34,7 @@ const Sidebar: React.FC = () => {
       title: "Dashboard",
       items: [
         { label: "Operator", path: "/operator", icon: <AccountCircleOutlinedIcon /> },
-        { label: "Role", path: "/hyy", icon: <Diversity3Icon /> },
+        { label: "Role", path: "/role", icon: <Diversity3Icon /> },
         { label: "Bus", path: "/bus", icon: <DirectionsBusIcon /> },
         { label: "Route", path: "/busroute", icon: <RouteIcon /> },
         { label: "Fare", path: "/fare", icon: <CorporateFareIcon /> },

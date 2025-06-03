@@ -84,3 +84,17 @@ export const accountFormSchema = yup.object().shape({
     .number()
     .required("Role is required"), 
 });
+
+//********************************************oprator Role Creation validation schema *****************************************
+export const operatorRoleCreationSchema = yup.object().shape({
+  name: yup.string().required("Role name is required"),
+  manage_operator: yup.boolean().required(),
+  manage_role: yup.boolean().required(),
+  manage_bus: yup.boolean().required(),
+  manage_route: yup.boolean().required(),
+  manage_fare: yup.boolean().required(),
+  manage_schedule: yup.boolean().required(),
+  manage_company: yup.boolean().required(),
+  manage_duty: yup.boolean().required(),
+  manage_service: yup.boolean().required(),
+});

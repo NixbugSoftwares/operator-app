@@ -25,5 +25,5 @@ export interface RoleDetails{
   manage_company: boolean,
   manage_fare: boolean,
   manage_duty: boolean,
-  manage_servic: boolean
+  manage_service: boolean
 }

@@ -7,7 +7,7 @@ import {
 } from "react-router-dom";
 
 const Operators=lazy(() => import("../screens/operatorAccounts/operator"));
-const Hyy =lazy(() => import("../screens/operatorAccounts/hy"));
+const OperatorRole = lazy(() => import("../screens/operatorRole/Role"));
 const LoadingIndicator = memo(() => (
   <div
     style={{
@@ -26,7 +26,7 @@ const HomeRouter: React.FC = () => {
     <Suspense fallback={<LoadingIndicator />}>
       <Routes>
         <Route path="/operators" element={<Operators />} />
-        <Route path="/hyy" element={<Hyy/>} />
+        <Route path="/role" element={<OperatorRole />} />
         <Route
           path="*"
           element={<Navigate to="/operators" replace />}

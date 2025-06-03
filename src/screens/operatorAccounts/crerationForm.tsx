@@ -74,16 +74,16 @@ const AccountForm: React.FC<IAccountCreationFormProps> = ({
 
   //   Fetchroles
   useEffect(() => {
-    dispatch(operatorRoleListApi())
-      .unwrap()
-      .then((res: any[]) => {
-        setRoles(res.map((role) => ({ id: role.id, name: role.name })));
-      })
+  dispatch(operatorRoleListApi({}))
+    .unwrap()
+    .then((res: { data: any[] }) => {
+      setRoles(res.data.map((role) => ({ id: role.id, name: role.name })));
+    })
 
-      .catch((err: any) => {
-        showErrorToast(err);
-      });
-  }, [dispatch]);
+    .catch((err: any) => {
+      showErrorToast(err);
+    });
+}, [dispatch]);
 
   const handleTogglePassword = () => {
     setShowPassword((prev) => !prev);

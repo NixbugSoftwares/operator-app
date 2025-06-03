@@ -14,6 +14,7 @@ import {
   Select,
   MenuItem,
   Skeleton,
+  Typography,
 } from "@mui/material";
 import ErrorIcon from "@mui/icons-material/Error";
 import { SelectChangeEvent } from "@mui/material";
@@ -249,22 +250,24 @@ const AccountListingTable = () => {
                   <TableCell>
                     <b style={{ display: "block", textAlign: "center" }}>ID</b>
                     <TextField
-                      type="number"
-                      variant="outlined"
-                      size="small"
-                      placeholder="Search"
-                      value={search.id}
-                      onChange={(e) => handleSearchChange(e, "id")}
-                      fullWidth
-                      inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
-                      sx={{
-                        "& .MuiInputBase-root": {
-                          height: 40,
-                          padding: "4px",
-                          textAlign: "center",
-                        },
-                      }}
-                    />
+        type="number"
+        variant="outlined"
+        size="small"
+        placeholder="Search"
+        value={search.id}
+        onChange={(e) => handleSearchChange(e, "id")}
+        fullWidth
+        inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
+        sx={{
+          "& .MuiInputBase-root": {
+            height: 40,
+            fontSize: selectedAccount ? "0.8rem" : "1rem",
+          },
+          "& .MuiInputBase-input": {
+            textAlign: "center",
+          },
+        }}
+      />
                   </TableCell>
 
                   <TableCell>
@@ -272,21 +275,23 @@ const AccountListingTable = () => {
                       Full Name
                     </b>
                     <TextField
-                      type="text"
-                      variant="outlined"
-                      size="small"
-                      placeholder="Search"
-                      value={search.fullName}
-                      onChange={(e) => handleSearchChange(e, "fullName")}
-                      fullWidth
-                      sx={{
-                        "& .MuiInputBase-root": {
-                          height: 40,
-                          padding: "4px",
-                          textAlign: "center",
-                        },
-                      }}
-                    />
+        type="text"
+        variant="outlined"
+        size="small"
+        placeholder="Search"
+        value={search.fullName}
+        onChange={(e) => handleSearchChange(e, "fullName")}
+        fullWidth
+        sx={{
+          "& .MuiInputBase-root": {
+            height: 40,
+            fontSize: selectedAccount ? "0.8rem" : "1rem",
+          },
+          "& .MuiInputBase-input": {
+            textAlign: "center",
+          },
+        }}
+      />
                   </TableCell>
 
                   <TableCell>
@@ -425,7 +430,9 @@ const AccountListingTable = () => {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={6} align="center">
-                      No accounts found.
+                      <Typography variant="body1" color="textSecondary" mt={2}>
+                        No accounts found.
+                      </Typography>
                     </TableCell>
                   </TableRow>
                 )}

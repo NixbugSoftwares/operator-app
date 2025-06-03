@@ -98,14 +98,15 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
 
   useEffect(() => {
     // Fetch available roles
-    dispatch(operatorRoleListApi())
-      .unwrap()
-      .then((res: any[]) => {
-        setRoles(res.map((role) => ({ id: role.id, name: role.name })));
-      })
-      .catch((err: any) => {
-        showErrorToast(err);
-      });
+    dispatch(operatorRoleListApi({}))
+        .unwrap()
+        .then((res: { data: any[] }) => {
+          setRoles(res.data.map((role) => ({ id: role.id, name: role.name })));
+        })
+    
+        .catch((err: any) => {
+          showErrorToast(err);
+        });
 
     // Fetch role mapping for this account
     dispatch(fetchRoleMappingApi(accountId))
