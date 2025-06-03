@@ -23,11 +23,11 @@ import type { AppDispatch } from "../../store/Store";
 import { showErrorToast } from "../../common/toastMessageHelper";
 import { Account } from "../../types/type";
 import PaginationControls from "../../common/paginationControl";
-import  AccountDetailsCard from "./AccountDetail";
+import AccountDetailsCard from "./AccountDetail";
 import AccountForm from "./crerationForm";
 import FormModal from "../../common/formModal";
-import localStorageHelper from "../../utils/localStorageHelper";
-
+import { useSelector } from "react-redux";
+import { RootState } from "../../store/Store";
 const getGenderBackendValue = (displayValue: string): string => {
   const genderMap: Record<string, string> = {
     Female: "1",
@@ -56,10 +56,9 @@ const AccountListingTable = () => {
   const [hasNextPage, setHasNextPage] = useState(false);
   const rowsPerPage = 10;
   const [openCreateModal, setOpenCreateModal] = useState(false);
-  const roleDetails = localStorageHelper.getItem("@roleDetails");
-  const canManageOperator = roleDetails?.manage_operator || false;
-
-
+  const canManageOperator = useSelector((state: RootState) =>
+    state.app.permissions.includes("manage_operator")
+  );
   const fetchAccounts = useCallback((pageNumber: number, searchParams = {}) => {
     setIsLoading(true);
     const offset = pageNumber * rowsPerPage;
@@ -180,27 +179,27 @@ const AccountListingTable = () => {
   return (
     <Box
       sx={{
-    display: "flex",
-    flexDirection: { xs: "column", md: "row" },
-    width: "100%",
-    height: "100%",
-    gap: 2,
-  }}
+        display: "flex",
+        flexDirection: { xs: "column", md: "row" },
+        width: "100%",
+        height: "100%",
+        gap: 2,
+      }}
     >
       <Box
         sx={{
-      flex: selectedAccount
-        ? { xs: "0 0 100%", md: "0 0 65%" }
-        : "0 0 100%",
-      maxWidth: selectedAccount ? { xs: "100%", md: "65%" } : "100%",
-      transition: "all 0.3s ease",
-      height: "100%",
-      display: "flex",
-      flexDirection: "column",
-      overflow: "hidden",
-    }}
+          flex: selectedAccount
+            ? { xs: "0 0 100%", md: "0 0 65%" }
+            : "0 0 100%",
+          maxWidth: selectedAccount ? { xs: "100%", md: "65%" } : "100%",
+          transition: "all 0.3s ease",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
       >
-       <Tooltip
+        <Tooltip
           title={
             !canManageOperator
               ? "You don't have permission, contact the admin"
@@ -444,44 +443,44 @@ const AccountListingTable = () => {
       </Box>
 
       {/* Right Side - Account Details Card */}
-  {selectedAccount && (
-    <Box
-      sx={{
-        flex: { xs: "0 0 100%", md: "0 0 35%" },
-        maxWidth: { xs: "100%", md: "35%" },
-        transition: "all 0.3s ease",
-        bgcolor: "grey.100",
-        p: 2,
-        mt: { xs: 2, md: 0 },
-        overflowY: "auto",
-        overflowX: "hidden",
-        height: "100%",
-      }}
-    >
-      <AccountDetailsCard
-        account={selectedAccount}
-        canManageOperator={canManageOperator}
-        onUpdate={() => {}}
-        onDelete={() => {}}
-        onBack={() => setSelectedAccount(null)}
-        refreshList={(value: any) => refreshList(value)}
-        onCloseDetailCard={() => setSelectedAccount(null)}
-      />
-    </Box>
-  )}
+      {selectedAccount && (
+        <Box
+          sx={{
+            flex: { xs: "0 0 100%", md: "0 0 35%" },
+            maxWidth: { xs: "100%", md: "35%" },
+            transition: "all 0.3s ease",
+            bgcolor: "grey.100",
+            p: 2,
+            mt: { xs: 2, md: 0 },
+            overflowY: "auto",
+            overflowX: "hidden",
+            height: "100%",
+          }}
+        >
+          <AccountDetailsCard
+            account={selectedAccount}
+            canManageOperator={canManageOperator}
+            onUpdate={() => {}}
+            onDelete={() => {}}
+            onBack={() => setSelectedAccount(null)}
+            refreshList={(value: any) => refreshList(value)}
+            onCloseDetailCard={() => setSelectedAccount(null)}
+          />
+        </Box>
+      )}
 
-  {/* Create Account Modal */}
-  <FormModal
-    open={openCreateModal}
-    onClose={() => setOpenCreateModal(false)}
-    title="Create Account"
-  >
-    <AccountForm
-      refreshList={refreshList}
-      onClose={() => setOpenCreateModal(false)}
-    />
-  </FormModal>
-</Box>
+      {/* Create Account Modal */}
+      <FormModal
+        open={openCreateModal}
+        onClose={() => setOpenCreateModal(false)}
+        title="Create Account"
+      >
+        <AccountForm
+          refreshList={refreshList}
+          onClose={() => setOpenCreateModal(false)}
+        />
+      </FormModal>
+    </Box>
   );
 };
 

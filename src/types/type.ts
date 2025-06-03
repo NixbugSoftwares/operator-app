@@ -14,3 +14,16 @@ export  interface Account {
   phoneNumber: string;
   status: string;
 }
+
+
+export interface RoleDetails{
+  manage_operator: boolean
+  manage_bus: boolean,
+  manage_route: boolean,
+  manage_schedule: boolean,
+  manage_role: boolean,
+  manage_company: boolean,
+  manage_fare: boolean,
+  manage_duty: boolean,
+  manage_servic: boolean
+}

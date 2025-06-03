@@ -22,9 +22,18 @@ import { useAppDispatch, useAppSelector } from "../../store/Hooks";
 import { LoginApi, companyListApi, selectAuth } from "../../slices/authSlice";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { loginSchema } from "./validations/authValidation";
-import {userLoggedIn,fetchRoleMappingApi, operatorRoleListApi, } from "../../slices/appSlice";
-import { showSuccessToast, showErrorToast } from "../../common/toastMessageHelper";
+import {
+  userLoggedIn,
+  fetchRoleMappingApi,
+  operatorRoleListApi,
+  setRoleDetails,
+} from "../../slices/appSlice";
+import {
+  showSuccessToast,
+  showErrorToast,
+} from "../../common/toastMessageHelper";
 import localStorageHelper from "../../utils/localStorageHelper";
+import { setPermissions } from "../../slices/appSlice";
 interface ILoginFormInputs {
   company_id: number | null | undefined;
   username: string;
@@ -62,9 +71,9 @@ const LoginPage: React.FC = () => {
     dispatch(companyListApi())
       .unwrap()
       .then((res: any[]) => {
-        const companyList = res.map((company) => ({ 
-          id: company.id, 
-          name: company.name 
+        const companyList = res.map((company) => ({
+          id: company.id,
+          name: company.name,
         }));
         setCompanies(companyList);
       })
@@ -74,63 +83,84 @@ const LoginPage: React.FC = () => {
   }, [dispatch]);
 
   const handleLogin: SubmitHandler<ILoginFormInputs> = async (data) => {
-  try {
-    if (!data.company_id) {
-      showErrorToast("Please select a company");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("company_id", data.company_id.toString());
-    formData.append("username", data.username);
-    formData.append("password", data.password);
-
-    const response = await dispatch(LoginApi(formData)).unwrap();
-    
-    if (response?.access_token) {
-      // Store auth info
-      const user = { username: data?.username, userId: response?.operator_id };
-      const access_token = response?.access_token;
-      const expiresAt = Date.now() + response?.expires_in * 1000;
-      localStorageHelper.storeItem("@token", access_token);
-      localStorageHelper.storeItem("@token_expires", expiresAt);
-      localStorageHelper.storeItem("@user", user);
-      dispatch(userLoggedIn(user));
-      showSuccessToast("Login successful");
-
-      // Fetch role mapping
-      const roleResponse = await dispatch(
-        fetchRoleMappingApi(response.operator_id)
-      ).unwrap();
-      
-      if (!roleResponse) {
-        throw new Error("No role mapping found for this user");
+    try {
+      if (!data.company_id) {
+        showErrorToast("Please select a company");
+        return;
       }
 
-      const assignedRole = {
-        id: roleResponse?.id,
-        userId: roleResponse?.operator_id,
-        roleId: roleResponse?.role_id,
-      };
-      
-      localStorage.setItem("@assignedRole", JSON.stringify(assignedRole));
+      const formData = new FormData();
+      formData.append("company_id", data.company_id.toString());
+      formData.append("username", data.username);
+      formData.append("password", data.password);
 
-      // Fetch role details
-      const roleListingResponse = await dispatch(
-        operatorRoleListApi(assignedRole.roleId)
-      ).unwrap();
-      
-      if (roleListingResponse.length > 0) {
-        localStorage.setItem("@roleDetails", JSON.stringify(roleListingResponse[0]));
-      } else {
-        showErrorToast("Role details not found");
+      const response = await dispatch(LoginApi(formData)).unwrap();
+
+      if (response?.access_token) {
+        const user = {
+          username: data?.username,
+          userId: response?.operator_id,
+        };
+        const access_token = response?.access_token;
+        const expiresAt = Date.now() + response?.expires_in * 1000;
+
+        localStorageHelper.storeItem("@token", access_token);
+        localStorageHelper.storeItem("@token_expires", expiresAt);
+        localStorageHelper.storeItem("@user", user);
+
+        dispatch(userLoggedIn(user));
+        showSuccessToast("Login successful");
+
+        const roleResponse = await dispatch(
+          fetchRoleMappingApi(response.operator_id)
+        ).unwrap();
+
+        if (!roleResponse) {
+          throw new Error("No role mapping found for this user");
+        }
+
+        const assignedRole = {
+          id: roleResponse?.id,
+          userId: roleResponse?.operator_id,
+          roleId: roleResponse?.role_id,
+        };
+
+        localStorage.setItem("@assignedRole", JSON.stringify(assignedRole));
+
+        const roleListingResponse = await dispatch(
+          operatorRoleListApi(assignedRole.roleId)
+        ).unwrap();
+
+        console.log("roleDetails", roleListingResponse[0]);
+
+        if (roleListingResponse.length > 0) {
+          dispatch(setRoleDetails(roleListingResponse[0]));
+
+          const roleDetails = roleListingResponse[0];
+          dispatch(setRoleDetails(roleDetails));
+
+          const permissions = Object.entries(roleDetails)
+            .filter(
+              ([key, value]) => key.startsWith("manage_") && value === true
+            )
+            .map(([key]) => key);
+
+          localStorage.setItem("@permissions", JSON.stringify(permissions));
+          dispatch(setPermissions(permissions));
+
+          if (permissions) {
+            localStorage.setItem("@permissions", JSON.stringify(permissions));
+            dispatch(setPermissions(permissions));
+          }
+        } else {
+          showErrorToast("Role details not found");
+        }
       }
+    } catch (error: any) {
+      console.error("Login Error:", error);
+      showErrorToast(error.message || "Login failed");
     }
-  } catch (error: any) {
-    console.error("Login Error:", error);
-    showErrorToast(error.message || "Login failed");
-  }
-};
+  };
 
   return (
     <Container component="main" maxWidth="xs" sx={{ mb: 10 }}>
@@ -144,7 +174,13 @@ const LoginPage: React.FC = () => {
         }}
       >
         <Card sx={{ width: "100%", p: 3, boxShadow: 3 }}>
-          <CardContent sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <CardContent
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
             <Avatar sx={{ m: 1, bgcolor: "darkblue" }}>
               <LockOutlinedIcon />
             </Avatar>
@@ -165,8 +201,10 @@ const LoginPage: React.FC = () => {
                   <Autocomplete
                     options={companies}
                     getOptionLabel={(option) => option.name}
-                    onChange={(_event, value) => field.onChange(value?.id || null)}
-                    value={companies.find(c => c.id === field.value) || null}
+                    onChange={(_event, value) =>
+                      field.onChange(value?.id || null)
+                    }
+                    value={companies.find((c) => c.id === field.value) || null}
                     renderInput={(params) => (
                       <TextField
                         {...params}

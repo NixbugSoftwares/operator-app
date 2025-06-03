@@ -1,9 +1,10 @@
 import React from "react";
 import { Box, Typography, Button, Modal } from "@mui/material";
 import { useAppDispatch } from "../store/Hooks";
-import { logoutApi, userLoggedOut } from "../slices/appSlice";
+import { clearRoleDetails, logoutApi, userLoggedOut } from "../slices/appSlice";
 import localStorageHelper from "../utils/localStorageHelper";
 import commonHelper from "../utils/commonHelper";
+import { showErrorToast, showSuccessToast } from "./toastMessageHelper";
 
 const style = {
   position: "absolute",
@@ -28,23 +29,24 @@ const LogoutConfirmationModal: React.FC<LogoutConfirmationModalProps> = ({
 }) => {
   const dispatch = useAppDispatch();
 
-   const handleLogout = async () => {
-      console.log("Attempting to logout...");
-      try {
-        console.log("Dispatching logoutApi...");
-        const response = await dispatch(logoutApi({})).unwrap();
-        console.log("Logout response:", response);
-  
-        localStorageHelper.clearStorage();
-        localStorageHelper.removeStoredItem("@user");
-        localStorageHelper.removeStoredItem("@roleDetails");
-        localStorageHelper.removeStoredItem("@assignedRole");
-        commonHelper.logout();
-        dispatch(userLoggedOut());
-      } catch (error) {
-        console.error("Logout Error:", error);
-      }
-    };
+  const handleLogout = async () => {
+    console.log("Attempting to logout...");
+    try {
+      console.log("Dispatching logoutApi...");
+      const response = await dispatch(logoutApi({})).unwrap();
+      console.log("Logout response:", response);
+
+      localStorageHelper.clearStorage();
+      localStorageHelper.removeStoredItem("@user");
+      dispatch(clearRoleDetails());
+      commonHelper.logout();
+      dispatch(userLoggedOut());
+      showSuccessToast("Logout successful!");
+    } catch (error) {
+      console.error("Logout Error:", error);
+      showErrorToast("Logout failed. Please try again.");
+    }
+  };
 
   return (
     <Modal open={open} onClose={onClose}>

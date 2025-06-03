@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { User } from "../types/type";
 import { RootState } from "../store/Store";
 import commonApi from "../utils/commonApi";
-
+import { RoleDetails } from "../types/type";
 // Define a type for the slice state
 type status = "idle" | "loading";
 interface AppState {
@@ -20,6 +20,8 @@ interface AppState {
   list: [];
   error: null;
   roles: any[];
+  roleDetails: RoleDetails | null;
+  permissions: any[];
 }
 
 // Define the initial state
@@ -37,7 +39,8 @@ const initialState: AppState = {
     email: "",
     password: "",
   },
-
+  roleDetails: null,
+  permissions: [],
 };
 
 interface OperatorListParams {
@@ -69,14 +72,14 @@ export const logoutApi = createAsyncThunk(
   }
 );
 
-
 // *************************************************Operators Account*****************************************************************
 
 //Get Operator List
 export const operatorListApi = createAsyncThunk(
   "/Account",
   async (params: OperatorListParams, { rejectWithValue }) => {
-    const { limit, offset, id, fullName, gender, email_id, phoneNumber } = params;
+    const { limit, offset, id, fullName, gender, email_id, phoneNumber } =
+      params;
     console.log("operatorListApi called with:", params);
 
     const queryParams = {
@@ -95,10 +98,9 @@ export const operatorListApi = createAsyncThunk(
         queryParams,
         true,
         "application/json"
-        
       );
       if (!response) throw new Error("No response received");
-      
+
       return {
         data: response.data || response,
       };
@@ -106,8 +108,8 @@ export const operatorListApi = createAsyncThunk(
       console.error("API Error:", error);
       return rejectWithValue(
         error?.response?.data?.message ||
-        error?.message ||
-        "Failed to fetch operator list"
+          error?.message ||
+          "Failed to fetch operator list"
       );
     }
   }
@@ -147,7 +149,7 @@ export const operatorUpdationApi = createAsyncThunk(
         `/account`,
         formData,
         true,
-        "application/x-www-form-urlencoded" 
+        "application/x-www-form-urlencoded"
       );
       return response;
     } catch (error: any) {
@@ -158,7 +160,6 @@ export const operatorUpdationApi = createAsyncThunk(
     }
   }
 );
-
 
 //Delete operator
 export const accountDeleteApi = createAsyncThunk(
@@ -192,14 +193,14 @@ export const operatorRoleListApi = createAsyncThunk<any[], number | undefined>(
       const response = await commonApi.apiCall(
         "get",
         "/role",
-        {}, 
+        {},
         true,
         "application/json"
       );
-      
+
       // If no roleId provided, return all roles
       if (!assignedRoleId) return response;
-      
+
       // If roleId provided, filter for that specific role
       const matchedRole = response.find(
         (role: { id: number }) => role.id === assignedRoleId
@@ -213,9 +214,6 @@ export const operatorRoleListApi = createAsyncThunk<any[], number | undefined>(
   }
 );
 
-
-
-
 //*******************************************Operator role mapping APIS*************************************************************
 
 //fetch operator role mapping
@@ -225,12 +223,12 @@ export const fetchRoleMappingApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "get",
-        "/account/role", 
-        {operator_id}, 
+        "/account/role",
+        { operator_id },
         true,
         "application/json"
       );
-      
+
       // Handle case where response is an array (like your Postman example)
       if (Array.isArray(response) && response.length > 0) {
         return response[0]; // Return first mapping (assuming one operator has one role)
@@ -287,37 +285,18 @@ export const roleAssignUpdateApi = createAsyncThunk(
         "/account/role",
         formData,
         true,
-        "application/x-www-form-urlencoded" 
+        "application/x-www-form-urlencoded"
       );
       console.log("Role Assignment Update Response:", response);
       return response;
     } catch (error: any) {
-      console.error("Backend Error Response:", error.response?.data); 
+      console.error("Backend Error Response:", error.response?.data);
       return rejectWithValue(
         error?.response?.data?.message || "Role assign failed"
       );
     }
   }
 );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // Slice
 export const appSlice = createSlice({
@@ -346,9 +325,15 @@ export const appSlice = createSlice({
     setLoginCreds: (state, action) => {
       state.logincreds = action.payload;
     },
-    // setRole: (state, action) => {
-    //   state.accounts = action.payload;
-    // },
+    setRoleDetails: (state, action) => {
+      state.roleDetails = action.payload;
+    },
+    clearRoleDetails: (state) => {
+      state.roleDetails = null;
+    },
+    setPermissions: (state, action: PayloadAction<string[]>) => {
+      state.permissions = action.payload;
+    },
   },
 });
 
@@ -360,6 +345,9 @@ export const {
   setLoggedUser,
   splashCompleted,
   setLoginCreds,
+  setRoleDetails,
+  clearRoleDetails,
+  setPermissions,
 } = appSlice.actions;
 // Export actions
 
@@ -371,3 +359,4 @@ export const getStatus = (state: RootState) => state.app.status;
 export const getLoggedIn = (state: RootState) => state.app.loggedIn;
 export const getLoggedUser = (state: RootState) => state.app.loggedUser;
 export const getLoginCreds = (state: RootState) => state.app.logincreds;
+export const getRoleDetails = (state: RootState) => state.app.roleDetails;

@@ -25,7 +25,6 @@ import {
 import {
   showSuccessToast,
   showErrorToast,
-  showWarningToast,
 } from "../../common/toastMessageHelper";
 import localStorageHelper from "../../utils/localStorageHelper";
 
@@ -131,71 +130,68 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
       });
   }, [accountId, dispatch, reset, accountData]);
 
-  const handleAccountUpdate: SubmitHandler<IAccountFormInputs> = async (
-    data
-  ) => {
-    try {
-      setLoading(true);
+  const handleAccountUpdate: SubmitHandler<IAccountFormInputs> = async (data) => {
+  try {
+    setLoading(true);
+    const formData = new FormData();
+    formData.append("id", accountId.toString());
 
-      const formData = new FormData();
-      formData.append("id", accountId.toString());
-      if (data.username) formData.append("username", data.username);
-      if (data.password) formData.append("password", data.password);
-      formData.append("gender", data.gender?.toString() || "");
-      if (data.fullName) formData.append("full_name", data.fullName);
-      if (data.phoneNumber)
-        formData.append("phone_number", `+91${data.phoneNumber}`);
-      if (data.email) formData.append("email_id", data.email);
-      if (data.status) formData.append("status", data.status.toString());
+    if (data.username) formData.append("username", data.username);
+    if (data.password) formData.append("password", data.password);
+    formData.append("gender", data.gender?.toString() || "");
+    if (data.fullName) formData.append("full_name", data.fullName);
+    if (data.phoneNumber)
+      formData.append("phone_number", `+91${data.phoneNumber}`);
+    if (data.email) formData.append("email_id", data.email);
 
-      // Update account
-      const accountResponse = await dispatch(
-        operatorUpdationApi({ accountId, formData })
-      ).unwrap();
-
-      if (!accountResponse || !accountResponse.id) {
-        showErrorToast("Account update failed! Please try again.");
-        onClose();
-        return;
-      }
-
-      // Handle role assignment
-      if (data.role) {
-        try {
-          if (data.roleAssignmentId) {
-            // Update existing role assignment
-            await dispatch(
-              roleAssignUpdateApi({
-                id: data.roleAssignmentId,
-                role_id: data.role,
-              })
-            ).unwrap();
-          } else {
-            // Create new role assignment
-            await dispatch(
-              operatorRoleAssignApi({
-                operator_id: accountId,
-                role_id: data.role,
-              })
-            ).unwrap();
-          }
-        } catch (error) {
-          showErrorToast("Account updated, but role assignment failed!");
-        }
-      } else {
-        showWarningToast("No role selected. Skipping role assignment.");
-      }
-
-      showSuccessToast("Account Updated successfully!");
-      onCloseDetailCard();
-      refreshList("refresh");
-      onClose();
-    } catch (error) {
-      showErrorToast("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
+    if (canManageOperator && data.status) {
+      formData.append("status", data.status.toString());
     }
-  };
+
+    // Update account
+    const accountResponse = await dispatch(
+      operatorUpdationApi({ accountId, formData })
+    ).unwrap();
+
+    if (!accountResponse?.id) {
+      showErrorToast("Account update failed! Please try again.");
+      onClose();
+      return;
+    }
+
+    // Only handle role assignment if allowed
+    if (canManageOperator && data.role) {
+      try {
+        if (data.roleAssignmentId) {
+          await dispatch(
+            roleAssignUpdateApi({
+              id: data.roleAssignmentId,
+              role_id: data.role,
+            })
+          ).unwrap();
+        } else {
+          await dispatch(
+            operatorRoleAssignApi({
+              operator_id: accountId,
+              role_id: data.role,
+            })
+          ).unwrap();
+        }
+      } catch {
+        showErrorToast("Account updated, but role assignment failed!");
+      }
+    }
+
+    showSuccessToast("Account Updated successfully!");
+    onCloseDetailCard();
+    refreshList("refresh");
+    onClose();
+  } catch {
+    showErrorToast("Something went wrong. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <Container component="main" maxWidth="xs">
@@ -274,33 +270,33 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
             size="small"
           />
 
-          <Controller
-  name="role"
-  control={control}
-  rules={{ required: "Role is required" }}
-  render={({ field }) => (
-    <TextField
-      margin="normal"
-      required
-      fullWidth
-      select
-      label="Role"
-      value={field.value || ""}
-      onChange={field.onChange}
-      error={!!errors.role}
-      helperText={errors.role?.message}
-      size="small"
-      disabled={isLoggedInUser && !canManageOperator} // Add this line
-    >
-      {roles.map((role) => (
-        <MenuItem key={role.id} value={role.id}>
-          {role.name}
-        </MenuItem>
-      ))}
-    </TextField>
-  )}
-/>
-
+         {canManageOperator && (
+  <Controller
+    name="role"
+    control={control}
+    rules={{ required: "Role is required" }}
+    render={({ field }) => (
+      <TextField
+        margin="normal"
+        required
+        fullWidth
+        select
+        label="Role"
+        value={field.value || ""}
+        onChange={field.onChange}
+        error={!!errors.role}
+        helperText={errors.role?.message}
+        size="small"
+      >
+        {roles.map((role) => (
+          <MenuItem key={role.id} value={role.id}>
+            {role.name}
+          </MenuItem>
+        ))}
+      </TextField>
+    )}
+  />
+)}
 
           <Controller
             name="gender"
@@ -325,30 +321,30 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
             )}
           />
 
-          {!isLoggedInUser && (
-            <Controller
-              name="status"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  margin="normal"
-                  fullWidth
-                  select
-                  label="status"
-                  {...field}
-                  error={!!errors.status}
-                  size="small"
-                  defaultValue={accountData.status}
-                >
-                  {statusOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-          )}
+          {canManageOperator && !isLoggedInUser && (
+  <Controller
+    name="status"
+    control={control}
+    render={({ field }) => (
+      <TextField
+        margin="normal"
+        fullWidth
+        select
+        label="Status"
+        {...field}
+        error={!!errors.status}
+        size="small"
+        defaultValue={accountData.status}
+      >
+        {statusOptions.map((option) => (
+          <MenuItem key={option.value} value={option.value}>
+            {option.label}
+          </MenuItem>
+        ))}
+      </TextField>
+    )}
+  />
+)}
 
           <TextField
             margin="normal"
