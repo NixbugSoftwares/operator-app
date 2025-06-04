@@ -98,3 +98,16 @@ export const operatorRoleCreationSchema = yup.object().shape({
   manage_duty: yup.boolean().required(),
   manage_service: yup.boolean().required(),
 });
+
+
+//******************************************Bus creation validation schema******************************* */
+export const busCreationSchema = yup.object().shape({
+  registrationNumber: yup.string().required().min(4).max(16),
+  name: yup.string().required().min(4).max(64),
+  capacity: yup.number().required().min(1).max(120),
+  manufactured_on: yup.string().required(),
+  insurance_upto: yup.string().nullable().notRequired(),
+  pollution_upto: yup.string().nullable().notRequired(),
+  fitness_upto: yup.string().nullable().notRequired(),
+  road_tax_upto: yup.string().nullable().notRequired(),
+});

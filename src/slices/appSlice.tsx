@@ -56,6 +56,15 @@ interface RoleListParams {
   id?: number;
   name?: string;
 }
+interface BusListParams {
+  limit?: number;
+  offset?: number;
+  id?: number;
+  name?: string;
+  registration_number?: string;
+  capacity?: number;
+
+}
 //Logout API
 export const logoutApi = createAsyncThunk(
   "token",
@@ -401,6 +410,104 @@ export const roleAssignUpdateApi = createAsyncThunk(
       return rejectWithValue(
         error?.response?.data?.message || "Role assign failed"
       );
+    }
+  }
+);
+
+//*******************************************Bus APIS*************************************************************
+//bus list Api
+export const companyBusListApi = createAsyncThunk(
+  "/bus",
+  async (params: BusListParams, { rejectWithValue }) => {
+    const { limit, offset, id, name, registration_number, capacity } =
+      params;
+    console.log("companyBusListApi called with:", params);
+
+    const queryParams = {
+      limit,
+      offset,
+      ...(id && { id }),
+      ...(name && { name: name }),
+      ...(registration_number && { registration_number }),
+      ...(capacity && { capacity }),
+    };
+    try {
+      const response = await commonApi.apiCall(
+        "get",
+        "/company/bus",
+        queryParams,
+        true,
+        "application/json"
+      );
+      if (!response) throw new Error("No response received");
+
+      return {
+        data: response.data || response,
+      };
+    } catch (error: any) {
+      console.error("API Error:", error);
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to fetch Bus list"
+      );
+    }
+  }
+);
+
+//bus create Api
+export const companyBusCreateApi = createAsyncThunk(
+  "/bus",
+  async (data: FormData, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "post",
+        "/company/bus",
+        data,
+        true,
+        "application/x-www-form-urlencoded"
+      );
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(error?.response?.data?.message || "Bus creation failed");
+    }
+  }
+);
+
+//bus update Api
+export const companyBusUpdateApi = createAsyncThunk(
+  "/bus",
+  async ({ formData }: { busId: number; formData: FormData }, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "patch",
+        "/company/bus",
+        formData,
+        true,
+        "application/x-www-form-urlencoded"
+      );
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(error?.response?.data?.message || "Bus update failed");
+    }
+  }
+)
+
+//bus delete Api
+export const companyBusDeleteApi = createAsyncThunk(
+  "/bus",
+  async (data: FormData, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "delete",
+        "/company/bus",
+        data,
+        true,
+        "application/x-www-form-urlencoded"
+      );
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(error?.response?.data?.message || "Bus deletion failed");
     }
   }
 );

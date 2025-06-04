@@ -250,24 +250,24 @@ const AccountListingTable = () => {
                   <TableCell>
                     <b style={{ display: "block", textAlign: "center" }}>ID</b>
                     <TextField
-        type="number"
-        variant="outlined"
-        size="small"
-        placeholder="Search"
-        value={search.id}
-        onChange={(e) => handleSearchChange(e, "id")}
-        fullWidth
-        inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
-        sx={{
-          "& .MuiInputBase-root": {
-            height: 40,
-            fontSize: selectedAccount ? "0.8rem" : "1rem",
-          },
-          "& .MuiInputBase-input": {
-            textAlign: "center",
-          },
-        }}
-      />
+                      type="number"
+                      variant="outlined"
+                      size="small"
+                      placeholder="Search"
+                      value={search.id}
+                      onChange={(e) => handleSearchChange(e, "id")}
+                      fullWidth
+                      inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
+                      sx={{
+                        "& .MuiInputBase-root": {
+                          height: 40,
+                          fontSize: selectedAccount ? "0.8rem" : "1rem",
+                        },
+                        "& .MuiInputBase-input": {
+                          textAlign: "center",
+                        },
+                      }}
+                    />
                   </TableCell>
 
                   <TableCell>
@@ -275,23 +275,23 @@ const AccountListingTable = () => {
                       Full Name
                     </b>
                     <TextField
-        type="text"
-        variant="outlined"
-        size="small"
-        placeholder="Search"
-        value={search.fullName}
-        onChange={(e) => handleSearchChange(e, "fullName")}
-        fullWidth
-        sx={{
-          "& .MuiInputBase-root": {
-            height: 40,
-            fontSize: selectedAccount ? "0.8rem" : "1rem",
-          },
-          "& .MuiInputBase-input": {
-            textAlign: "center",
-          },
-        }}
-      />
+                      type="text"
+                      variant="outlined"
+                      size="small"
+                      placeholder="Search"
+                      value={search.fullName}
+                      onChange={(e) => handleSearchChange(e, "fullName")}
+                      fullWidth
+                      sx={{
+                        "& .MuiInputBase-root": {
+                          height: 40,
+                          fontSize: selectedAccount ? "0.8rem" : "1rem",
+                        },
+                        "& .MuiInputBase-input": {
+                          textAlign: "center",
+                        },
+                      }}
+                    />
                   </TableCell>
 
                   <TableCell>
@@ -490,5 +490,4 @@ const AccountListingTable = () => {
     </Box>
   );
 };
-
 export default AccountListingTable;

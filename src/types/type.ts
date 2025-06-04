@@ -27,3 +27,18 @@ export interface RoleDetails{
   manage_duty: boolean,
   manage_service: boolean
 }
+
+
+export interface Bus {
+  id: number;
+  registrationNumber: string;
+  name: string;
+  capacity: number;
+  model: string;
+  manufactured_on: string;
+  insurance_upto: string;
+  pollution_upto: string;
+  fitness_upto: string;
+  road_tax_upto: string;
+  status: number;
+}
