@@ -65,6 +65,20 @@ interface BusListParams {
   capacity?: number;
 
 }
+
+interface RouteListParams {
+  limit?: number;
+  offset?: number;
+  id?: number;
+  name?: string;
+}
+interface FareListParams {
+  limit?: number;
+  offset?: number;
+  id?: number;
+  name?: string;
+  scope?: number;
+}
 //Logout API
 export const logoutApi = createAsyncThunk(
   "token",
@@ -508,6 +522,359 @@ export const companyBusDeleteApi = createAsyncThunk(
       return response;
     } catch (error: any) {
       return rejectWithValue(error?.response?.data?.message || "Bus deletion failed");
+    }
+  }
+);
+//************************************************* Bus route APIs *******************************************************
+//landmarkListingApi with verified status
+export const landmarkListApi = createAsyncThunk(
+  "/landmark",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "get",
+        "/landmark",
+        { status: 2 }, 
+        true,
+        "application/json"
+      );
+
+      console.log("Filtered Landmark API Response:", response);
+
+      if (Array.isArray(response)) {
+        return response;
+      }
+
+      if (!response || !response.data) {
+        throw new Error("Invalid response format");
+      }
+
+      return response.data;
+    } catch (error: any) {
+      console.log("Error fetching filtered landmarks:", error);
+      return rejectWithValue(
+        error?.response?.data?.message || "Failed to fetch landmarks"
+      );
+    }
+  }
+);
+//route list Api
+
+export const busRouteListApi = createAsyncThunk(
+  "/company/route",
+  async (params: RouteListParams, { rejectWithValue }) => {
+    const{limit,offset,id,name}=params;
+    console.log("companyBusListApi called with:", params);
+    const queryParams = {
+      limit,
+      offset,
+      ...(id && { id }),
+      ...(name && { name: name }),
+    }
+    try {
+      
+      const response = await commonApi.apiCall(
+        "get",
+        "/company/route",
+        queryParams,
+        true,
+        "application/json"
+      );
+      if (!response) throw new Error("No response received");
+
+      return {
+        data: response.data || response,
+      };
+    } catch (error: any) {
+      console.error("API Error:", error);
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to fetch Bus list"
+      );
+    }
+  }
+);
+
+
+//route-landmark list api
+
+export const busRouteLandmarkListApi = createAsyncThunk(
+  "/company/route/landmark",
+  async (routeId: number | null, { rejectWithValue }) => {
+    try {
+      const params = routeId ? { route_id: routeId } : {};
+      const response = await commonApi.apiCall(
+        "get",
+        "/company/route/landmark",
+        params,
+        true,
+        "application/json"
+      );
+      console.log("Full API Response==================>", response);
+
+      // Check if response is directly an array
+      if (Array.isArray(response)) {
+        return response;
+      }
+
+      // Check if response.data exists
+      if (!response || !response.data) {
+        throw new Error("Invalid response format");
+      }
+
+      return response.data; // Ensure correct return
+    } catch (error: any) {
+      console.log("Error fetching route landmarks =====================>", error);
+      return rejectWithValue(
+        error?.response?.data?.message || "Failed to fetch route landmarks"
+      );
+    }
+  }
+);
+
+
+//route-delete Api
+export const routeDeleteApi = createAsyncThunk(
+  "/company/route",
+  async (data: FormData, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "delete",
+        "/company/route",
+        data,
+        true,
+        "application/x-www-form-urlencoded"
+      );
+
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(
+        error?.response?.data?.message || "Account deletion failed"
+      );
+    }
+  }
+);
+
+//route creation API
+export const routeCreationApi = createAsyncThunk(
+  "/company/route",
+  async (data: FormData, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "post",
+        "/company/route",
+        data,
+        true,
+        "application/www-form-urlencoded"
+      );
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(
+        error?.response?.data?.message || "route creation failed"
+      );
+    }
+  }
+);
+
+//route-landmark creation API
+export const routeLandmarkCreationApi = createAsyncThunk(
+  "/company/route/landmark",
+  async (data: FormData, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "post",
+        "/company/route/landmark",
+        data,
+        true,
+        "application/www-form-urlencoded"
+      );
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(
+        error?.response?.data?.message || "route-landmark creation failed"
+      );
+    }
+  }
+); 
+
+//route-landmark Delete Api
+export const routeLandmarkDeleteApi = createAsyncThunk(
+  "/company/route/landmark",
+  async (data: FormData, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "delete",
+        "/company/route/landmark",
+        data,
+        true,
+        "application/x-www-form-urlencoded"
+      );
+
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(
+        error?.response?.data?.message || "Account deletion failed"
+      );
+    }
+  }
+);
+
+
+//route update Api
+export const routeUpdationApi = createAsyncThunk(
+  "/company/route",
+  async (
+    { formData }: { routeId: number; formData: FormData },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await commonApi.apiCall(
+        "patch",
+        "/company/route",
+        formData,
+        true,
+        "application/x-www-form-urlencoded"
+      );
+      return response;
+    } catch (error: any) {
+      console.error("Backend Error Response:", error.response?.data); // Log the full error response
+      return rejectWithValue(
+        error?.response?.data?.message || "route update failed"
+      );
+    }
+  }
+);
+
+//route-landmark update Api
+export const routeLandmarkUpdationApi = createAsyncThunk(
+  "/company/route/landmark",
+  async (
+    { formData }: { routeLandmarkId: number; formData: FormData },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await commonApi.apiCall(
+        "patch",
+        "/company/route/landmark",
+        formData,
+        true,
+        "application/x-www-form-urlencoded"
+      );
+      return response;
+    } catch (error: any) {
+      console.error("Backend Error Response:", error.response?.data); // Log the full error response
+      return rejectWithValue(
+        error?.response?.data?.message || "Route-landmark update failed"
+      );
+    }
+  }
+);
+
+
+
+//*******************************Fare******************************
+//fare listing Api
+export const fareListingApi = createAsyncThunk(
+   "/fare",
+  async (params: FareListParams, { rejectWithValue }) => {
+    const { limit, offset, id, name } =
+      params;
+    console.log("companyBusListApi called with:", params);
+
+    const queryParams = {
+      limit,
+      offset,
+      ...(id && { id }),
+      ...(name && { name: name }),
+      scop:2
+    };
+    try {
+      const response = await commonApi.apiCall(
+        "get",
+        "/company/fare",
+        queryParams,
+        true,
+        "application/json"
+      );
+      if (!response) throw new Error("No response received");
+
+      return {
+        data: response.data || response,
+      };
+    } catch (error: any) {
+      console.error("API Error:", error);
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to fetch fare list"
+      );
+    }
+  }
+)
+
+//fare creation API
+export const fareCreationApi = createAsyncThunk(
+  "/company/fare",
+  async (data: FormData, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "post",
+        "/company/fare",
+        data,
+        true,
+        "application/x-www-form-urlencoded"
+      );
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(
+        error?.response?.data?.message || "Account creation failed"
+      );
+    }
+  }
+);
+
+//fare updation API
+export const fareupdationApi = createAsyncThunk(
+  "/company/fare",
+  async (
+    { formData }: { fareId: number; formData: FormData },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await commonApi.apiCall(
+        "patch",
+        `/company/fare`,
+        formData,
+        true,
+        "application/x-www-form-urlencoded" // Use the correct content type
+      );
+      return response;
+    } catch (error: any) {
+      console.error("Backend Error Response:", error.response?.data); // Log the full error response
+      return rejectWithValue(
+        error?.response?.data?.message || "Fare update failed"
+      );
+    }
+  }
+);
+//fare delete API
+export const fareDeleteApi = createAsyncThunk(
+  "/company/fare",
+  async (data: FormData, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "delete",
+        "/company/fare",
+        data,
+        true,
+        "application/x-www-form-urlencoded"
+      );
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(
+        error?.response?.data?.message || "Fare deletion failed"
+      );
     }
   }
 );

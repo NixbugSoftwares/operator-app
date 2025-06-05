@@ -42,3 +42,70 @@ export interface Bus {
   road_tax_upto: string;
   status: number;
 }
+
+
+
+
+export interface Landmark {
+  id: number;
+  name: string;
+  boundary: string;
+  status: string;
+  importance: string;
+}
+
+
+
+export interface SelectedLandmark {
+  id: number;
+  name: string;
+  sequenceId?: number;
+  starting_time: string;
+
+  arrivalTime: { fullTime: string };
+  departureTime: { fullTime: string };
+
+  arrivalDayOffset: number; 
+  departureDayOffset: number;
+  arrivalDelta: number;
+  departureDelta: number;
+  distance_from_start: number;
+
+  arrivalHour?: number;
+  arrivalMinute?: number;
+  arrivalAmPm?: "AM" | "PM";
+  departureHour?: number;
+  departureMinute?: number;
+  departureAmPm?: "AM" | "PM";
+}
+
+
+export interface RouteLandmark {
+  id: number;
+  landmark_id: string;
+  name: string;
+  starting_time: string;
+  arrival_delta: string;
+  departure_delta: string;
+  arrivalTime: {  fullTime: string };
+  departureTime: { fullTime: string };
+  distance_from_start?: number;
+  sequence_id?: number;
+}
+
+export interface Fare {
+  id: number;
+  name: string;
+  company_id: number | null;
+  version: number;
+  function: string;
+  scope: number;
+  attributes: {
+    df_version: number;
+    ticket_types: { id: number; name: string }[];
+    currency_type: string;
+    distance_unit: string;
+    extra: Record<string, any>;
+  };
+  created_on: string;
+}

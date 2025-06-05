@@ -111,7 +111,7 @@ const Sidebar: React.FC = () => {
                     <ListItemButton
                       onClick={() => {
                         navigate(item.path);
-                        if (isSmallScreen) setIsOpen(false); // Close sidebar on navigation for small screens
+                        if (isSmallScreen) setIsOpen(false); 
                       }}
                       sx={{
                         backgroundColor:
