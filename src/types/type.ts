@@ -109,3 +109,16 @@ export interface Fare {
   };
   created_on: string;
 }
+
+export interface Service{
+  id:number
+  name:string
+  company_id:number
+  bus_id:number
+  route_id:number
+  fare_id:number
+  status:number
+  ticket_mode:number
+  created_mode:number
+  starting_date:string
+}

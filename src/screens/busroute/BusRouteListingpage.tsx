@@ -34,7 +34,6 @@ import {
 } from "../../common/toastMessageHelper";
 import BusRouteDetailsPage from "./BusRouteDetails";
 import { SelectedLandmark, RouteLandmark } from "../../types/type";
-import { set } from "ol/transform";
 import PaginationControls from "../../common/paginationControl";
 interface Route {
   id: number;
@@ -222,22 +221,21 @@ const BusRouteListing = () => {
     setDeleteConfirmOpen(true);
   };
 
-  // const handleRouteDelete = async () => {
-  //   if (!routeToDelete) return;
+  const handleRouteDelete = async () => {
+    if (!routeToDelete) return;
 
-  //   try {
-  //     const formData = new FormData();
-  //     formData.append("id", routeToDelete.id.toString());
-  //     await dispatch(routeDeleteApi(formData)).unwrap();
-  //     showSuccessToast("Route deleted successfully");
-  //     fetchRoute();
-  //   } catch (error) {
-  //     showErrorToast("Failed to delete route");
-  //   } finally {
-  //     setDeleteConfirmOpen(false);
-  //     setRouteToDelete(null);
-  //   }
-  // };
+    try {
+      const formData = new FormData();
+      formData.append("id", routeToDelete.id.toString());
+      await dispatch(routeDeleteApi(formData)).unwrap();
+      showSuccessToast("Route deleted successfully");
+    } catch (error) {
+      showErrorToast("Failed to delete route");
+    } finally {
+      setDeleteConfirmOpen(false);
+      setRouteToDelete(null);
+    }
+  };
 
   const handleAddLandmarkEdit = (landmark: SelectedLandmark) => {
     setNewRouteLandmarks((prev) => [...prev, landmark]);
@@ -246,7 +244,7 @@ const BusRouteListing = () => {
 
   const refreshList = (value: string) => {
     if (value === "refresh") {
-      
+      fetchRoute(page, debouncedSearch);
     }
   };
 
@@ -310,7 +308,6 @@ const BusRouteListing = () => {
               </Button>
             </Box>
             <BusRouteCreation
-              
               landmarks={landmarks}
               onLandmarkRemove={handleRemoveLandmark}
               onSuccess={handleRouteCreated}
@@ -318,6 +315,7 @@ const BusRouteListing = () => {
               onClearRoute={() => mapRef.current?.clearRoutePath()}
               mapRef={mapRef} 
               onStartingTimeChange={handleStartingTimeChange}
+              refreshList={refreshList}
 
             />
           </>
@@ -551,7 +549,7 @@ const BusRouteListing = () => {
         <DialogActions>
           <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
           <Button 
-          // onClick={handleRouteDelete}
+          onClick={handleRouteDelete}
            color="error" autoFocus>
             Delete
           </Button>

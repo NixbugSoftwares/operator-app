@@ -20,13 +20,13 @@ import BlockIcon from "@mui/icons-material/Block";
 import { Delete as DeleteIcon } from "@mui/icons-material";
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import { useAppDispatch } from "../../store/Hooks";
-import { companyBusDeleteApi } from "../../slices/appSlice";
+import { serviceDeleteApi } from "../../slices/appSlice";
 import localStorageHelper from "../../utils/localStorageHelper";
-import BusUpdateForm from "./BusUpdation";
+// import BusUpdateForm from "./BusUpdation";
 import { showSuccessToast } from "../../common/toastMessageHelper";
 
-interface BusCardProps {
-  bus: {
+interface ServiceCardProps {
+  service: {
     id: number;
     registrationNumber: string;
     name: string;
@@ -43,22 +43,22 @@ interface BusCardProps {
   onUpdate: () => void;
   onDelete: (id: number) => void;
   onBack: () => void;
-  canManageBus: boolean;
+  canManageService: boolean;
   onCloseDetailCard: () => void;
 }
 
-const BusDetailsCard: React.FC<BusCardProps> = ({
-  bus,
+const BusDetailsCard: React.FC<ServiceCardProps> = ({
+  service,
   refreshList,
   onDelete,
   onBack,
-  canManageBus,
+  canManageService,
   onCloseDetailCard,
 }) => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [updateFormOpen, setUpdateFormOpen] = useState(false);
   const dispatch = useAppDispatch();
-  console.log("bus", bus);
+  console.log("service", service);
 
   const formatUTCDateToLocal = (dateString: string | null): string => {
     if (!dateString || dateString.trim() === "") return "Not added yet";
@@ -67,20 +67,20 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
   };
 
   const handleBusDelete = async () => {
-    if (!bus.id) {
+    if (!service.id) {
       console.error("Error: Bus ID is missing");
       return;
     }
 
     try {
       const formData = new FormData();
-      formData.append("id", String(bus.id));
-      await dispatch(companyBusDeleteApi(formData)).unwrap();
+      formData.append("id", String(service.id));
+      await dispatch(serviceDeleteApi(formData)).unwrap();
 
       setDeleteConfirmOpen(false);
-      localStorageHelper.removeStoredItem(`bus_${bus.id}`);
-      onDelete(bus.id);
-      showSuccessToast("Bus deleted successfully");
+      localStorageHelper.removeStoredItem(`service${service.id}`);
+      onDelete(service.id);
+      showSuccessToast("service deleted successfully");
       onCloseDetailCard();
       refreshList("refresh");
     } catch (error) {
@@ -112,10 +112,10 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
             <DirectionsBusIcon fontSize="large" />
           </Avatar>
           <Typography variant="h6" sx={{ mt: 1 }}>
-            <b>{bus.name}</b>
+            <b>{service.name}</b>
           </Typography>
           <Typography variant="body2" color="textSecondary">
-            <b>Bus ID:</b> {bus.id}
+            <b>Bus ID:</b> {service.id}
           </Typography>
         </Box>
 
@@ -129,27 +129,7 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
               alignItems: "flex-start",
             }}
           >
-            <Typography variant="body2" color="textSecondary">
-              <b>Registration Number:</b> {bus.registrationNumber}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              <b>Capacity:</b> {bus.capacity}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              <b>Manufactured:</b> {formatUTCDateToLocal(bus.manufactured_on)}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              <b>Insurance Upto:</b> {formatUTCDateToLocal(bus.insurance_upto)}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              <b>Pollution Upto:</b> {formatUTCDateToLocal(bus.pollution_upto)}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              <b>Fitness Upto:</b> {formatUTCDateToLocal(bus.fitness_upto)}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              <b>Road tax Upto:</b> {formatUTCDateToLocal(bus.road_tax_upto)}
-            </Typography>
+            
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", mb: 1, gap: 1 }}>
   {bus.status === 1 ? (
@@ -199,7 +179,7 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
             {/* Update Button with Tooltip */}
             <Tooltip
               title={
-                !canManageBus
+                !canManageService
                   ? "You don't have permission, contact the admin"
                   : ""
               }
@@ -208,7 +188,7 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
             >
               <span
                 style={{
-                  cursor: !canManageBus ? "not-allowed" : "default",
+                  cursor: !canManageService ? "not-allowed" : "default",
                 }}
               >
                 <Button
@@ -216,7 +196,7 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
                   color="success"
                   size="small"
                   onClick={() => setUpdateFormOpen(true)}
-                  disabled={!canManageBus}
+                  disabled={!canManageService}
                   sx={{
                     "&.Mui-disabled": {
                       backgroundColor: "#81c784 !important",
@@ -232,7 +212,7 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
             {/* Delete Button with Tooltip */}
             <Tooltip
               title={
-                !canManageBus
+                !canManageService
                   ? "You don't have permission, contact the admin"
                   : ""
               }
@@ -241,7 +221,7 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
             >
               <span
                 style={{
-                  cursor: !canManageBus ? "not-allowed" : "default",
+                  cursor: !canManageService ? "not-allowed" : "default",
                 }}
               >
                 <Button
@@ -250,7 +230,7 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
                   size="small"
                   onClick={() => setDeleteConfirmOpen(true)}
                   startIcon={<DeleteIcon />}
-                  disabled={!canManageBus}
+                  disabled={!canManageService}
                   sx={{
                     "&.Mui-disabled": {
                       backgroundColor: "#e57373 !important",
@@ -292,7 +272,7 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
       </Dialog>
 
       {/* Update Form Modal */}
-      <Dialog
+      {/* <Dialog
         open={updateFormOpen}
         onClose={() => setUpdateFormOpen(false)}
         maxWidth="xs"
@@ -318,7 +298,7 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
             onCloseDetailCard={onCloseDetailCard}
           />
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </>
   );
 };

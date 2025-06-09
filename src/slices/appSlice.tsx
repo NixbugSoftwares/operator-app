@@ -79,6 +79,17 @@ interface FareListParams {
   name?: string;
   scope?: number;
 }
+
+interface ServiceListParams {
+  limit?: number;
+  offset?: number;
+  id?: number;
+  name?: string;
+  ticket_mode?: number;
+  created_mode?: number;
+  status?: number;
+}
+
 //Logout API
 export const logoutApi = createAsyncThunk(
   "token",
@@ -878,6 +889,95 @@ export const fareDeleteApi = createAsyncThunk(
     }
   }
 );
+
+//*******************************************Service**************************************************
+
+//service listing Api
+export const serviceListingApi = createAsyncThunk(
+  "/service",
+  async (params: ServiceListParams, { rejectWithValue }) => {
+    const { limit, offset, id, name, created_mode, ticket_mode, status } =
+      params;
+
+    const queryParams = {
+      limit,
+      offset,
+      ...(id && { id }),
+      ...(name && { name: name }),
+      ...(created_mode && { created_mode }),
+      ...(ticket_mode && { ticket_mode }),
+      ...(status && { status }),
+    };
+    try {
+      const response = await commonApi.apiCall(
+        "get",
+        "/company/service",
+        queryParams,
+        true,
+        "application/json"
+      );
+      if (!response) throw new Error("No response received");
+
+      return {
+        data: response.data || response,
+      };
+    } catch (error: any) {
+      console.error("API Error:", error);
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to fetch service list"
+      );
+    }
+  }
+)
+
+//service creation Api
+export const serviceCreationApi = createAsyncThunk(
+  "/company/service",
+  async (data: FormData, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "post",
+        "/company/service",
+        data,
+        true,
+        "application/x-www-form-urlencoded"
+      );
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(
+        error?.response?.data?.message || "Service creation failed"
+      );
+    }
+  }
+);
+
+//service Deletion Api
+export const serviceDeleteApi = createAsyncThunk(
+  "/company/service",
+  async (data: FormData, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "delete",
+        "/company/service",
+        data,
+        true,
+        "application/x-www-form-urlencoded"
+      );
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(
+        error?.response?.data?.message || "Service deletion failed"
+      );
+    }
+  }
+);
+
+
+
+
+
 
 // Slice
 export const appSlice = createSlice({

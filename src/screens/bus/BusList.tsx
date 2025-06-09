@@ -300,7 +300,7 @@ const BusListingTable = () => {
             onDelete={() => {}}
             onBack={() => setSelectedBus(null)}
             refreshList={(value: any) => refreshList(value)}
-            canManageCompany={canManageBus}
+            canManageBus={canManageBus}
             onCloseDetailCard={() => setSelectedBus(null)}
           />
         </Box>

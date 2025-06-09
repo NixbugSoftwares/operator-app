@@ -38,8 +38,8 @@ const Sidebar: React.FC = () => {
         { label: "Bus", path: "/bus", icon: <DirectionsBusIcon /> },
         { label: "Route", path: "/busroute", icon: <RouteIcon /> },
         { label: "Fare", path: "/fare", icon: <CorporateFareIcon /> },
+        { label: "Service", path: "/service", icon: <Diversity3Icon /> },
         { label: "schedule", path: "/schedule", icon: <CorporateFareIcon /> },
-        { label: "Service", path: "/Service", icon: <Diversity3Icon /> },
         {label:"Duty",path:"/duty",icon:<CorporateFareIcon/>},
       ],
     },
@@ -113,17 +113,13 @@ const Sidebar: React.FC = () => {
                         navigate(item.path);
                         if (isSmallScreen) setIsOpen(false); 
                       }}
-                      sx={{
+                     sx={{
                         backgroundColor:
                           location.pathname === item.path
                             ? "primary.light"
                             : "inherit",
                         "&:hover": {
-                          backgroundColor: "primary.light",
-                        },
-                        "&.Mui-selected": {
-                          backgroundColor: "primary.main",
-                          color: "white",
+                          backgroundColor: "#E3F2FD",
                         },
                       }}
                     >

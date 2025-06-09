@@ -39,6 +39,7 @@ interface BusRouteCreationProps {
   onClearRoute?: () => void;
   mapRef: React.RefObject<any>;
   onStartingTimeChange: (time: string) => void;
+  refreshList: (value: any) => void;
 }
 
 interface BusRouteFormInputs {
@@ -54,6 +55,7 @@ const BusRouteCreation = ({
   onClearRoute,
   mapRef,
   onStartingTimeChange,
+  refreshList,
 }: BusRouteCreationProps) => {
   const dispatch = useAppDispatch();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,7 +67,6 @@ const BusRouteCreation = ({
   const {
     register,
     handleSubmit,
-    reset,
     setValue,
     formState: { errors },
   } = useForm<BusRouteFormInputs>();
@@ -206,7 +207,7 @@ const BusRouteCreation = ({
 
       await Promise.all(landmarkPromises);
       showSuccessToast("Route and landmarks created successfully");
-      reset();
+      refreshList("refresh");
       onSuccess();
       if (onClearRoute) onClearRoute();
     } catch (error) {
