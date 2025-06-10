@@ -18,7 +18,10 @@ import Diversity3Icon from "@mui/icons-material/Diversity3";
 import RouteIcon from "@mui/icons-material/Route";
 import CorporateFareIcon from "@mui/icons-material/CorporateFare";
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
+import ScheduleIcon from '@mui/icons-material/Schedule';
 import PowerSettingsNewIcon from "@mui/icons-material/PowerSettingsNew";
+import AssignmentIndRoundedIcon from '@mui/icons-material/AssignmentIndRounded';
+import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded';
 import { useTheme, useMediaQuery } from "@mui/material";
 import LogoutConfirmationModal from "./logoutModal";
 const Sidebar: React.FC = () => {
@@ -38,9 +41,9 @@ const Sidebar: React.FC = () => {
         { label: "Bus", path: "/bus", icon: <DirectionsBusIcon /> },
         { label: "Route", path: "/busroute", icon: <RouteIcon /> },
         { label: "Fare", path: "/fare", icon: <CorporateFareIcon /> },
-        { label: "Service", path: "/service", icon: <Diversity3Icon /> },
-        { label: "schedule", path: "/schedule", icon: <CorporateFareIcon /> },
-        {label:"Duty",path:"/duty",icon:<CorporateFareIcon/>},
+        { label: "Service", path: "/service", icon: <AssignmentIndRoundedIcon /> },
+        { label: "schedule", path: "/schedule", icon: <ScheduleIcon /> },
+        {label:"Duty",path:"/duty",icon:<AssignmentTurnedInRoundedIcon/>},
       ],
     },
   ];

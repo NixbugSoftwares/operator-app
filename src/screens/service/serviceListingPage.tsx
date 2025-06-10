@@ -24,33 +24,33 @@ import PaginationControls from "../../common/paginationControl";
 import FormModal from "../../common/formModal";
 import ServiceCreationForm from "./ServiceCreationForm";
 import { Service } from "../../types/type";
-// import BusDetailsCard from "./BusDetail";
+import ServiceDetailsCard from "./serviceDetails";
 
 const getTicketModeBackendValue = (displayValue: string): string => {
-  const genderMap: Record<string, string> = {
+  const ticketMap: Record<string, string> = {
     Hybrid: "1",
     Digital: "2",
     Conventional: "3",
   };
-  return genderMap[displayValue] || "";
+  return ticketMap[displayValue] || "";
 };
 
 const getStatusBackendValue = (displayValue: string): string => {
-  const genderMap: Record<string, string> = {
+  const statusMap: Record<string, string> = {
     Created: "1",
     Started: "2",
     Terminated: "3",
     Ended: "4",
   };
-  return genderMap[displayValue] || "";
+  return statusMap[displayValue] || "";
 };
 
 const getCreatedModeBackendValue = (displayValue: string): string => {
-  const genderMap: Record<string, string> = {
+  const createdModMap: Record<string, string> = {
     Manual: "1",
     Automatic: "2",
   };
-  return genderMap[displayValue] || "";
+  return createdModMap[displayValue] || "";
 };
 
 const ServiceListingTable = () => {
@@ -107,6 +107,8 @@ const ServiceListingTable = () => {
                 ? "Terminated"
                 : "Ended",
             created_mode: service.created_mode === 1 ? "Manual" : "Automatic",
+            starting_date: service.starting_date,
+            remarks: service.remark,
           }));
           setServiceBusList(formattedBusses);
           setHasNextPage(items.length === rowsPerPage);
@@ -226,12 +228,13 @@ const ServiceListingTable = () => {
                   ? "#6c87b7 !important"
                   : "#00008B",
                 color: "white",
+                display: 'flex', justifyContent: 'flex-end'
               }}
               variant="contained"
               onClick={() => setOpenCreateModal(true)}
               disabled={!canManageService}
             >
-              Add New Bus
+              Add New Service
             </Button>
           </span>
         </Tooltip>
@@ -371,7 +374,7 @@ const ServiceListingTable = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} align="center">
-                    No Bus found.
+                    No Service found.
                   </TableCell>
                 </TableRow>
               )}
@@ -401,15 +404,15 @@ const ServiceListingTable = () => {
             height: "100%",
           }}
         >
-          {/* <BusDetailsCard
-            bus={selectedBus}
+          <ServiceDetailsCard
+            service={selectedService}
             onUpdate={() => {}}
             onDelete={() => {}}
-            onBack={() => setSelectedBus(null)}
+            onBack={() => setSelectedService(null)}
             refreshList={(value: any) => refreshList(value)}
-            canManageCompany={canManageBus}
-            onCloseDetailCard={() => setSelectedBus(null)}
-          /> */}
+            canManageService={canManageService}
+            onCloseDetailCard={() => setSelectedService(null)}
+          />
         </Box>
       )}
 

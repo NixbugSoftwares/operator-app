@@ -953,6 +953,31 @@ export const serviceCreationApi = createAsyncThunk(
   }
 );
 
+//service updation Api
+export const serviceupdationApi = createAsyncThunk(
+  "/company/service",
+  async (
+    { formData }: { serviceId: number; formData: FormData },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await commonApi.apiCall(
+        "patch",
+        `/company/service`,
+        formData,
+        true,
+        "application/x-www-form-urlencoded" 
+      );
+      return response;
+    } catch (error: any) {
+      console.error("Backend Error Response:", error.response?.data); 
+      return rejectWithValue(
+        error?.response?.data?.message || "Service update failed"
+      );
+    }
+  }
+);
+
 //service Deletion Api
 export const serviceDeleteApi = createAsyncThunk(
   "/company/service",

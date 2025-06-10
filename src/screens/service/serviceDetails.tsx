@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardActions,
@@ -12,32 +12,29 @@ import {
   DialogTitle,
   DialogContentText,
   Tooltip,
+  Chip 
 } from "@mui/material";
 
-import VerifiedIcon from "@mui/icons-material/Verified";
-import NewReleasesIcon from "@mui/icons-material/NewReleases";
-import BlockIcon from "@mui/icons-material/Block";
 import { Delete as DeleteIcon } from "@mui/icons-material";
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import { useAppDispatch } from "../../store/Hooks";
-import { serviceDeleteApi } from "../../slices/appSlice";
+import { serviceDeleteApi,busRouteListApi, companyBusListApi, fareListingApi } from "../../slices/appSlice";
 import localStorageHelper from "../../utils/localStorageHelper";
-// import BusUpdateForm from "./BusUpdation";
+import ServiceUpdateForm from "./ServiceUpdation";
 import { showSuccessToast } from "../../common/toastMessageHelper";
 
 interface ServiceCardProps {
   service: {
     id: number;
-    registrationNumber: string;
     name: string;
-    capacity: number;
-    model: string;
-    manufactured_on: string;
-    insurance_upto: string;
-    pollution_upto: string;
-    fitness_upto: string;
-    road_tax_upto: string;
+    ticket_mode: number;
+    created_mode: number;
     status: number;
+    bus_id: number;
+    route_id: number;
+    fare_id: number;
+    starting_date: string;
+    remarks: string;
   };
   refreshList: (value: any) => void;
   onUpdate: () => void;
@@ -47,7 +44,26 @@ interface ServiceCardProps {
   onCloseDetailCard: () => void;
 }
 
-const BusDetailsCard: React.FC<ServiceCardProps> = ({
+
+const statusMap: Record<string, { label: string; color: string }> = {
+  Created: { label: "Created", color: "#42a5f5" },
+  Started: { label: "Started", color: "#66bb6a" },
+  Terminated: { label: "Terminated", color: "#ef5350" },
+  Ended: { label: "Ended", color: "#ab47bc" },
+};
+
+const ticketModeMap: Record<string, { label: string; color: string }> = {
+  Hybrid: { label: "Hybrid", color: "#29b6f6" },
+  Digital: { label: "Digital", color: "#26a69a" },
+  Conventional: { label: "Conventional", color: "#ffa726" },
+};
+
+const createdModeMap: Record<string, { label: string; color: string }> = {
+  Manual: { label: "Manual", color: "#8d6e63" },
+  Automatic: { label: "Automatic", color: "#5c6bc0" },
+};
+
+const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
   service,
   refreshList,
   onDelete,
@@ -55,10 +71,62 @@ const BusDetailsCard: React.FC<ServiceCardProps> = ({
   canManageService,
   onCloseDetailCard,
 }) => {
+    console.log("service>>>>>>>>>>>>>>>>>>>>>>>>>>>>", service);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [updateFormOpen, setUpdateFormOpen] = useState(false);
   const dispatch = useAppDispatch();
-  console.log("service", service);
+ const [routeName, setRouteName] = useState("Route not found");
+ const [busName, setBusName] = useState("Bus not found");
+ const [fareName, setFareName] = useState("Fare not found");
+
+ const fetchRouteName = async () => {
+    try {
+      const id = service.route_id;
+      const response = await dispatch(busRouteListApi({ id })).unwrap();
+      setRouteName(response.data[0].name);
+      console.log("Route Name Response:", response.data[0].name);
+      
+      return response.data[0].name;
+    } catch (error) {
+      console.error("Error fetching route name:", error);
+      return "Route not found";
+    }
+  };
+  const fetchBusName = async () => {
+    try {
+      const id = service.bus_id;
+      const response = await dispatch(companyBusListApi({ id })).unwrap();
+      setBusName(response.data[0].name);
+      console.log("Bus Name Response:", response.data[0].name);
+      
+      return response.data[0].name;
+    } catch (error) {
+      console.error("Error fetching bus name:", error);
+      return "Bus not found";
+    }
+  }
+
+  const fetchFareName = async () => {
+    try {
+      const id = service.fare_id;
+      const response = await dispatch(fareListingApi({ id })).unwrap();
+      setFareName(response.data[0].name);
+      console.log("Fare Name Response:", response.data[0].name);
+      
+      return response.data[0].name;
+    } catch (error) {
+      console.error("Error fetching fare name:", error);
+      return "Fare not found";
+    }
+  }
+useEffect(() => {
+    fetchRouteName();
+    fetchBusName();
+    fetchFareName();
+  }, [service.route_id, service.bus_id, service.fare_id]);
+
+
+
 
   const formatUTCDateToLocal = (dateString: string | null): string => {
     if (!dateString || dateString.trim() === "") return "Not added yet";
@@ -87,6 +155,8 @@ const BusDetailsCard: React.FC<ServiceCardProps> = ({
       console.error("Delete error:", error);
     }
   };
+  console.log(service.status);
+  
 
   return (
     <>
@@ -100,62 +170,98 @@ const BusDetailsCard: React.FC<ServiceCardProps> = ({
         }}
       >
         {/* Bus Avatar & Info */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            mb: 2,
-          }}
-        >
-          <Avatar sx={{ width: 80, height: 80, bgcolor: "darkblue" }}>
-            <DirectionsBusIcon fontSize="large" />
-          </Avatar>
-          <Typography variant="h6" sx={{ mt: 1 }}>
-            <b>{service.name}</b>
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            <b>Bus ID:</b> {service.id}
-          </Typography>
-        </Box>
-
+         <Box
+    sx={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      mb: 2,
+    }}
+  >
+    <Avatar sx={{ width: 80, height: 80, bgcolor: "darkblue" }}>
+      <DirectionsBusIcon fontSize="large" />
+    </Avatar>
+    <Typography variant="h6" sx={{ mt: 1 }}>
+      <b>{service.name}</b>
+    </Typography>
+    <Typography variant="body2" color="textSecondary">
+      <b>Service ID:</b> {service.id}
+    </Typography>
+  </Box>
         {/* Bus Details (Aligned Left) */}
         <Card sx={{ p: 2, bgcolor: "grey.100", mb: 2 }}>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 1,
-              alignItems: "flex-start",
-            }}
-          >
-            
-          </Box>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 1, gap: 1 }}>
-  {bus.status === 1 ? (
-    <>
-      <VerifiedIcon sx={{ color: "green", fontSize: 30 }} />
-      <Typography sx={{ color: "green", fontWeight: "bold" }}>
-        Active
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 1.5,
+        alignItems: "flex-start",
+      }}
+    >
+      <Typography variant="body1">
+        <b>Route :</b> {routeName}
       </Typography>
-    </>
-  ) : bus.status === 2 ? (
-    <>
-      <NewReleasesIcon sx={{ color: "#FFA500", fontSize: 30 }} />
-      <Typography sx={{ color: "#FFA500", fontWeight: "bold" }}>
-        Maintenance
+      <Typography variant="body1">
+        <b>Bus :</b> {busName}
       </Typography>
-    </>
-  ) : (
-    <>
-      <BlockIcon sx={{ color: "#d93550", fontSize: 30 }} />
-      <Typography sx={{ color: "#d93550", fontWeight: "bold" }}>
-        Suspended
+      <Typography variant="body1">
+        <b>Fare :</b> {fareName}
       </Typography>
-    </>
-  )}
-</Box>
-        </Card>
+      <Typography variant="body1" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <b>Ticket Mode:</b>
+        <Chip
+          label={ticketModeMap[service.ticket_mode]?.label || "Unknown"}
+          sx={{
+            bgcolor: `${ticketModeMap[service.ticket_mode]?.color}20`,
+            color: ticketModeMap[service.ticket_mode]?.color,
+            fontWeight: "bold",
+            borderRadius: "12px",
+            px: 1.5,
+            fontSize: "0.75rem",
+          }}
+          size="small"
+        />
+      </Typography>
+      <Typography variant="body1" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <b>Created Mode:</b>
+        <Chip
+          label={createdModeMap[service.created_mode]?.label || "Unknown"}
+          sx={{
+            bgcolor: `${createdModeMap[service.created_mode]?.color}20`,
+            color: createdModeMap[service.created_mode]?.color,
+            fontWeight: "bold",
+            borderRadius: "12px",
+            px: 1.5,
+            fontSize: "0.75rem",
+          }}
+          size="small"
+        />
+      </Typography>
+      <Typography variant="body1" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <b>Status:</b>
+        <Chip
+          label={statusMap[service.status]?.label || "Unknown"}
+          sx={{
+            bgcolor: `${statusMap[service.status]?.color}20`,
+            color: statusMap[service.status]?.color,
+            fontWeight: "bold",
+            borderRadius: "12px",
+            px: 1.5,
+            fontSize: "0.75rem",
+          }}
+          size="small"
+        />
+      </Typography>
+      <Typography variant="body1">
+        <b>Starting Date:</b> {formatUTCDateToLocal(service.starting_date)}
+      </Typography>
+  
+      
+  <Typography variant="body1">
+    <b>Remarks:</b> {service.remarks || "Not added yet"}
+  </Typography>
+    </Box>
+  </Card>
 
         {/* Action Buttons */}
         <CardActions>
@@ -257,8 +363,7 @@ const BusDetailsCard: React.FC<ServiceCardProps> = ({
             Are you sure you want to delete this bus?
           </DialogContentText>
           <Typography>
-            <b>Bus Name:</b> {bus.name}, <b>Registration Number:</b>{" "}
-            {bus.registrationNumber}
+            <b>Service Name:</b> {service.name}, 
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -272,35 +377,30 @@ const BusDetailsCard: React.FC<ServiceCardProps> = ({
       </Dialog>
 
       {/* Update Form Modal */}
-      {/* <Dialog
+      <Dialog
         open={updateFormOpen}
         onClose={() => setUpdateFormOpen(false)}
         maxWidth="xs"
         fullWidth
       >
         <DialogContent>
-          <BusUpdateForm
-            busId={bus.id}
-            busData={{
-              id: bus.id,
-              registration_number: bus.registrationNumber,
-              name: bus.name,
-              capacity: bus.capacity,
-              manufactured_on: bus.manufactured_on,
-              insurance_upto: bus.insurance_upto,
-              pollution_upto: bus.pollution_upto,
-              fitness_upto: bus.fitness_upto,
-              road_tax_upto: bus.road_tax_upto,
-              status: bus.status,
+          <ServiceUpdateForm
+          serviceId={service.id}
+            serviceData={{
+              id: service.id,
+              name: service.name,
+              ticket_mode: service.ticket_mode,
+              status: service.status,
+              remarks: service.remarks,
             }}
             refreshList={(value: any) => refreshList(value)}
             onClose={() => setUpdateFormOpen(false)}
             onCloseDetailCard={onCloseDetailCard}
           />
         </DialogContent>
-      </Dialog> */}
+      </Dialog>
     </>
   );
 };
 
-export default BusDetailsCard;
+export default ServiceDetailsCard;

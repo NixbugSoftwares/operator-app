@@ -58,13 +58,23 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
     routeList: [] as DropdownItem[],
     fareList: [] as DropdownItem[],
   });
+  const [searchParams, setSearchParams] = useState({
+    bus: "",
+    route: "",
+    fare: "",
+  });
   const [page, setPage] = useState({
     bus: 0,
     route: 0,
     fare: 0,
   });
+  const [hasMore, setHasMore] = useState({
+    bus: true,
+    route: true,
+    fare: true,
+  });
 
-  const rowsPerPage = 20;
+  const rowsPerPage = 10;
 
   const {
     register,
@@ -79,13 +89,14 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
   });
 
   const fetchBusList = useCallback(
-    (pageNumber: number, ) => {
+    (pageNumber: number, searchText = "") => {
       setLoading(true);
       const offset = pageNumber * rowsPerPage;
       dispatch(
         companyBusListApi({
           limit: rowsPerPage,
           offset,
+          name: searchText,
         })
       )
         .unwrap()
@@ -97,7 +108,10 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
           }));
           setDropdownData((prev) => ({
             ...prev,
-            busList: pageNumber === 0 ? formattedBusList : [...prev.busList, ...formattedBusList],
+            busList:
+              pageNumber === 0
+                ? formattedBusList
+                : [...prev.busList, ...formattedBusList],
           }));
         })
         .catch((error) => {
@@ -109,13 +123,14 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
   );
 
   const fetchFareList = useCallback(
-    (pageNumber: number, ) => {
+    (pageNumber: number, searchText = "") => {
       setLoading(true);
       const offset = pageNumber * rowsPerPage;
       dispatch(
         fareListingApi({
           limit: rowsPerPage,
           offset,
+          name: searchText,
         })
       )
         .unwrap()
@@ -127,7 +142,10 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
           }));
           setDropdownData((prev) => ({
             ...prev,
-            fareList: pageNumber === 0 ? formattedFareList : [...prev.fareList, ...formattedFareList],
+            fareList:
+              pageNumber === 0
+                ? formattedFareList
+                : [...prev.fareList, ...formattedFareList],
           }));
         })
         .catch((error) => {
@@ -139,25 +157,33 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
   );
 
   const fetchRouteList = useCallback(
-    (pageNumber: number, ) => {
+    (pageNumber: number, searchText = "") => {
       setLoading(true);
       const offset = pageNumber * rowsPerPage;
       dispatch(
         busRouteListApi({
           limit: rowsPerPage,
           offset,
+          name: searchText,
         })
       )
         .unwrap()
         .then((res) => {
           const items = res.data || [];
-          const formattedRouteList = items.map((route: any) => ({
-            id: route.id,
-            name: route.name ?? "-",
+          const formattedList = items.map((item: any) => ({
+            id: item.id,
+            name: item.name ?? "-",
           }));
           setDropdownData((prev) => ({
             ...prev,
-            routeList: pageNumber === 0 ? formattedRouteList : [...prev.routeList, ...formattedRouteList],
+            routeList:
+              pageNumber === 0
+                ? formattedList
+                : [...prev.routeList, ...formattedList],
+          }));
+          setHasMore((prev) => ({
+            ...prev,
+            route: items.length === rowsPerPage,
           }));
         })
         .catch((error) => {
@@ -211,21 +237,27 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
     }
   };
 
-  const handleScroll = (event: React.UIEvent<HTMLElement>, type: 'bus' | 'route' | 'fare') => {
+  const handleScroll = (
+    event: React.UIEvent<HTMLElement>,
+    type: "bus" | "route" | "fare"
+  ) => {
     const element = event.currentTarget;
-    if (element.scrollHeight - element.scrollTop === element.clientHeight) {
+    if (
+      element.scrollHeight - element.scrollTop === element.clientHeight &&
+      hasMore[type]
+    ) {
       const newPage = page[type] + 1;
-      setPage(prev => ({ ...prev, [type]: newPage }));
-      
+      setPage((prev) => ({ ...prev, [type]: newPage }));
+
       switch (type) {
-        case 'bus':
-          fetchBusList(newPage, );
+        case "bus":
+          fetchBusList(newPage, searchParams.bus);
           break;
-        case 'route':
-          fetchRouteList(newPage, );
+        case "route":
+          fetchRouteList(newPage, searchParams.route);
           break;
-        case 'fare':
-          fetchFareList(newPage, );
+        case "fare":
+          fetchFareList(newPage, searchParams.fare);
           break;
       }
     }
@@ -270,9 +302,20 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
               <Autocomplete
                 options={dropdownData.routeList}
                 getOptionLabel={(option) => option.name}
-                value={dropdownData.routeList.find(item => item.id === field.value) || null}
+                value={
+                  dropdownData.routeList.find(
+                    (item) => item.id === field.value
+                  ) || null
+                }
                 onChange={(_, newValue) => field.onChange(newValue?.id)}
-                
+                onInputChange={(_, newInputValue) => {
+                  setSearchParams((prev) => ({
+                    ...prev,
+                    route: newInputValue,
+                  }));
+                  setPage((prev) => ({ ...prev, route: 0 }));
+                  fetchRouteList(0, newInputValue);
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -292,8 +335,8 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
                   />
                 )}
                 ListboxProps={{
-                  onScroll: (event) => handleScroll(event, 'route'),
-                  style: { maxHeight: 200, overflow: 'auto' },
+                  onScroll: (event) => handleScroll(event, "route"),
+                  style: { maxHeight: 200, overflow: "auto" },
                 }}
               />
             )}
@@ -307,9 +350,16 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
               <Autocomplete
                 options={dropdownData.busList}
                 getOptionLabel={(option) => option.name}
-                value={dropdownData.busList.find(item => item.id === field.value) || null}
+                value={
+                  dropdownData.busList.find(
+                    (item) => item.id === field.value
+                  ) || null
+                }
                 onChange={(_, newValue) => field.onChange(newValue?.id)}
-                
+                onInputChange={(_, newInputValue) => {
+                  setSearchParams((prev) => ({ ...prev, bus: newInputValue }));
+                  fetchBusList(0, newInputValue);
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -329,8 +379,8 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
                   />
                 )}
                 ListboxProps={{
-                  onScroll: (event) => handleScroll(event, 'bus'),
-                  style: { maxHeight: 200, overflow: 'auto' },
+                  onScroll: (event) => handleScroll(event, "bus"),
+                  style: { maxHeight: 200, overflow: "auto" },
                 }}
               />
             )}
@@ -344,9 +394,16 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
               <Autocomplete
                 options={dropdownData.fareList}
                 getOptionLabel={(option) => option.name}
-                value={dropdownData.fareList.find(item => item.id === field.value) || null}
+                value={
+                  dropdownData.fareList.find(
+                    (item) => item.id === field.value
+                  ) || null
+                }
                 onChange={(_, newValue) => field.onChange(newValue?.id)}
-                
+                onInputChange={(_, newInputValue) => {
+                  setSearchParams((prev) => ({ ...prev, fare: newInputValue }));
+                  fetchFareList(0, newInputValue);
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -366,8 +423,8 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
                   />
                 )}
                 ListboxProps={{
-                  onScroll: (event) => handleScroll(event, 'fare'),
-                  style: { maxHeight: 200, overflow: 'auto' },
+                  onScroll: (event) => handleScroll(event, "fare"),
+                  style: { maxHeight: 200, overflow: "auto" },
                 }}
               />
             )}
@@ -380,12 +437,14 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
             label="Starting Date"
             type="date"
             InputLabelProps={{ shrink: true }}
-            {...register("starting_date", { required: "Starting date is required" })}
+            {...register("starting_date", {
+              required: "Starting date is required",
+            })}
             error={!!errors.starting_date}
             helperText={errors.starting_date?.message}
             size="small"
             inputProps={{
-              max: "9999-12-31", 
+              max: "9999-12-31",
             }}
           />
 

@@ -164,6 +164,7 @@ const BusListingTable = () => {
                     ? "#6c87b7 !important"
                     : "#00008B",
                   color: "white",
+                   display: 'flex', justifyContent: 'flex-end'
                 }}
                 variant="contained"
                 onClick={() => setOpenCreateModal(true)}

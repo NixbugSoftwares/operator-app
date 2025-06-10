@@ -121,4 +121,5 @@ export interface Service{
   ticket_mode:number
   created_mode:number
   starting_date:string
+  remarks:string
 }
