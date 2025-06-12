@@ -12,6 +12,7 @@ const Bus=lazy(() => import("../screens/bus/Bus"));
 const BusRoute=lazy(() => import("../screens/busroute/BusRoute"));
 const Fare = lazy(() => import("../screens/fare/Fare"));
 const Service=lazy(() => import("../screens/service/service"));
+const Duty = lazy(() => import("../screens/duty/duty"));
 const LoadingIndicator = memo(() => (
   <div
     style={{
@@ -35,6 +36,7 @@ const HomeRouter: React.FC = () => {
         <Route path="/busroute" element={<BusRoute />} />
         <Route path="/fare" element={<Fare />} />
         <Route path="/service" element={<Service />} />
+        <Route path="/duty" element={<Duty />} />
         <Route
           path="*"
           element={<Navigate to="/operators" replace />}

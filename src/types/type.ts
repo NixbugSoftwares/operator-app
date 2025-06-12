@@ -123,3 +123,14 @@ export interface Service{
   starting_date:string
   remarks:string
 }
+
+
+export interface Duty{
+  id:number
+  operator_id:number
+  service_id:number
+  operatorName:string
+  serviceName:string
+  status:string
+  type:string
+}

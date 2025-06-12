@@ -83,11 +83,21 @@ interface FareListParams {
 interface ServiceListParams {
   limit?: number;
   offset?: number;
-  id?: number;
+  id?: string;
   name?: string;
   ticket_mode?: number;
   created_mode?: number;
   status?: number;
+  status_list?: number[];
+}
+
+interface DutyListParams {
+  limit?: number;
+  offset?: number;
+  id?: number;
+  name?: string;
+  status?: number;
+  type?: number;
 }
 
 //Logout API
@@ -896,7 +906,7 @@ export const fareDeleteApi = createAsyncThunk(
 export const serviceListingApi = createAsyncThunk(
   "/service",
   async (params: ServiceListParams, { rejectWithValue }) => {
-    const { limit, offset, id, name, created_mode, ticket_mode, status } =
+    const { limit, offset, id, name, created_mode, ticket_mode, status, status_list  } =
       params;
 
     const queryParams = {
@@ -907,6 +917,7 @@ export const serviceListingApi = createAsyncThunk(
       ...(created_mode && { created_mode }),
       ...(ticket_mode && { ticket_mode }),
       ...(status && { status }),
+      ...(status_list && { status_list }),
     };
     try {
       const response = await commonApi.apiCall(
@@ -999,11 +1010,110 @@ export const serviceDeleteApi = createAsyncThunk(
   }
 );
 
+//*******************************************Duty**************************************************  
 
+//duty listing Api
+export const dutyListingApi = createAsyncThunk(
+  "/duty",
+  async (params: DutyListParams, { rejectWithValue }) => {
+    const { limit, offset, id, name, status, type } = params;
+    const queryParams = {
+      limit,
+      offset,
+      ...(id && { id }),
+      ...(name && { name }),
+      ...(status && { status }),
+      ...(type && { type }),
+    };
+    try {
+      const response = await commonApi.apiCall(
+        "get",
+        "/company/service/duty",
+        queryParams,
+        true,
+        "application/json"
+      );
+      if (!response) throw new Error("No response received");
+      return {
+        data: response.data || response,
+      };
+    } catch (error: any) {
+      console.error("API Error:", error);
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to fetch duty list"
+      );
+    }
+  }
+);
 
+//duty creation Api
+export const dutyCreationApi = createAsyncThunk(
+  "/company/service/duty",
+  async (data: FormData, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "post",
+        "/company/service/duty",
+        data,
+        true,
+        "application/x-www-form-urlencoded"
+      );
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(
+        error?.response?.data?.message || "Duty creation failed"
+      );
+    }
+  }
+);
 
+//duty updation Api
+export const dutyupdationApi = createAsyncThunk(
+  "/company/service/duty",
+  async (
+    { formData }: { dutyId: number; formData: FormData },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await commonApi.apiCall(
+        "patch",
+        `/company/service/duty`,
+        formData,
+        true,
+        "application/x-www-form-urlencoded"
+      );
+      return response;
+    } catch (error: any) {
+      console.error("Backend Error Response:", error.response?.data);
+      return rejectWithValue(
+        error?.response?.data?.message || "Duty update failed"
+      );
+    }
+  }
+);
 
-
+//duty Deletion Api
+export const dutyDeleteApi = createAsyncThunk(
+  "/company/service/duty",
+  async (data: FormData, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "delete",
+        "/company/service/duty",
+        data,
+        true,
+        "application/x-www-form-urlencoded"
+      );
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(
+        error?.response?.data?.message || "Duty deletion failed"
+      );
+    }
+  }
+)
 // Slice
 export const appSlice = createSlice({
   name: "app",

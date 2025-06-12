@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 
 import { Delete as DeleteIcon } from "@mui/icons-material";
-import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
+import AssignmentIndRoundedIcon from '@mui/icons-material/AssignmentIndRounded';
 import { useAppDispatch } from "../../store/Hooks";
 import { serviceDeleteApi,busRouteListApi, companyBusListApi, fareListingApi } from "../../slices/appSlice";
 import localStorageHelper from "../../utils/localStorageHelper";
@@ -179,7 +179,7 @@ useEffect(() => {
     }}
   >
     <Avatar sx={{ width: 80, height: 80, bgcolor: "darkblue" }}>
-      <DirectionsBusIcon fontSize="large" />
+      <AssignmentIndRoundedIcon fontSize="large" />
     </Avatar>
     <Typography variant="h6" sx={{ mt: 1 }}>
       <b>{service.name}</b>

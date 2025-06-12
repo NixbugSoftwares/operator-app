@@ -143,12 +143,25 @@ const apiCall = async (
     headers["Content-Type"] = contentType;
 
     const config = {
-      method,
-      url: `${base_URL}${route}`,
-      headers,
-      data: method !== "get" ? params : undefined,
-      params: method === "get" ? params : undefined,
-    };
+  method,
+  url: `${base_URL}${route}`,
+  headers,
+  data: method !== "get" ? params : undefined,
+  params: method === "get" ? params : undefined,
+
+  paramsSerializer: (params: any) => {
+  return Object.entries(params)
+    .flatMap(([key, value]) => {
+      if (value === undefined || value === null) return []; 
+      return Array.isArray(value)
+        ? value.map((v) => `${key}=${encodeURIComponent(v)}`)
+        : [`${key}=${encodeURIComponent(String(value))}`];
+    })
+    .join("&");
+}
+
+};
+
 
     console.log("CONFIG ===> ", config);
 

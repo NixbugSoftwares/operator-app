@@ -13,7 +13,6 @@ import {
   FormControl,
   Select,
   MenuItem,
-  Skeleton,
   Typography,
 } from "@mui/material";
 import ErrorIcon from "@mui/icons-material/Error";
@@ -147,29 +146,7 @@ const AccountListingTable = () => {
     fetchAccounts(page, searchParams);
   }, [page, debouncedSearch, fetchAccounts]);
 
-  const SkeletonLoader = () => (
-    <TableBody>
-      {[...Array(rowsPerPage)].map((_, index) => (
-        <TableRow key={index}>
-          <TableCell>
-            <Skeleton variant="text" animation="wave" />
-          </TableCell>
-          <TableCell>
-            <Skeleton variant="text" animation="wave" />
-          </TableCell>
-          <TableCell>
-            <Skeleton variant="text" animation="wave" />
-          </TableCell>
-          <TableCell>
-            <Skeleton variant="text" animation="wave" />
-          </TableCell>
-          <TableCell>
-            <Skeleton variant="text" animation="wave" />
-          </TableCell>
-        </TableRow>
-      ))}
-    </TableBody>
-  );
+  
 
   const refreshList = (value: string) => {
     if (value === "refresh") {
@@ -242,7 +219,9 @@ const AccountListingTable = () => {
           }}
         >
           {isLoading ? (
-            <SkeletonLoader />
+            <Typography variant="h6" color="textPrimary" gutterBottom>
+              Loading...
+            </Typography>
           ) : (
             <Table>
               <TableHead>
