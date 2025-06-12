@@ -179,15 +179,17 @@ const BusListingTable = () => {
         
 
         <TableContainer
-          sx={{
-            flex: 1,
-            maxHeight: "calc(100vh - 100px)",
-            overflowY: "auto",
-          }}
+           sx={{
+    flex: 1,
+    maxHeight: "calc(100vh - 100px)",
+    overflowY: "auto",
+    borderRadius: 2,
+    border: "1px solid #e0e0e0",
+  }}
         >
-          <Table>
+          <Table stickyHeader>
             <TableHead>
-              <TableRow>
+              <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
                 {["ID", "Name", "Registration Number", "Capacity"].map(
                   (label, index) => {
                     const key = [

@@ -12,13 +12,18 @@ import {
   DialogTitle,
   DialogContentText,
   Tooltip,
-  Chip 
+  Chip,
 } from "@mui/material";
 
 import { Delete as DeleteIcon } from "@mui/icons-material";
-import AssignmentIndRoundedIcon from '@mui/icons-material/AssignmentIndRounded';
+import AssignmentIndRoundedIcon from "@mui/icons-material/AssignmentIndRounded";
 import { useAppDispatch } from "../../store/Hooks";
-import { serviceDeleteApi,busRouteListApi, companyBusListApi, fareListingApi } from "../../slices/appSlice";
+import {
+  serviceDeleteApi,
+  busRouteListApi,
+  companyBusListApi,
+  fareListingApi,
+} from "../../slices/appSlice";
 import localStorageHelper from "../../utils/localStorageHelper";
 import ServiceUpdateForm from "./ServiceUpdation";
 import { showSuccessToast } from "../../common/toastMessageHelper";
@@ -29,7 +34,7 @@ interface ServiceCardProps {
     name: string;
     ticket_mode: number;
     created_mode: number;
-    status: number;
+    status: string;
     bus_id: number;
     route_id: number;
     fare_id: number;
@@ -43,7 +48,6 @@ interface ServiceCardProps {
   canManageService: boolean;
   onCloseDetailCard: () => void;
 }
-
 
 const statusMap: Record<string, { label: string; color: string }> = {
   Created: { label: "Created", color: "#42a5f5" },
@@ -71,21 +75,20 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
   canManageService,
   onCloseDetailCard,
 }) => {
-    console.log("service>>>>>>>>>>>>>>>>>>>>>>>>>>>>", service);
+  console.log("service>>>>>>>>>>>>>>>>>>>>>>>>>>>>", service);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [updateFormOpen, setUpdateFormOpen] = useState(false);
   const dispatch = useAppDispatch();
- const [routeName, setRouteName] = useState("Route not found");
- const [busName, setBusName] = useState("Bus not found");
- const [fareName, setFareName] = useState("Fare not found");
-
- const fetchRouteName = async () => {
+  const [routeName, setRouteName] = useState("Route not found");
+  const [busName, setBusName] = useState("Bus not found");
+  const [fareName, setFareName] = useState("Fare not found");
+  const fetchRouteName = async () => {
     try {
       const id = service.route_id;
       const response = await dispatch(busRouteListApi({ id })).unwrap();
       setRouteName(response.data[0].name);
       console.log("Route Name Response:", response.data[0].name);
-      
+
       return response.data[0].name;
     } catch (error) {
       console.error("Error fetching route name:", error);
@@ -98,13 +101,13 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
       const response = await dispatch(companyBusListApi({ id })).unwrap();
       setBusName(response.data[0].name);
       console.log("Bus Name Response:", response.data[0].name);
-      
+
       return response.data[0].name;
     } catch (error) {
       console.error("Error fetching bus name:", error);
       return "Bus not found";
     }
-  }
+  };
 
   const fetchFareName = async () => {
     try {
@@ -112,21 +115,18 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
       const response = await dispatch(fareListingApi({ id })).unwrap();
       setFareName(response.data[0].name);
       console.log("Fare Name Response:", response.data[0].name);
-      
+
       return response.data[0].name;
     } catch (error) {
       console.error("Error fetching fare name:", error);
       return "Fare not found";
     }
-  }
-useEffect(() => {
+  };
+  useEffect(() => {
     fetchRouteName();
     fetchBusName();
     fetchFareName();
   }, [service.route_id, service.bus_id, service.fare_id]);
-
-
-
 
   const formatUTCDateToLocal = (dateString: string | null): string => {
     if (!dateString || dateString.trim() === "") return "Not added yet";
@@ -156,7 +156,6 @@ useEffect(() => {
     }
   };
   console.log(service.status);
-  
 
   return (
     <>
@@ -170,98 +169,107 @@ useEffect(() => {
         }}
       >
         {/* Bus Avatar & Info */}
-         <Box
-    sx={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      mb: 2,
-    }}
-  >
-    <Avatar sx={{ width: 80, height: 80, bgcolor: "darkblue" }}>
-      <AssignmentIndRoundedIcon fontSize="large" />
-    </Avatar>
-    <Typography variant="h6" sx={{ mt: 1 }}>
-      <b>{service.name}</b>
-    </Typography>
-    <Typography variant="body2" color="textSecondary">
-      <b>Service ID:</b> {service.id}
-    </Typography>
-  </Box>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            mb: 2,
+          }}
+        >
+          <Avatar sx={{ width: 80, height: 80, bgcolor: "darkblue" }}>
+            <AssignmentIndRoundedIcon fontSize="large" />
+          </Avatar>
+          <Typography variant="h6" sx={{ mt: 1 }}>
+            <b>{service.name}</b>
+          </Typography>
+          <Typography variant="body2" color="textSecondary">
+            <b>Service ID:</b> {service.id}
+          </Typography>
+        </Box>
         {/* Bus Details (Aligned Left) */}
         <Card sx={{ p: 2, bgcolor: "grey.100", mb: 2 }}>
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 1.5,
-        alignItems: "flex-start",
-      }}
-    >
-      <Typography variant="body1">
-        <b>Route :</b> {routeName}
-      </Typography>
-      <Typography variant="body1">
-        <b>Bus :</b> {busName}
-      </Typography>
-      <Typography variant="body1">
-        <b>Fare :</b> {fareName}
-      </Typography>
-      <Typography variant="body1" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        <b>Ticket Mode:</b>
-        <Chip
-          label={ticketModeMap[service.ticket_mode]?.label || "Unknown"}
-          sx={{
-            bgcolor: `${ticketModeMap[service.ticket_mode]?.color}20`,
-            color: ticketModeMap[service.ticket_mode]?.color,
-            fontWeight: "bold",
-            borderRadius: "12px",
-            px: 1.5,
-            fontSize: "0.75rem",
-          }}
-          size="small"
-        />
-      </Typography>
-      <Typography variant="body1" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        <b>Created Mode:</b>
-        <Chip
-          label={createdModeMap[service.created_mode]?.label || "Unknown"}
-          sx={{
-            bgcolor: `${createdModeMap[service.created_mode]?.color}20`,
-            color: createdModeMap[service.created_mode]?.color,
-            fontWeight: "bold",
-            borderRadius: "12px",
-            px: 1.5,
-            fontSize: "0.75rem",
-          }}
-          size="small"
-        />
-      </Typography>
-      <Typography variant="body1" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        <b>Status:</b>
-        <Chip
-          label={statusMap[service.status]?.label || "Unknown"}
-          sx={{
-            bgcolor: `${statusMap[service.status]?.color}20`,
-            color: statusMap[service.status]?.color,
-            fontWeight: "bold",
-            borderRadius: "12px",
-            px: 1.5,
-            fontSize: "0.75rem",
-          }}
-          size="small"
-        />
-      </Typography>
-      <Typography variant="body1">
-        <b>Starting Date:</b> {formatUTCDateToLocal(service.starting_date)}
-      </Typography>
-  
-      
-  <Typography variant="body1">
-    <b>Remarks:</b> {service.remarks || "Not added yet"}
-  </Typography>
-    </Box>
-  </Card>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 1.5,
+              alignItems: "flex-start",
+            }}
+          >
+            <Typography variant="body1">
+              <b>Route :</b> {routeName}
+            </Typography>
+            <Typography variant="body1">
+              <b>Bus :</b> {busName}
+            </Typography>
+            <Typography variant="body1">
+              <b>Fare :</b> {fareName}
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{ display: "flex", alignItems: "center", gap: 1 }}
+            >
+              <b>Ticket Mode:</b>
+              <Chip
+                label={ticketModeMap[service.ticket_mode]?.label || "Unknown"}
+                sx={{
+                  bgcolor: `${ticketModeMap[service.ticket_mode]?.color}20`,
+                  color: ticketModeMap[service.ticket_mode]?.color,
+                  fontWeight: "bold",
+                  borderRadius: "12px",
+                  px: 1.5,
+                  fontSize: "0.75rem",
+                }}
+                size="small"
+              />
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{ display: "flex", alignItems: "center", gap: 1 }}
+            >
+              <b>Created Mode:</b>
+              <Chip
+                label={createdModeMap[service.created_mode]?.label || "Unknown"}
+                sx={{
+                  bgcolor: `${createdModeMap[service.created_mode]?.color}20`,
+                  color: createdModeMap[service.created_mode]?.color,
+                  fontWeight: "bold",
+                  borderRadius: "12px",
+                  px: 1.5,
+                  fontSize: "0.75rem",
+                }}
+                size="small"
+              />
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{ display: "flex", alignItems: "center", gap: 1 }}
+            >
+              <b>Status:</b>
+              <Chip
+                label={statusMap[service.status]?.label || "Unknown"}
+                sx={{
+                  bgcolor: `${statusMap[service.status]?.color}20`,
+                  color: statusMap[service.status]?.color,
+                  fontWeight: "bold",
+                  borderRadius: "12px",
+                  px: 1.5,
+                  fontSize: "0.75rem",
+                }}
+                size="small"
+              />
+            </Typography>
+            <Typography variant="body1">
+              <b>Starting Date:</b>{" "}
+              {formatUTCDateToLocal(service.starting_date)}
+            </Typography>
+
+            <Typography variant="body1">
+              <b>Remarks:</b> {service.remarks || "Not added yet"}
+            </Typography>
+          </Box>
+        </Card>
 
         {/* Action Buttons */}
         <CardActions>
@@ -320,6 +328,12 @@ useEffect(() => {
               title={
                 !canManageService
                   ? "You don't have permission, contact the admin"
+                  : service.status === "Started"
+                  ? "Cannot delete a service that has Started"
+                  : service.status === "Terminated"
+                  ? "Cannot delete a service that is Terminated"
+                  : service.status === "Ended"
+                  ? "Cannot delete a service that is Ended"
                   : ""
               }
               arrow
@@ -336,7 +350,12 @@ useEffect(() => {
                   size="small"
                   onClick={() => setDeleteConfirmOpen(true)}
                   startIcon={<DeleteIcon />}
-                  disabled={!canManageService}
+                  disabled={
+                    !canManageService ||
+                    service.status === "Started" ||
+                    service.status === "Terminated" ||
+                    service.status === "Ended"
+                  }
                   sx={{
                     "&.Mui-disabled": {
                       backgroundColor: "#e57373 !important",
@@ -363,7 +382,7 @@ useEffect(() => {
             Are you sure you want to delete this bus?
           </DialogContentText>
           <Typography>
-            <b>Service Name:</b> {service.name}, 
+            <b>Service Name:</b> {service.name},
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -385,7 +404,7 @@ useEffect(() => {
       >
         <DialogContent>
           <ServiceUpdateForm
-          serviceId={service.id}
+            serviceId={service.id}
             serviceData={{
               id: service.id,
               name: service.name,

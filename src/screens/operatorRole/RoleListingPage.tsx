@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
-  Paper,
   Table,
   TableBody,
   TableCell,
@@ -205,15 +204,16 @@ const RoleListingTable = () => {
 
         <TableContainer
           sx={{
-            flex: 1,
-            maxHeight: "calc(100vh - 160px)",
-            overflowY: "auto",
-          }}
-          component={Paper}
+    flex: 1,
+    maxHeight: "calc(100vh - 100px)",
+    overflowY: "auto",
+    borderRadius: 2,
+    border: "1px solid #e0e0e0",
+  }}
         >
           <Table stickyHeader>
             <TableHead>
-              <TableRow>
+              <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
                 {tableHeaders.map(({ key, label }) => (
                   <TableCell key={key}>
                     <b style={{ display: "block", textAlign: "center" }}>

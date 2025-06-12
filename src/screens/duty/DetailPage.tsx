@@ -65,7 +65,8 @@ const DutyDetailsCard: React.FC<DutyCardProps> = ({
   const dispatch = useAppDispatch();
   console.log("duty()()()()()()(()()", duty);
 
-
+const canDeleteDuty =
+  canManageDuty && (duty.status === "Assigned" || duty.status === "Finished");
 
   const handleBusDelete = async () => {
     if (!duty.id) {
@@ -221,37 +222,36 @@ const DutyDetailsCard: React.FC<DutyCardProps> = ({
 
             {/* Delete Button with Tooltip */}
             <Tooltip
-              title={
-                !canManageDuty
-                  ? "You don't have permission, contact the admin"
-                  : ""
-              }
-              arrow
-              placement="top-start"
-            >
-              <span
-                style={{
-                  cursor: !canManageDuty ? "not-allowed" : "default",
-                }}
-              >
-                <Button
-                  variant="contained"
-                  color="error"
-                  size="small"
-                  onClick={() => setDeleteConfirmOpen(true)}
-                  startIcon={<DeleteIcon />}
-                  disabled={!canManageDuty}
-                  sx={{
-                    "&.Mui-disabled": {
-                      backgroundColor: "#e57373 !important",
-                      color: "#ffffff99",
-                    },
-                  }}
-                >
-                  Delete
-                </Button>
-              </span>
-            </Tooltip>
+  title={
+    !canDeleteDuty
+      ? duty.status === "Started" || duty.status === "Terminated"
+        ? "Duty cannot be deleted after it has started or terminated"
+        : "You don't have permission, contact the admin"
+      : ""
+  }
+  arrow
+  placement="top-start"
+>
+  <span style={{ cursor: !canDeleteDuty ? "not-allowed" : "pointer" }}>
+    <Button
+      variant="contained"
+      color="error"
+      size="small"
+      onClick={() => setDeleteConfirmOpen(true)}
+      startIcon={<DeleteIcon />}
+      disabled={!canDeleteDuty}
+      sx={{
+        "&.Mui-disabled": {
+          backgroundColor: "#e57373 !important",
+          color: "#ffffff99",
+        },
+      }}
+    >
+      Delete
+    </Button>
+  </span>
+</Tooltip>
+
           </Box>
         </CardActions>
       </Card>

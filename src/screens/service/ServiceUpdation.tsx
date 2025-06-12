@@ -20,7 +20,7 @@ import {
 type ServiceFormValues = {
   id: number;
   name: string;
-  status: number;
+  status: string;
   ticket_mode: number;
   remarks: string;
 };
@@ -159,7 +159,7 @@ const ServiceUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
           <Controller
             name="status"
             control={control}
-            defaultValue={statusValue}
+            defaultValue={statusValue.toString()}
             render={({ field }) => (
               <TextField
                 select
@@ -171,7 +171,7 @@ const ServiceUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
 
                   if (isValidTransition(currentStatus, newStatus)) {
                     field.onChange(e);
-                    setCurrentStatus(newStatus); // Update current status here
+                    setCurrentStatus(newStatus); 
                   } else {
                     showErrorToast(
                       `Invalid status transition from ${
