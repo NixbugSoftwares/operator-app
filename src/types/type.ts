@@ -117,9 +117,9 @@ export interface Service{
   bus_id:number
   route_id:number
   fare_id:number
-  status:number
-  ticket_mode:number
-  created_mode:number
+  status:string
+  ticket_mode:string
+  created_mode:string
   starting_date:string
   remarks:string
 }

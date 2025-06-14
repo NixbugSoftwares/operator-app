@@ -13,6 +13,7 @@ import {
   DialogContentText,
   Tooltip,
   Chip,
+  TextField,
 } from "@mui/material";
 
 import { Delete as DeleteIcon } from "@mui/icons-material";
@@ -32,8 +33,8 @@ interface ServiceCardProps {
   service: {
     id: number;
     name: string;
-    ticket_mode: number;
-    created_mode: number;
+    ticket_mode: string;
+    created_mode: string;
     status: string;
     bus_id: number;
     route_id: number;
@@ -50,21 +51,21 @@ interface ServiceCardProps {
 }
 
 const statusMap: Record<string, { label: string; color: string }> = {
-  Created: { label: "Created", color: "#42a5f5" },
-  Started: { label: "Started", color: "#66bb6a" },
-  Terminated: { label: "Terminated", color: "#ef5350" },
-  Ended: { label: "Ended", color: "#ab47bc" },
+  Created: { label: "Created", color: "#616161" },
+  Started: { label: "Started", color: "#2E7D32" },
+  Terminated: { label: "Terminated", color: "#C62828" },
+  Ended: { label: "Ended", color: "#4527A0" },
 };
 
 const ticketModeMap: Record<string, { label: string; color: string }> = {
-  Hybrid: { label: "Hybrid", color: "#29b6f6" },
-  Digital: { label: "Digital", color: "#26a69a" },
-  Conventional: { label: "Conventional", color: "#ffa726" },
+  Hybrid: { label: "Hybrid", color: "#FF8F00" },
+  Digital: { label: "Digital", color: "#0097A7" },
+  Conventional: { label: "Conventional", color: "#616161" },
 };
 
 const createdModeMap: Record<string, { label: string; color: string }> = {
-  Manual: { label: "Manual", color: "#8d6e63" },
-  Automatic: { label: "Automatic", color: "#5c6bc0" },
+  Manual: { label: "Manual", color: "#FF8F00" },
+  Automatic: { label: "Automatic", color: "#0097A7" },
 };
 
 const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
@@ -216,10 +217,11 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
                 sx={{
                   bgcolor: `${ticketModeMap[service.ticket_mode]?.color}20`,
                   color: ticketModeMap[service.ticket_mode]?.color,
-                  fontWeight: "bold",
+                  fontWeight: 600,
                   borderRadius: "12px",
                   px: 1.5,
                   fontSize: "0.75rem",
+                  width: 150,
                 }}
                 size="small"
               />
@@ -238,6 +240,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
                   borderRadius: "12px",
                   px: 1.5,
                   fontSize: "0.75rem",
+                  width: 150,
                 }}
                 size="small"
               />
@@ -256,6 +259,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
                   borderRadius: "12px",
                   px: 1.5,
                   fontSize: "0.75rem",
+                  width: 150,
                 }}
                 size="small"
               />
@@ -265,9 +269,39 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
               {formatUTCDateToLocal(service.starting_date)}
             </Typography>
 
-            <Typography variant="body1">
-              <b>Remarks:</b> {service.remarks || "Not added yet"}
-            </Typography>
+            <TextField
+              label="Remarks"
+              value={service.remarks || "No remarks added"}
+              fullWidth
+              multiline
+              rows={3}
+              variant="outlined"
+              InputProps={{
+                readOnly: true,
+                sx: {
+                  cursor: "default", 
+                  "& input": {
+                    userSelect: "none", 
+                  },
+                },
+              }}
+              sx={{
+                mt: 1,
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "action.hover",
+                  "& fieldset": {
+                    borderColor: "grey.300",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "grey.300", 
+                  },
+                },
+                "& .MuiInputBase-inputMultiline": {
+                  userSelect: "none",
+                  cursor: "default",
+                },
+              }}
+            />
           </Box>
         </Card>
 

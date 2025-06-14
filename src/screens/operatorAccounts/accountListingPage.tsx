@@ -60,7 +60,7 @@ const AccountListingTable = () => {
     state.app.permissions.includes("manage_operator")
   );
   const fetchAccounts = useCallback((pageNumber: number, searchParams = {}) => {
-    setIsLoading(true);
+
     const offset = pageNumber * rowsPerPage;
     dispatch(operatorListApi({ limit: rowsPerPage, offset, ...searchParams }))
       .unwrap()
@@ -347,7 +347,7 @@ const AccountListingTable = () => {
                   </TableCell>
                 </TableRow>
               </TableHead>
-              <TableBody>
+              <TableBody >
                 {accountList.length > 0 ? (
                   accountList.map((row) => (
                     <TableRow
@@ -368,8 +368,8 @@ const AccountListingTable = () => {
                         },
                       }}
                     >
-                      <TableCell>{row.id}</TableCell>
-                      <TableCell>
+                      <TableCell >{row.id}</TableCell>
+                      <TableCell >
                         {row.fullName ? (
                           row.fullName
                         ) : (

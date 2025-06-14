@@ -53,10 +53,10 @@ const typeModeOptions = [
 ];
 
 const allowedTransitions: Record<number, number[]> = {
-  1: [2, 3], 
+  1: [2, 3],
   2: [3, 4],
-  3: [], 
-  4: [], 
+  3: [],
+  4: [],
 };
 
 interface DropdownItem {
@@ -73,7 +73,7 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState<number>(2); 
+  const [currentStatus, setCurrentStatus] = useState<number>(2);
   const rowsPerPage = 10;
   const [dropdownData, setDropdownData] = useState({
     serviceList: [] as DropdownItem[],
@@ -84,10 +84,9 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
   );
   const [searchText, setSearchText] = useState("");
 
-
   const getInitialStatusValue = (statusLabel: string): number => {
     const option = statusOptions.find((opt) => opt.label === statusLabel);
-    return option ? option.value : 2; 
+    return option ? option.value : 2;
   };
 
   const getInitialTypeValue = (typeLabel: string): number => {
@@ -135,7 +134,7 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
           limit: rowsPerPage,
           offset,
           name: searchText,
-          status_list: [1, 2], 
+          status_list: [1, 2],
         })
       )
         .unwrap()
@@ -241,7 +240,12 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
         <Box
           component="form"
           noValidate
-          sx={{ mt: 1 }}
+          sx={{
+            mt: 1,
+            width: "100%",
+            maxWidth: 800,
+            margin: "0 auto",
+          }}
           onSubmit={handleSubmit(handleDutyUpdate)}
         >
           <Controller

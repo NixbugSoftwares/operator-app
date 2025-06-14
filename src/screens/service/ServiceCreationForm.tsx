@@ -9,7 +9,6 @@ import {
   CssBaseline,
   CircularProgress,
   MenuItem,
-  InputAdornment,
   Autocomplete,
 } from "@mui/material";
 import { useAppDispatch } from "../../store/Hooks";
@@ -24,7 +23,6 @@ import {
   showSuccessToast,
 } from "../../common/toastMessageHelper";
 import { Service } from "../../types/type";
-import SearchIcon from "@mui/icons-material/Search";
 
 interface IOperatorCreationFormProps {
   onClose: () => void;
@@ -326,11 +324,7 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
                     required
                     InputProps={{
                       ...params.InputProps,
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon />
-                        </InputAdornment>
-                      ),
+                      
                     }}
                   />
                 )}
@@ -370,11 +364,7 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
                     required
                     InputProps={{
                       ...params.InputProps,
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon />
-                        </InputAdornment>
-                      ),
+                      
                     }}
                   />
                 )}
@@ -414,11 +404,7 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
                     required
                     InputProps={{
                       ...params.InputProps,
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon />
-                        </InputAdornment>
-                      ),
+                      
                     }}
                   />
                 )}

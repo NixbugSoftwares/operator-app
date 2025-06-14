@@ -1007,9 +1007,9 @@ const MapComponent = React.forwardRef(
 
             {(selectedLandmarks.length > 0 || propLandmarks.length > 0) && (
               <TextField
+              required
                 label="Distance from Start (meters)"
                 type="number"
-                required
                 fullWidth
                 margin="normal"
                 value={selectedLandmark?.distance_from_start || ""}

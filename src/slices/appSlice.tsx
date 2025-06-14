@@ -849,7 +849,7 @@ export const fareCreationApi = createAsyncThunk(
       return response;
     } catch (error: any) {
       return rejectWithValue(
-        error?.response?.data?.message || "Account creation failed"
+        error?.response?.data?.message || "fare creation failed"
       );
     }
   }

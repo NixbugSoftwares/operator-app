@@ -34,6 +34,7 @@ import { useAppDispatch } from "../../store/Hooks";
 import { fareCreationApi } from "../../slices/appSlice";
 import {
   showErrorToast,
+  showInfoToast,
   showSuccessToast,
 } from "../../common/toastMessageHelper";
 import { Fare } from "../../types/type";
@@ -250,7 +251,7 @@ const FareSkeletonPage = ({
       formData.append("function", fareFunction);
       formData.append("attributes", JSON.stringify(data.attributes));
 
-      // 🔍 LOGGING ALL FORM DATA
+
       console.log("======= Sending FormData =======");
       for (const [key, value] of formData.entries()) {
         console.log(`${key}:`, value);
@@ -267,7 +268,7 @@ const FareSkeletonPage = ({
       console.log("API Response:", response);
     } catch (error: any) {
       console.error("Error updating fare:", error);
-      showErrorToast(error.message);
+      showInfoToast(error.message);
     } finally {
       setLoading(false);
     }
@@ -602,7 +603,7 @@ const FareSkeletonPage = ({
                     ? "You don't have permission, contact the admin"
                     : isGlobalScope
                     ? "Global fare cannot be updated or deleted"
-                    : ""
+                    : "Click to confirm update"
                 }
                 arrow
                 placement="top-start"
@@ -626,7 +627,7 @@ const FareSkeletonPage = ({
                       },
                     }}
                   >
-                    Update
+                  Update
                   </Button>
                 </span>
               </Tooltip>

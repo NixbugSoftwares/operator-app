@@ -267,7 +267,6 @@ const BusRouteCreation = ({
 
         <TextField
           margin="normal"
-          required
           fullWidth
           label="Route Name"
           {...register("name", { required: "Route name is required" })}
@@ -358,26 +357,31 @@ const BusRouteCreation = ({
 
         {landmarks.length === 0 ? (
           <Box
-            sx={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              textAlign: "center",
-              p: 4,
-              backgroundColor: "action.hover",
-              borderRadius: 1,
-              my: 2,
-            }}
-          >
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-              No landmarks selected yet
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Please select landmarks from the map to create your route
-            </Typography>
-          </Box>
+  sx={{
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    textAlign: "center",
+    p: 4,
+    backgroundColor: "action.hover",
+    borderRadius: 1,
+    my: 2,
+    border: "1px dashed",
+    borderColor: "divider",
+  }}
+>
+  <Typography variant="body1" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+    No landmarks selected
+  </Typography>
+  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+    Please select landmarks from the map to create your route
+  </Typography>
+  <Typography variant="caption" color="info" fontSize="0.75rem" fontWeight="bold">
+    Only verified landmarks will be displayed
+  </Typography>
+</Box>
         ) : (
           <List
             sx={{ width: "100%", maxHeight: 400, overflow: "auto", flex: 1 }}

@@ -22,6 +22,7 @@ import ScheduleIcon from '@mui/icons-material/Schedule';
 import PowerSettingsNewIcon from "@mui/icons-material/PowerSettingsNew";
 import AssignmentIndRoundedIcon from '@mui/icons-material/AssignmentIndRounded';
 import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded';
+import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import { useTheme, useMediaQuery } from "@mui/material";
 import LogoutConfirmationModal from "./logoutModal";
 const Sidebar: React.FC = () => {
@@ -44,6 +45,7 @@ const Sidebar: React.FC = () => {
         { label: "Service", path: "/service", icon: <AssignmentIndRoundedIcon /> },
         { label: "schedule", path: "/schedule", icon: <ScheduleIcon /> },
         {label:"Duty",path:"/duty",icon:<AssignmentTurnedInRoundedIcon/>},
+        {label:"Ticket",path:"/ticket",icon:<ConfirmationNumberIcon/>},
       ],
     },
   ];

@@ -35,7 +35,7 @@ import {
 import localStorageHelper from "../../utils/localStorageHelper";
 import { setPermissions } from "../../slices/appSlice";
 interface ILoginFormInputs {
-  company_id: number | null | undefined;
+  company_id: number  ;
   username: string;
   password: string;
 }
@@ -59,7 +59,6 @@ const LoginPage: React.FC = () => {
   } = useForm<ILoginFormInputs>({
     resolver: yupResolver(loginSchema),
     defaultValues: {
-      company_id: null,
     },
   });
 

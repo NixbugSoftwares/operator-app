@@ -21,7 +21,7 @@ type ServiceFormValues = {
   id: number;
   name: string;
   status: string;
-  ticket_mode: number;
+  ticket_mode: string;
   remarks: string;
 };
 
@@ -219,7 +219,7 @@ const ServiceUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
           <Controller
             name="ticket_mode"
             control={control}
-            defaultValue={ticketModeValue}
+            defaultValue={ticketModeValue.toString()}
             render={({ field }) => (
               <TextField
                 margin="normal"

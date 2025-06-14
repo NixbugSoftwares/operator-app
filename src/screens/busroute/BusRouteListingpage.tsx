@@ -6,7 +6,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   Button,
   Box,
   Stack,
@@ -18,6 +17,7 @@ import {
   DialogActions,
   Tooltip,
 } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/Store";
 import {
@@ -365,10 +365,15 @@ const BusRouteListing = () => {
               </Tooltip>
             </Stack>
 
-            <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
-              <Table sx={{ borderCollapse: "collapse", width: "100%" }}>
+            <TableContainer  sx={{
+    flex: 1,
+    maxHeight: "calc(100vh - 100px)",
+    overflowY: "auto",
+    borderRadius: 2,
+    border: "1px solid #e0e0e0", }}>
+              <Table stickyHeader>
                 <TableHead>
-                  <TableRow>
+                  <TableRow sx={{ backgroundColor: "#f5f5f5" }} >
                     <TableCell sx={{ width: "20%" }}>
                       <Box
                         display="flex"
@@ -458,29 +463,38 @@ const BusRouteListing = () => {
                                     : "default",
                                 }}
                               >
-                                <Button
-                                  variant="contained"
-                                  color="error"
-                                  size="small"
-                                  sx={{
-                                    ml: "auto",
-                                    mr: 2,
-                                    mb: 2,
-                                    display: "block",
-                                    backgroundColor: !canManageRoutes
-                                      ? "#f46a6a  !important" // light red for disabled
-                                      : "#d32f2f", // MUI error main red
-                                    color: "white",
-                                    "&.Mui-disabled": {
-                                      backgroundColor: "#f46a6a  !important", // light red when disabled
-                                      color: "#ffffff99",
-                                    },
-                                  }}
-                                  disabled={!canManageRoutes}
-                                  onClick={() => handleDeleteClick(row)}
-                                >
-                                  Delete
-                                </Button>
+                               <Button
+  variant="contained"
+  color="error"
+  size="small"
+  startIcon={<DeleteIcon />}
+  disabled={!canManageRoutes}
+  onClick={() => handleDeleteClick(row)}
+  sx={{
+    ml: "auto",
+    mr: 2,
+    mb: 2,
+    display: "flex",
+    alignItems: "center",
+    gap: 1,
+    textTransform: "none",
+    borderRadius: 2,
+    fontWeight: 500,
+    boxShadow: "none",
+    backgroundColor: !canManageRoutes ? "#f46a6a" : "#d32f2f",
+    color: "#fff",
+    "&:hover": {
+      backgroundColor: !canManageRoutes ? "#f46a6a" : "#b71c1c",
+      boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+    },
+    "&.Mui-disabled": {
+      backgroundColor: "#f46a6a",
+      color: "#ffffff99",
+    },
+  }}
+>
+  Delete
+</Button>
                               </span>
                             </Tooltip>
                           </TableCell>

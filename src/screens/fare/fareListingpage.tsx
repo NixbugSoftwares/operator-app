@@ -163,11 +163,9 @@ const FareListingPage = () => {
             sx={{
               p: 2,
               display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
+              justifyContent: "flex-end",
             }}
           >
-            <Typography variant="h6"> Fares</Typography>
             <Tooltip
               title={
                 !canManageFare
