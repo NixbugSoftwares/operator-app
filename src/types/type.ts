@@ -124,6 +124,18 @@ export interface Service{
   remarks:string
 }
 
+export interface Schedule{
+  id:number
+  service_id:number
+  name:string
+  permit_no:string
+  trigger_mode:number
+  ticket_mode:number
+  frequency:number[] 
+  bus_id:number
+  route_id:number
+  fare_id:number
+}
 
 export interface Duty{
   id:number

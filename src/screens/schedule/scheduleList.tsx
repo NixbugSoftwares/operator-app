@@ -17,15 +17,15 @@ import {
 } from "@mui/material";
 import { SelectChangeEvent } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
-import { serviceListingApi } from "../../slices/appSlice";
+import { scheduleListingApi } from "../../slices/appSlice";
 import type { AppDispatch } from "../../store/Store";
 import { RootState } from "../../store/Store";
 import { showErrorToast } from "../../common/toastMessageHelper";
 import PaginationControls from "../../common/paginationControl";
 import FormModal from "../../common/formModal";
-import ServiceCreationForm from "./ServiceCreationForm";
-import { Service } from "../../types/type";
-import ServiceDetailsCard from "./serviceDetails";
+import ScheduleCreationForm from "./CreationForm";
+import { Schedule } from "../../types/type";
+import ScheduleDetailsCard from "./DetailCard";
 
 // Utility functions for converting between display and backend values
 const getTicketModeBackendValue = (displayValue: string): string => {
@@ -37,20 +37,11 @@ const getTicketModeBackendValue = (displayValue: string): string => {
   return ticketMap[displayValue] || "";
 };
 
-const getStatusBackendValue = (displayValue: string): string => {
-  const statusMap: Record<string, string> = {
-    Created: "1",
-    Started: "2",
-    Terminated: "3",
-    Ended: "4",
-  };
-  return statusMap[displayValue] || "";
-};
-
-const getCreatedModeBackendValue = (displayValue: string): string => {
+const getTriggerModeBackendValue = (displayValue: string): string => {
   const createdModMap: Record<string, string> = {
-    Manual: "1",
-    Automatic: "2",
+    Auto: "1",
+    Manual: "2",
+    Disabled: "3",
   };
   return createdModMap[displayValue] || "";
 };
@@ -60,20 +51,22 @@ type SearchFilter = {
   id: string;
   name: string;
   ticket_mode: string;
-  status: string;
-  created_mode: string;
+  trigger_mode: string;
+  permit_no: string;
 };
 
-const ServiceListingTable = () => {
+const ScheduleListingTable = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const [serviceList, setServiceList] = useState<Service[]>([]);
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [scheduleList, setScheduleList] = useState<Schedule[]>([]);
+  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(
+    null
+  );
   const [search, setSearch] = useState<SearchFilter>({
     id: "",
     name: "",
     ticket_mode: "",
-    status: "",
-    created_mode: "",
+    trigger_mode: "",
+    permit_no: "",
   });
   const [debouncedSearch, setDebouncedSearch] = useState<SearchFilter>(search);
   const debounceRef = useRef<number | null>(null);
@@ -81,8 +74,8 @@ const ServiceListingTable = () => {
   const [page, setPage] = useState(0);
   const [hasNextPage, setHasNextPage] = useState(false);
   const rowsPerPage = 10;
-  const canManageService = useSelector((state: RootState) =>
-    state.app.permissions.includes("manage_service")
+  const canManageSchedule = useSelector((state: RootState) =>
+    state.app.permissions.includes("manage_schedule")
   );
   const [openCreateModal, setOpenCreateModal] = useState(false);
 
@@ -90,46 +83,55 @@ const ServiceListingTable = () => {
     (pageNumber: number, searchParams: Partial<SearchFilter> = {}) => {
       setIsLoading(true);
       const offset = pageNumber * rowsPerPage;
-      
+
       // Convert display values to backend values
       const backendSearchParams = {
-  ...searchParams,
-  ticket_mode: searchParams.ticket_mode ? +getTicketModeBackendValue(searchParams.ticket_mode) : undefined,
-  status: searchParams.status ? +getStatusBackendValue(searchParams.status) : undefined,
-  created_mode: searchParams.created_mode ? +getCreatedModeBackendValue(searchParams.created_mode) : undefined
-};
+        ...searchParams,
+        ticket_mode: searchParams.ticket_mode
+          ? +getTicketModeBackendValue(searchParams.ticket_mode)
+          : undefined,
+        trigger_mode: searchParams.trigger_mode
+          ? +getTriggerModeBackendValue(searchParams.trigger_mode)
+          : undefined,
+      };
 
       dispatch(
-        serviceListingApi({ limit: rowsPerPage, offset, ...backendSearchParams })
+        scheduleListingApi({
+          limit: rowsPerPage,
+          offset,
+          ...backendSearchParams,
+        })
       )
         .unwrap()
         .then((res) => {
           const items = res.data || [];
-          const formattedServices = items.map((service: any) => ({
-            id: service.id,
-            name: service.name,
-            route_id: service.route_id,
-            fare_id: service.fare_id,
-            bus_id: service.bus_id,
-            ticket_mode:
-              service.ticket_mode === 1
-                ? "Hybrid"
-                : service.ticket_mode === 2
-                ? "Digital"
-                : "Conventional",
-            status:
-              service.status === 1
-                ? "Created"
-                : service.status === 2
-                ? "Started"
-                : service.status === 3
-                ? "Terminated"
-                : "Ended",
-            created_mode: service.created_mode === 1 ? "Manual" : "Automatic",
-            starting_date: service.starting_date,
-            remarks: service.remark,
-          }));
-          setServiceList(formattedServices);
+
+          const formattedSchedules = items.map((schedule: any) => ({
+  id: schedule.id,
+  name: schedule.name,
+  permit_no: schedule.permit_no,
+  route_id: schedule.route_id,
+  fare_id: schedule.fare_id,
+  bus_id: schedule.bus_id,
+  ticket_mode:
+    schedule.ticket_mode === 1
+      ? "Hybrid"
+      : schedule.ticket_mode === 2
+      ? "Digital"
+      : "Conventional",
+  trigger_mode:
+    schedule.trigger_mode === 1
+      ? "Automatic"
+      : schedule.trigger_mode === 2
+      ? "Manual"
+      : "Disabled",
+  frequency: Array.isArray(schedule.frequency)
+    ? schedule.frequency
+    : [], 
+}));
+
+
+          setScheduleList(formattedSchedules);
           setHasNextPage(items.length === rowsPerPage);
         })
         .catch((error) => {
@@ -141,8 +143,8 @@ const ServiceListingTable = () => {
     [dispatch]
   );
 
-  const handleRowClick = (service: Service) => {
-    setSelectedService(service);
+  const handleRowClick = (schedule: Schedule) => {
+    setSelectedSchedule(schedule);
   };
 
   const handleSearchChange = useCallback(
@@ -204,8 +206,10 @@ const ServiceListingTable = () => {
     >
       <Box
         sx={{
-          flex: selectedService ? { xs: "0 0 100%", md: "0 0 65%" } : "0 0 100%",
-          maxWidth: selectedService ? { xs: "100%", md: "65%" } : "100%",
+          flex: selectedSchedule
+            ? { xs: "0 0 100%", md: "0 0 65%" }
+            : "0 0 100%",
+          maxWidth: selectedSchedule ? { xs: "100%", md: "65%" } : "100%",
           transition: "all 0.3s ease",
           height: "100%",
           display: "flex",
@@ -215,30 +219,32 @@ const ServiceListingTable = () => {
       >
         <Tooltip
           title={
-            !canManageService
+            !canManageSchedule
               ? "You don't have permission, contact the admin"
-              : "Click to open the Service creation form"
+              : "Click to open the Schedule creation form"
           }
           placement="top-end"
         >
-          <span style={{ cursor: !canManageService ? "not-allowed" : "pointer" }}>
+          <span
+            style={{ cursor: !canManageSchedule ? "not-allowed" : "pointer" }}
+          >
             <Button
               sx={{
                 ml: "auto",
                 mr: 2,
                 mb: 2,
-                backgroundColor: !canManageService
+                backgroundColor: !canManageSchedule
                   ? "#6c87b7 !important"
                   : "#00008B",
                 color: "white",
-                display: 'flex',
-                justifyContent: 'flex-end'
+                display: "flex",
+                justifyContent: "flex-end",
               }}
               variant="contained"
               onClick={() => setOpenCreateModal(true)}
-              disabled={!canManageService}
+              disabled={!canManageSchedule}
             >
-              Add New Service
+              Add New Schedule
             </Button>
           </span>
         </Tooltip>
@@ -258,9 +264,9 @@ const ServiceListingTable = () => {
                 {[
                   { label: "ID", width: 80, key: "id" },
                   { label: "Name", width: 200, key: "name" },
+                  { label: "Permit Number", width: 160, key: "permit_number" },
                   { label: "Ticket Mode", width: 160, key: "ticket_mode" },
-                  { label: "Status", width: 160, key: "status" },
-                  { label: "Created Mode", width: 160, key: "created_mode" },
+                  { label: "Trigger Mode", width: 160, key: "trigger_mode" },
                 ].map((col) => (
                   <TableCell
                     key={col.key}
@@ -284,15 +290,25 @@ const ServiceListingTable = () => {
                 {[
                   { key: "id", isNumber: true },
                   { key: "name", isNumber: false },
-                  { key: "ticket_mode", isSelect: true, options: ["Hybrid", "Digital", "Conventional"] },
-                  { key: "status", isSelect: true, options: ["Created", "Started", "Terminated", "Ended"] },
-                  { key: "created_mode", isSelect: true, options: ["Manual", "Automatic"] },
+                  { key: "permit_number", isNumber: false },
+                  {
+                    key: "ticket_mode",
+                    isSelect: true,
+                    options: ["Hybrid", "Digital", "Conventional"],
+                  },
+                  {
+                    key: "trigger_mode",
+                    isSelect: true,
+                    options: ["Automatic", "Manual", "Disabled"],
+                  },
                 ].map(({ key, isNumber, isSelect, options }) => (
                   <TableCell key={key}>
                     {isSelect ? (
                       <Select
                         value={search[key as keyof SearchFilter]}
-                        onChange={(e) => handleSelectChange(e, key as keyof SearchFilter)}
+                        onChange={(e) =>
+                          handleSelectChange(e, key as keyof SearchFilter)
+                        }
                         displayEmpty
                         size="small"
                         fullWidth
@@ -311,7 +327,9 @@ const ServiceListingTable = () => {
                         size="small"
                         placeholder="Search"
                         value={search[key as keyof SearchFilter]}
-                        onChange={(e) => handleSearchChange(e, key as keyof SearchFilter)}
+                        onChange={(e) =>
+                          handleSearchChange(e, key as keyof SearchFilter)
+                        }
                         fullWidth
                         type={isNumber ? "number" : "text"}
                         sx={{
@@ -319,11 +337,11 @@ const ServiceListingTable = () => {
                             height: 40,
                             padding: "4px",
                             textAlign: "center",
-                            fontSize: selectedService ? "0.8rem" : "1rem",
+                            fontSize: selectedSchedule ? "0.8rem" : "1rem",
                           },
                           "& .MuiInputBase-input": {
                             textAlign: "center",
-                            fontSize: selectedService ? "0.8rem" : "1rem",
+                            fontSize: selectedSchedule ? "0.8rem" : "1rem",
                           },
                         }}
                       />
@@ -334,8 +352,8 @@ const ServiceListingTable = () => {
             </TableHead>
 
             <TableBody>
-              {serviceList.length > 0 ? (
-                serviceList.map((row) => (
+              {scheduleList.length > 0 ? (
+                scheduleList.map((row) => (
                   <TableRow
                     key={row.id}
                     hover
@@ -343,13 +361,16 @@ const ServiceListingTable = () => {
                     sx={{
                       cursor: "pointer",
                       backgroundColor:
-                        selectedService?.id === row.id ? "#E3F2FD" : "inherit",
+                        selectedSchedule?.id === row.id ? "#E3F2FD" : "inherit",
                       "&:hover": { backgroundColor: "#E3F2FD" },
                     }}
                   >
                     <TableCell sx={{ textAlign: "center" }}>{row.id}</TableCell>
                     <TableCell>
                       <Typography noWrap>{row.name}</Typography>
+                    </TableCell>
+                    <TableCell sx={{ textAlign: "center" }}>
+                      <Typography noWrap>{row.permit_no}</Typography>
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -359,15 +380,15 @@ const ServiceListingTable = () => {
                           width: 100,
                           textAlign: "center",
                           backgroundColor:
-                            row.ticket_mode === "Hybrid"
+                            String(row.ticket_mode) === "Hybrid"
                               ? "rgba(255, 193, 7, 0.12)"
-                              : row.ticket_mode === "Digital"
+                              : String(row.ticket_mode) === "Digital"
                               ? "rgba(0, 188, 212, 0.12)"
                               : "rgba(158, 158, 158, 0.12)",
                           color:
-                            row.ticket_mode === "Hybrid"
+                            String(row.ticket_mode) === "Hybrid"
                               ? "#FF8F00"
-                              : row.ticket_mode === "Digital"
+                              : String(row.ticket_mode) === "Digital"
                               ? "#0097A7"
                               : "#616161",
                           fontWeight: 600,
@@ -378,48 +399,27 @@ const ServiceListingTable = () => {
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={row.status}
+                        label={row.trigger_mode}
                         size="small"
                         sx={{
                           width: 100,
                           textAlign: "center",
                           backgroundColor:
-                            row.status === "Created"
+                            String(row.trigger_mode) === "Automatic"
                               ? "rgba(158, 158, 158, 0.12)"
-                              : row.status === "Started"
+                              : String(row.trigger_mode) === "Manual"
                               ? "rgba(76, 175, 80, 0.12)"
-                              : row.status === "Terminated"
+                              : String(row.trigger_mode) === "Disabled"
                               ? "rgba(244, 67, 54, 0.12)"
                               : "rgba(103, 58, 183, 0.12)",
                           color:
-                            row.status === "Created"
+                            String(row.trigger_mode) === "Automatic"
                               ? "#616161"
-                              : row.status === "Started"
+                              : String(row.trigger_mode) === "Manual"
                               ? "#2E7D32"
-                              : row.status === "Terminated"
+                              : String(row.trigger_mode) === "Disabled"
                               ? "#C62828"
                               : "#4527A0",
-                          fontWeight: 600,
-                          fontSize: "0.75rem",
-                          borderRadius: "8px",
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={row.created_mode}
-                        size="small"
-                        sx={{
-                          width: 100,
-                          textAlign: "center",
-                          backgroundColor:
-                            row.created_mode === "Manual"
-                              ? "rgba(255, 193, 7, 0.12)"
-                              : "rgba(0, 188, 212, 0.12)",
-                          color:
-                            row.created_mode === "Manual"
-                              ? "#FF8F00"
-                              : "#0097A7",
                           fontWeight: 600,
                           fontSize: "0.75rem",
                           borderRadius: "8px",
@@ -447,7 +447,7 @@ const ServiceListingTable = () => {
         />
       </Box>
 
-      {selectedService && (
+      {selectedSchedule && (
         <Box
           sx={{
             flex: { xs: "0 0 100%", md: "0 0 35%" },
@@ -461,14 +461,14 @@ const ServiceListingTable = () => {
             height: "100%",
           }}
         >
-          <ServiceDetailsCard
-            service={selectedService}
+          <ScheduleDetailsCard
+            schedule={selectedSchedule}
             onUpdate={() => {}}
             onDelete={() => {}}
-            onBack={() => setSelectedService(null)}
+            onBack={() => setSelectedSchedule(null)}
             refreshList={(value: any) => refreshList(value)}
-            canManageService={canManageService}
-            onCloseDetailCard={() => setSelectedService(null)}
+            canManageSchedule={canManageSchedule}
+            onCloseDetailCard={() => setSelectedSchedule(null)}
           />
         </Box>
       )}
@@ -477,7 +477,7 @@ const ServiceListingTable = () => {
         open={openCreateModal}
         onClose={() => setOpenCreateModal(false)}
       >
-        <ServiceCreationForm
+        <ScheduleCreationForm
           refreshList={refreshList}
           onClose={() => setOpenCreateModal(false)}
         />
@@ -486,4 +486,4 @@ const ServiceListingTable = () => {
   );
 };
 
-export default ServiceListingTable;
+export default ScheduleListingTable;

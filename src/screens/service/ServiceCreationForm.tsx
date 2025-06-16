@@ -81,8 +81,8 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
     formState: { errors },
   } = useForm<Service>({
     defaultValues: {
-      ticket_mode: 1,
-      created_mode: 1,
+      ticket_mode: "1",
+      created_mode: "1",
     },
   });
 

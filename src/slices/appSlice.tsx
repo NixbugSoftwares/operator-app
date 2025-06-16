@@ -91,6 +91,16 @@ interface ServiceListParams {
   status_list?: number[];
 }
 
+interface ScheduleListParams {
+  limit?: number;
+  offset?: number;
+  id?: string;
+  name?: string;
+  permit_no?: string;
+  trigger_mode?: number;
+  ticket_mode?: number;
+}
+
 interface DutyListParams {
   limit?: number;
   offset?: number;
@@ -1010,6 +1020,113 @@ export const serviceDeleteApi = createAsyncThunk(
   }
 );
 
+//*******************************************Schedule**************************************************
+
+//schedule listing api
+export const scheduleListingApi = createAsyncThunk(
+  "/schedule",
+  async (params: ScheduleListParams, { rejectWithValue }) => {
+    const { limit, offset, id, name, permit_no , trigger_mode, ticket_mode,  } =
+      params;
+
+    const queryParams = {
+      limit,
+      offset,
+      ...(id && { id }),
+      ...(name && { name: name }),
+      ...(permit_no && { permit_no }),
+      ...(ticket_mode && { ticket_mode }),
+      ...(trigger_mode && { trigger_mode }),
+    };
+    try {
+      const response = await commonApi.apiCall(
+        "get",
+        "/company/schedule",
+        queryParams,
+        true,
+        "application/json"
+      );
+      if (!response) throw new Error("No response received");
+
+      return {
+        data: response.data || response,
+      };
+    } catch (error: any) {
+      console.error("API Error:", error);
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to fetch schedule list"
+      );
+    }
+  }
+)
+
+//schedule creation Api
+export const scheduleCreationApi = createAsyncThunk(
+  "/company/schedule",
+  async (data: any, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "post",
+        "/company/schedule",
+        data, 
+        true,
+        "application/json" 
+      );
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(
+        error?.response?.data?.message || "Schedule creation failed"
+      );
+    }
+  }
+);
+
+//schedule updation Api
+export const scheduleUpdationApi = createAsyncThunk(
+  "/company/schedule",
+  async (data: any, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "patch",
+        "/company/schedule",
+        data, 
+        true,
+        "application/json" 
+      );
+      return response;
+    } catch (error: any) {
+      console.error("Backend Error Response:", error.response?.data); // Log the full error response
+      return rejectWithValue(
+        error?.response?.data?.message || "Schedule update failed"
+      );
+    }
+  }
+);
+
+//schedule deletion Api
+export const scheduleDeleteApi = createAsyncThunk(
+  "/company/schedule",
+  async (id: number, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "delete",
+        "/company/schedule",
+        id, 
+        true,
+        "application/json"
+      );
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(
+        error?.response?.data?.message || "Schedule deletion failed"
+      );
+    }
+  }
+);
+
+
 //*******************************************Duty**************************************************  
 
 //duty listing Api
@@ -1114,6 +1231,8 @@ export const dutyDeleteApi = createAsyncThunk(
     }
   }
 )
+
+
 // Slice
 export const appSlice = createSlice({
   name: "app",

@@ -13,48 +13,44 @@ import {
   DialogContentText,
   Tooltip,
   Chip,
-  TextField,
 } from "@mui/material";
 
 import { Delete as DeleteIcon } from "@mui/icons-material";
 import AssignmentIndRoundedIcon from "@mui/icons-material/AssignmentIndRounded";
 import { useAppDispatch } from "../../store/Hooks";
 import {
-  serviceDeleteApi,
+  scheduleDeleteApi,
   busRouteListApi,
   companyBusListApi,
   fareListingApi,
 } from "../../slices/appSlice";
-import localStorageHelper from "../../utils/localStorageHelper";
-import ServiceUpdateForm from "./ServiceUpdation";
+import ScheduleUpdateForm from "./updationForm";
 import { showSuccessToast } from "../../common/toastMessageHelper";
 
 interface ServiceCardProps {
-  service: {
+  schedule: {
     id: number;
     name: string;
-    ticket_mode: string;
-    created_mode: string;
-    status: string;
+    permit_no: string;
+    ticket_mode: number;
+    trigger_mode: number;
     bus_id: number;
     route_id: number;
     fare_id: number;
-    starting_date: string;
-    remarks: string;
+    frequency: number[] ;
   };
   refreshList: (value: any) => void;
   onUpdate: () => void;
   onDelete: (id: number) => void;
   onBack: () => void;
-  canManageService: boolean;
+  canManageSchedule: boolean;
   onCloseDetailCard: () => void;
 }
 
-const statusMap: Record<string, { label: string; color: string }> = {
-  Created: { label: "Created", color: "#616161" },
-  Started: { label: "Started", color: "#2E7D32" },
-  Terminated: { label: "Terminated", color: "#C62828" },
-  Ended: { label: "Ended", color: "#4527A0" },
+const createdTriggerMap: Record<string, { label: string; color: string }> = {
+  Automatic: { label: "Automatic", color: "#616161" },
+  Manual: { label: "Manual", color: "#2E7D32" },
+  Disabled: { label: "Disabled", color: "#C62828" },
 };
 
 const ticketModeMap: Record<string, { label: string; color: string }> = {
@@ -63,20 +59,26 @@ const ticketModeMap: Record<string, { label: string; color: string }> = {
   Conventional: { label: "Conventional", color: "#616161" },
 };
 
-const createdModeMap: Record<string, { label: string; color: string }> = {
-  Manual: { label: "Manual", color: "#FF8F00" },
-  Automatic: { label: "Automatic", color: "#0097A7" },
-};
+const dayMap = [
+  "",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
 
-const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
-  service,
+const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
+  schedule,
   refreshList,
   onDelete,
   onBack,
-  canManageService,
+  canManageSchedule,
   onCloseDetailCard,
 }) => {
-  console.log("service>>>>>>>>>>>>>>>>>>>>>>>>>>>>", service);
+  console.log("schedule>>>>>>>>>>>>>>>>>>>>>>>>>>>>", schedule);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [updateFormOpen, setUpdateFormOpen] = useState(false);
   const dispatch = useAppDispatch();
@@ -85,7 +87,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
   const [fareName, setFareName] = useState("Fare not found");
   const fetchRouteName = async () => {
     try {
-      const id = service.route_id;
+      const id = schedule.route_id;
       const response = await dispatch(busRouteListApi({ id })).unwrap();
       setRouteName(response.data[0].name);
       console.log("Route Name Response:", response.data[0].name);
@@ -98,7 +100,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
   };
   const fetchBusName = async () => {
     try {
-      const id = service.bus_id;
+      const id = schedule.bus_id;
       const response = await dispatch(companyBusListApi({ id })).unwrap();
       setBusName(response.data[0].name);
       console.log("Bus Name Response:", response.data[0].name);
@@ -112,7 +114,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
 
   const fetchFareName = async () => {
     try {
-      const id = service.fare_id;
+      const id = schedule.fare_id;
       const response = await dispatch(fareListingApi({ id })).unwrap();
       setFareName(response.data[0].name);
       console.log("Fare Name Response:", response.data[0].name);
@@ -127,7 +129,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
     fetchRouteName();
     fetchBusName();
     fetchFareName();
-  }, [service.route_id, service.bus_id, service.fare_id]);
+  }, [schedule.route_id, schedule.bus_id, schedule.fare_id]);
 
   const formatUTCDateToLocal = (dateString: string | null): string => {
     if (!dateString || dateString.trim() === "") return "Not added yet";
@@ -135,28 +137,24 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
     return isNaN(date.getTime()) ? "Not added yet" : date.toLocaleDateString();
   };
 
-  const handleServiceDelete = async () => {
-    if (!service.id) {
-      console.error("Error: service ID is missing");
+  const handleScheduleDelete = async () => {
+    if (!schedule.id) {
+      console.error("Error: Schedule ID is missing");
       return;
     }
 
     try {
-      const formData = new FormData();
-      formData.append("id", String(service.id));
-      await dispatch(serviceDeleteApi(formData)).unwrap();
+      await dispatch(scheduleDeleteApi(schedule.id)).unwrap();
 
       setDeleteConfirmOpen(false);
-      localStorageHelper.removeStoredItem(`service${service.id}`);
-      onDelete(service.id);
-      showSuccessToast("service deleted successfully");
+      onDelete(schedule.id);
+      showSuccessToast("Schedule deleted successfully");
       onCloseDetailCard();
       refreshList("refresh");
     } catch (error) {
       console.error("Delete error:", error);
     }
   };
-  console.log(service.status);
 
   return (
     <>
@@ -182,10 +180,10 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
             <AssignmentIndRoundedIcon fontSize="large" />
           </Avatar>
           <Typography variant="h6" sx={{ mt: 1 }}>
-            <b>{service.name}</b>
+            <b>{schedule.name}</b>
           </Typography>
           <Typography variant="body2" color="textSecondary">
-            <b>Service ID:</b> {service.id}
+            <b>Schedule ID:</b> {schedule.id}
           </Typography>
         </Box>
         {/* Bus Details (Aligned Left) */}
@@ -198,6 +196,9 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
               alignItems: "flex-start",
             }}
           >
+            <Typography variant="body1">
+              <b>Permit Number:</b> {formatUTCDateToLocal(schedule.permit_no)}
+            </Typography>
             <Typography variant="body1">
               <b>Route :</b> {routeName}
             </Typography>
@@ -213,10 +214,10 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
             >
               <b>Ticket Mode:</b>
               <Chip
-                label={ticketModeMap[service.ticket_mode]?.label || "Unknown"}
+                label={ticketModeMap[schedule.ticket_mode]?.label || "Unknown"}
                 sx={{
-                  bgcolor: `${ticketModeMap[service.ticket_mode]?.color}20`,
-                  color: ticketModeMap[service.ticket_mode]?.color,
+                  bgcolor: `${ticketModeMap[schedule.ticket_mode]?.color}20`,
+                  color: ticketModeMap[schedule.ticket_mode]?.color,
                   fontWeight: 600,
                   borderRadius: "12px",
                   px: 1.5,
@@ -226,36 +227,18 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
                 size="small"
               />
             </Typography>
+
             <Typography
               variant="body1"
               sx={{ display: "flex", alignItems: "center", gap: 1 }}
             >
-              <b>Created Mode:</b>
+              <b>Trigger Mode:</b>
               <Chip
-                label={createdModeMap[service.created_mode]?.label || "Unknown"}
+                label={createdTriggerMap[schedule.trigger_mode]?.label || "Unknown"}
                 sx={{
-                  bgcolor: `${createdModeMap[service.created_mode]?.color}20`,
-                  color: createdModeMap[service.created_mode]?.color,
-                  fontWeight: "bold",
-                  borderRadius: "12px",
-                  px: 1.5,
-                  fontSize: "0.75rem",
-                  width: 150,
-                }}
-                size="small"
-              />
-            </Typography>
-            <Typography
-              variant="body1"
-              sx={{ display: "flex", alignItems: "center", gap: 1 }}
-            >
-              <b>Status:</b>
-              <Chip
-                label={statusMap[service.status]?.label || "Unknown"}
-                sx={{
-                  bgcolor: `${statusMap[service.status]?.color}20`,
-                  color: statusMap[service.status]?.color,
-                  fontWeight: "bold",
+                  bgcolor: `${createdTriggerMap[schedule.trigger_mode]?.color}20`,
+                  color: createdTriggerMap[schedule.trigger_mode]?.color,
+                  fontWeight: 600,
                   borderRadius: "12px",
                   px: 1.5,
                   fontSize: "0.75rem",
@@ -265,43 +248,14 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
               />
             </Typography>
             <Typography variant="body1">
-              <b>Starting Date:</b>{" "}
-              {formatUTCDateToLocal(service.starting_date)}
-            </Typography>
+  <b>Active Days:</b>{" "}
+  {schedule.frequency && Array.isArray(schedule.frequency)
+    ? schedule.frequency
+        .map((num) => dayMap[num] || num)
+        .join(", ")
+    : "Not set"}
+</Typography>
 
-            <TextField
-              label="Remarks"
-              value={service.remarks || "No remarks added"}
-              fullWidth
-              multiline
-              rows={3}
-              variant="outlined"
-              InputProps={{
-                readOnly: true,
-                sx: {
-                  cursor: "default", 
-                  "& input": {
-                    userSelect: "none", 
-                  },
-                },
-              }}
-              sx={{
-                mt: 1,
-                "& .MuiOutlinedInput-root": {
-                  backgroundColor: "action.hover",
-                  "& fieldset": {
-                    borderColor: "grey.300",
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "grey.300", 
-                  },
-                },
-                "& .MuiInputBase-inputMultiline": {
-                  userSelect: "none",
-                  cursor: "default",
-                },
-              }}
-            />
           </Box>
         </Card>
 
@@ -327,7 +281,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
             {/* Update Button with Tooltip */}
             <Tooltip
               title={
-                !canManageService
+                !canManageSchedule
                   ? "You don't have permission, contact the admin"
                   : ""
               }
@@ -336,7 +290,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
             >
               <span
                 style={{
-                  cursor: !canManageService ? "not-allowed" : "default",
+                  cursor: !canManageSchedule ? "not-allowed" : "default",
                 }}
               >
                 <Button
@@ -344,7 +298,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
                   color="success"
                   size="small"
                   onClick={() => setUpdateFormOpen(true)}
-                  disabled={!canManageService}
+                  disabled={!canManageSchedule}
                   sx={{
                     "&.Mui-disabled": {
                       backgroundColor: "#81c784 !important",
@@ -360,14 +314,8 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
             {/* Delete Button with Tooltip */}
             <Tooltip
               title={
-                !canManageService
+                !canManageSchedule
                   ? "You don't have permission, contact the admin"
-                  : service.status === "Started"
-                  ? "Cannot delete a service that has Started"
-                  : service.status === "Terminated"
-                  ? "Cannot delete a service that is Terminated"
-                  : service.status === "Ended"
-                  ? "Cannot delete a service that is Ended"
                   : ""
               }
               arrow
@@ -375,7 +323,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
             >
               <span
                 style={{
-                  cursor: !canManageService ? "not-allowed" : "default",
+                  cursor: !canManageSchedule ? "not-allowed" : "default",
                 }}
               >
                 <Button
@@ -384,12 +332,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
                   size="small"
                   onClick={() => setDeleteConfirmOpen(true)}
                   startIcon={<DeleteIcon />}
-                  disabled={
-                    !canManageService ||
-                    service.status === "Started" ||
-                    service.status === "Terminated" ||
-                    service.status === "Ended"
-                  }
+                  disabled={!canManageSchedule}
                   sx={{
                     "&.Mui-disabled": {
                       backgroundColor: "#e57373 !important",
@@ -413,17 +356,17 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete this Service?
+            Are you sure you want to delete this Schedule?
           </DialogContentText>
           <Typography>
-            <b>Service Name:</b> {service.name},
+            <b>Schedule Name:</b> {schedule.name},
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteConfirmOpen(false)} color="primary">
             Cancel
           </Button>
-          <Button onClick={handleServiceDelete} color="error">
+          <Button onClick={handleScheduleDelete} color="error">
             Confirm Delete
           </Button>
         </DialogActions>
@@ -437,14 +380,18 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
         fullWidth
       >
         <DialogContent>
-          <ServiceUpdateForm
-            serviceId={service.id}
-            serviceData={{
-              id: service.id,
-              name: service.name,
-              ticket_mode: service.ticket_mode,
-              status: service.status,
-              remarks: service.remarks,
+          <ScheduleUpdateForm
+            scheduleId={schedule.id}
+            scheduleData={{
+              id: schedule.id,
+              name: schedule.name,
+              permit_no: schedule.permit_no,
+              ticket_mode: schedule.ticket_mode,
+              trigger_mode: schedule.trigger_mode,
+              frequency: schedule.frequency,
+              bus_id: schedule.bus_id,
+              fare_id: schedule.fare_id,
+              route_id: schedule.route_id,
             }}
             refreshList={(value: any) => refreshList(value)}
             onClose={() => setUpdateFormOpen(false)}
@@ -456,4 +403,4 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
   );
 };
 
-export default ServiceDetailsCard;
+export default ScheduleDetailsCard;
