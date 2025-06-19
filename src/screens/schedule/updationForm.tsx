@@ -18,7 +18,10 @@ import {
   fareListingApi,
 } from "../../slices/appSlice";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
-import { showErrorToast, showSuccessToast } from "../../common/toastMessageHelper";
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "../../common/toastMessageHelper";
 
 interface DropdownItem {
   id: number;
@@ -82,12 +85,16 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
     routeList: [] as DropdownItem[],
     fareList: [] as DropdownItem[],
   });
-  const [hasMore, setHasMore] = useState({ bus: true, route: true, fare: true });
+  const [hasMore, setHasMore] = useState({
+    bus: true,
+    route: true,
+    fare: true,
+  });
   const [selectedBus, setSelectedBus] = useState<DropdownItem | null>(null);
   const [selectedRoute, setSelectedRoute] = useState<DropdownItem | null>(null);
   const [selectedFare, setSelectedFare] = useState<DropdownItem | null>(null);
   const isFirstLoad = useRef(true);
-const [isReady, setIsReady] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   const getTicketModeValue = (label: string): number => {
     const option = ticketModeOptions.find((opt) => opt.label === label);
@@ -106,8 +113,12 @@ const [isReady, setIsReady] = useState(false);
   } = useForm<ScheduleFormValues>({
     defaultValues: {
       ...scheduleData,
-      ticket_mode: getTicketModeValue(scheduleData.ticket_mode as unknown as string),
-      trigger_mode: getTriggerModeValue(scheduleData.trigger_mode as unknown as string),
+      ticket_mode: getTicketModeValue(
+        scheduleData.ticket_mode as unknown as string
+      ),
+      trigger_mode: getTriggerModeValue(
+        scheduleData.trigger_mode as unknown as string
+      ),
     },
   });
 
@@ -135,7 +146,9 @@ const [isReady, setIsReady] = useState(false);
         setDropdownData((prev) => ({
           ...prev,
           [`${type}List`]:
-            pageNumber === 0 ? formattedList : [...prev[`${type}List`], ...formattedList],
+            pageNumber === 0
+              ? formattedList
+              : [...prev[`${type}List`], ...formattedList],
         }));
 
         setHasMore((prev) => ({
@@ -145,53 +158,51 @@ const [isReady, setIsReady] = useState(false);
 
         // Set initial selected values on first load
         if (pageNumber === 0 && isFirstLoad.current) {
-  const idMap = {
-    bus: scheduleData.bus_id,
-    route: scheduleData.route_id,
-    fare: scheduleData.fare_id,
-  };
-
-  if (idMap[type]) {
-    const foundItem = formattedList.find(
-      (item: DropdownItem) => item.id === idMap[type]
-    );
-
-    if (foundItem) {
-      const setterMap = {
-        bus: setSelectedBus,
-        route: setSelectedRoute,
-        fare: setSelectedFare,
-      };
-      setterMap[type](foundItem);
-    } else {
-      
-      try {
-        const singleItemResponse = await dispatch(
-          apiMap[type]({ id: idMap[type] }) 
-        ).unwrap();
-
-        const item = singleItemResponse?.data?.[0];
-        if (item) {
-          const injectedItem = { id: item.id, name: item.name ?? "-" };
-          setDropdownData((prev) => ({
-            ...prev,
-            [`${type}List`]: [injectedItem, ...prev[`${type}List`]],
-          }));
-
-          const setterMap = {
-            bus: setSelectedBus,
-            route: setSelectedRoute,
-            fare: setSelectedFare,
+          const idMap = {
+            bus: scheduleData.bus_id,
+            route: scheduleData.route_id,
+            fare: scheduleData.fare_id,
           };
-          setterMap[type](injectedItem);
-        }
-      } catch (err) {
-        showErrorToast(`Could not fetch selected ${type}`);
-      }
-    }
-  }
-}
 
+          if (idMap[type]) {
+            const foundItem = formattedList.find(
+              (item: DropdownItem) => item.id === idMap[type]
+            );
+
+            if (foundItem) {
+              const setterMap = {
+                bus: setSelectedBus,
+                route: setSelectedRoute,
+                fare: setSelectedFare,
+              };
+              setterMap[type](foundItem);
+            } else {
+              try {
+                const singleItemResponse = await dispatch(
+                  apiMap[type]({ id: idMap[type] })
+                ).unwrap();
+
+                const item = singleItemResponse?.data?.[0];
+                if (item) {
+                  const injectedItem = { id: item.id, name: item.name ?? "-" };
+                  setDropdownData((prev) => ({
+                    ...prev,
+                    [`${type}List`]: [injectedItem, ...prev[`${type}List`]],
+                  }));
+
+                  const setterMap = {
+                    bus: setSelectedBus,
+                    route: setSelectedRoute,
+                    fare: setSelectedFare,
+                  };
+                  setterMap[type](injectedItem);
+                }
+              } catch (err) {
+                showErrorToast(`Could not fetch selected ${type}`);
+              }
+            }
+          }
+        }
       } catch (error: any) {
         showErrorToast(error.message || `Failed to fetch ${type} list`);
       } finally {
@@ -203,48 +214,56 @@ const [isReady, setIsReady] = useState(false);
   );
 
   useEffect(() => {
-  const initializeDropdowns = async () => {
-    try {
-      setLoading(true);
-      const [busResp, routeResp, fareResp] = await Promise.all([
-        dispatch(companyBusListApi({ limit: rowsPerPage, offset: 0, name: "" })).unwrap(),
-        dispatch(busRouteListApi({ limit: rowsPerPage, offset: 0, name: "" })).unwrap(),
-        dispatch(fareListingApi({ limit: rowsPerPage, offset: 0, name: "" })).unwrap(),
-      ]);
+    const initializeDropdowns = async () => {
+      try {
+        setLoading(true);
+        const [busResp, routeResp, fareResp] = await Promise.all([
+          dispatch(
+            companyBusListApi({ limit: rowsPerPage, offset: 0, name: "" })
+          ).unwrap(),
+          dispatch(
+            busRouteListApi({ limit: rowsPerPage, offset: 0, name: "" })
+          ).unwrap(),
+          dispatch(
+            fareListingApi({ limit: rowsPerPage, offset: 0, name: "" })
+          ).unwrap(),
+        ]);
 
-      const formatList = (items: any[]) =>
-        items.map((item: any) => ({ id: item.id, name: item.name ?? "-" }));
+        const formatList = (items: any[]) =>
+          items.map((item: any) => ({ id: item.id, name: item.name ?? "-" }));
 
-      const busList = formatList(busResp.data || []);
-      const routeList = formatList(routeResp.data || []);
-      const fareList = formatList(fareResp.data || []);
+        const busList = formatList(busResp.data || []);
+        const routeList = formatList(routeResp.data || []);
+        const fareList = formatList(fareResp.data || []);
 
-      setDropdownData({
-        busList,
-        routeList,
-        fareList,
-      });
+        setDropdownData({
+          busList,
+          routeList,
+          fareList,
+        });
 
-      // Set selected items if they exist
-      const bus = busList.find((item) => item.id === scheduleData.bus_id) || null;
-      const route = routeList.find((item) => item.id === scheduleData.route_id) || null;
-      const fare = fareList.find((item) => item.id === scheduleData.fare_id) || null;
+        // Set selected items if they exist
+        const bus =
+          busList.find((item) => item.id === scheduleData.bus_id) || null;
+        const route =
+          routeList.find((item) => item.id === scheduleData.route_id) || null;
+        const fare =
+          fareList.find((item) => item.id === scheduleData.fare_id) || null;
 
-      setSelectedBus(bus);
-      setSelectedRoute(route);
-      setSelectedFare(fare);
-    } catch (err: any) {
-      showErrorToast("Failed to load dropdowns");
-      console.error(err);
-    } finally {
-      setLoading(false);
-      setIsReady(true);
-    }
-  };
+        setSelectedBus(bus);
+        setSelectedRoute(route);
+        setSelectedFare(fare);
+      } catch (err: any) {
+        showErrorToast("Failed to load dropdowns");
+        console.error(err);
+      } finally {
+        setLoading(false);
+        setIsReady(true);
+      }
+    };
 
-  initializeDropdowns();
-}, []);
-
+    initializeDropdowns();
+  }, []);
 
   const handleScroll = (
     event: React.UIEvent<HTMLUListElement>,
@@ -256,15 +275,19 @@ const [isReady, setIsReady] = useState(false);
         listboxNode.scrollHeight &&
       hasMore[type]
     ) {
-      const nextPage = Math.floor(dropdownData[`${type}List`].length / rowsPerPage);
+      const nextPage = Math.floor(
+        dropdownData[`${type}List`].length / rowsPerPage
+      );
       fetchDropdownData(type, nextPage);
     }
   };
 
-  const handleScheduleUpdate: SubmitHandler<ScheduleFormValues> = async (data) => {
+  const handleScheduleUpdate: SubmitHandler<ScheduleFormValues> = async (
+    data
+  ) => {
     try {
       setLoading(true);
-      
+
       const updationData = {
         id: scheduleId,
         name: data.name,
@@ -292,15 +315,14 @@ const [isReady, setIsReady] = useState(false);
       setLoading(false);
     }
   };
- if (!isReady) {
+  if (!isReady) {
+    return (
+      <Box display="flex" justifyContent="center" mt={4}>
+        <CircularProgress />
+      </Box>
+    );
+  }
   return (
-    <Box display="flex" justifyContent="center" mt={4}>
-      <CircularProgress />
-    </Box>
-  );
-}
-  return (
-   
     <Container component="main" maxWidth="xs">
       <CssBaseline />
       <Box
@@ -517,7 +539,9 @@ const [isReady, setIsReady] = useState(false);
                 multiple
                 options={daysFrequency}
                 getOptionLabel={(option) => option.label}
-                value={daysFrequency.filter((day) => field.value?.includes(day.value))}
+                value={daysFrequency.filter((day) =>
+                  field.value?.includes(day.value)
+                )}
                 onChange={(_, newValue) => {
                   field.onChange(newValue.map((day) => day.value));
                 }}

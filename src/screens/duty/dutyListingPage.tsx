@@ -101,10 +101,10 @@ const DutyListingTable = () => {
               ]);
 
               const operator = operatorResponse.data.find(
-                (op: any) => op.id === duty.operator_id
+                (operator: any) => operator.id === duty.operator_id
               );
               const service = serviceResponse.data.find(
-                (srv: any) => srv.id === duty.service_id
+                (service: any) => service.id === duty.service_id
               );
 
               return {

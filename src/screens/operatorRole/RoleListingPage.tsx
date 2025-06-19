@@ -106,7 +106,7 @@ const RoleListingTable = () => {
     []
   );
   const handleRowClick = (role: Role) => setSelectedRole(role);
-  
+
   useEffect(() => {
     const searchParams = {
       ...(debouncedSearch.id && { id: debouncedSearch.id }),
@@ -204,12 +204,12 @@ const RoleListingTable = () => {
 
         <TableContainer
           sx={{
-    flex: 1,
-    maxHeight: "calc(100vh - 100px)",
-    overflowY: "auto",
-    borderRadius: 2,
-    border: "1px solid #e0e0e0",
-  }}
+            flex: 1,
+            maxHeight: "calc(100vh - 100px)",
+            overflowY: "auto",
+            borderRadius: 2,
+            border: "1px solid #e0e0e0",
+          }}
         >
           <Table stickyHeader>
             <TableHead>

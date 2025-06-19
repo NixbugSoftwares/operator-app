@@ -27,7 +27,6 @@ import ScheduleCreationForm from "./CreationForm";
 import { Schedule } from "../../types/type";
 import ScheduleDetailsCard from "./DetailCard";
 
-// Utility functions for converting between display and backend values
 const getTicketModeBackendValue = (displayValue: string): string => {
   const ticketMap: Record<string, string> = {
     Hybrid: "1",
@@ -107,29 +106,28 @@ const ScheduleListingTable = () => {
           const items = res.data || [];
 
           const formattedSchedules = items.map((schedule: any) => ({
-  id: schedule.id,
-  name: schedule.name,
-  permit_no: schedule.permit_no,
-  route_id: schedule.route_id,
-  fare_id: schedule.fare_id,
-  bus_id: schedule.bus_id,
-  ticket_mode:
-    schedule.ticket_mode === 1
-      ? "Hybrid"
-      : schedule.ticket_mode === 2
-      ? "Digital"
-      : "Conventional",
-  trigger_mode:
-    schedule.trigger_mode === 1
-      ? "Automatic"
-      : schedule.trigger_mode === 2
-      ? "Manual"
-      : "Disabled",
-  frequency: Array.isArray(schedule.frequency)
-    ? schedule.frequency
-    : [], 
-}));
-
+            id: schedule.id,
+            name: schedule.name,
+            permit_no: schedule.permit_no,
+            route_id: schedule.route_id,
+            fare_id: schedule.fare_id,
+            bus_id: schedule.bus_id,
+            ticket_mode:
+              schedule.ticket_mode === 1
+                ? "Hybrid"
+                : schedule.ticket_mode === 2
+                ? "Digital"
+                : "Conventional",
+            trigger_mode:
+              schedule.trigger_mode === 1
+                ? "Automatic"
+                : schedule.trigger_mode === 2
+                ? "Manual"
+                : "Disabled",
+            frequency: Array.isArray(schedule.frequency)
+              ? schedule.frequency
+              : [],
+          }));
 
           setScheduleList(formattedSchedules);
           setHasNextPage(items.length === rowsPerPage);
@@ -431,7 +429,7 @@ const ScheduleListingTable = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} align="center">
-                    No Service found.
+                    No schedule found.
                   </TableCell>
                 </TableRow>
               )}

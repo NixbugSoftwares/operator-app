@@ -28,7 +28,7 @@ import {
 import localStorageHelper from "../../utils/localStorageHelper";
 import ServiceUpdateForm from "./ServiceUpdation";
 import { showSuccessToast } from "../../common/toastMessageHelper";
-
+import { useNavigate } from "react-router-dom";
 interface ServiceCardProps {
   service: {
     id: number;
@@ -83,6 +83,10 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
   const [routeName, setRouteName] = useState("Route not found");
   const [busName, setBusName] = useState("Bus not found");
   const [fareName, setFareName] = useState("Fare not found");
+  const navigate = useNavigate(); 
+
+
+
   const fetchRouteName = async () => {
     try {
       const id = service.route_id;
@@ -404,6 +408,15 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
           </Box>
         </CardActions>
       </Card>
+      <Box sx={{ mt: 2, textAlign: "center" }}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => navigate(`/ticket?service_id=${service.id}`)}
+        >
+          View All Tickets
+        </Button>
+      </Box>
 
       {/* Delete Confirmation Modal */}
       <Dialog

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import {
   Box,
@@ -14,12 +14,13 @@ import {
   Card,
   CardContent,
   Autocomplete,
+  Grid,
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import { useAppDispatch, useAppSelector } from "../../store/Hooks";
-import { LoginApi, companyListApi, selectAuth } from "../../slices/authSlice";
+import { useAppDispatch } from "../../store/Hooks";
+import { LoginApi, companyListApi } from "../../slices/authSlice";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { loginSchema } from "./validations/authValidation";
 import {
@@ -35,22 +36,33 @@ import {
 import localStorageHelper from "../../utils/localStorageHelper";
 import { setPermissions } from "../../slices/appSlice";
 interface ILoginFormInputs {
-  company_id: number  ;
+  company_id: number;
   username: string;
   password: string;
 }
 
-interface Company {
+interface DropdownItem {
   id: number;
   name: string;
 }
-
 const LoginPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { loading, error } = useAppSelector(selectAuth);
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [searchParams, setSearchParams] = useState({
+    company: "",
+  });
+  const [page, setPage] = useState({
+    company: 0,
+  });
+  const [hasMore, setHasMore] = useState({
+    company: true,
+  });
+  const [dropdownData, setDropdownData] = useState({
+    companyList: [] as DropdownItem[],
+  });
 
+  const rowsPerPage = 10;
   const {
     control,
     handleSubmit,
@@ -58,29 +70,56 @@ const LoginPage: React.FC = () => {
     formState: { errors },
   } = useForm<ILoginFormInputs>({
     resolver: yupResolver(loginSchema),
-    defaultValues: {
-    },
+    defaultValues: {},
   });
 
   const handleTogglePassword = () => {
     setShowPassword((prev) => !prev);
   };
 
-  useEffect(() => {
-    dispatch(companyListApi())
-      .unwrap()
-      .then((res: any[]) => {
-        const companyList = res.map((company) => ({
-          id: company.id,
-          name: company.name,
-        }));
-        setCompanies(companyList);
-      })
-      .catch((err: any) => {
-        console.error("Error fetching company:", err);
-      });
-  }, [dispatch]);
+  const fetchCompanyList = useCallback(
+    (pageNumber: number, searchText = "") => {
+      setLoading(true);
+      const offset = pageNumber * rowsPerPage;
+      dispatch(
+        companyListApi({
+          limit: rowsPerPage,
+          offset,
+          name: searchText,
+        })
+      )
+        .unwrap()
+        .then((res) => {
+          const items = res.data || [];
+          console.log("items", items);
 
+          const formattedList = items.map((item: any) => ({
+            id: item.id,
+            name: item.name ?? "-",
+          }));
+          setDropdownData((prev) => ({
+            ...prev,
+            companyList:
+              pageNumber === 0
+                ? formattedList
+                : [...prev.companyList, ...formattedList],
+          }));
+          setHasMore((prev) => ({
+            ...prev,
+            company: items.length === rowsPerPage,
+          }));
+        })
+        .catch((error) => {
+          showErrorToast(error.message || "Failed to fetch Company list");
+        })
+        .finally(() => setLoading(false));
+    },
+    [dispatch]
+  );
+
+  useEffect(() => {
+    fetchCompanyList(0);
+  }, [fetchCompanyList]);
   const handleLogin: SubmitHandler<ILoginFormInputs> = async (data) => {
     try {
       if (!data.company_id) {
@@ -99,6 +138,7 @@ const LoginPage: React.FC = () => {
         const user = {
           username: data?.username,
           userId: response?.operator_id,
+          company_id: data?.company_id,
         };
         const access_token = response?.access_token;
         const expiresAt = Date.now() + response?.expires_in * 1000;
@@ -160,7 +200,22 @@ const LoginPage: React.FC = () => {
       showErrorToast(error.message || "Login failed");
     }
   };
+  const handleScroll = (event: React.UIEvent<HTMLElement>, type: "company") => {
+    const element = event.currentTarget;
+    if (
+      element.scrollHeight - element.scrollTop === element.clientHeight &&
+      hasMore[type]
+    ) {
+      const newPage = page[type] + 1;
+      setPage((prev) => ({ ...prev, [type]: newPage }));
 
+      switch (type) {
+        case "company":
+          fetchCompanyList(newPage, searchParams.company);
+          break;
+      }
+    }
+  };
   return (
     <Container component="main" maxWidth="xs" sx={{ mb: 10 }}>
       <CssBaseline />
@@ -192,33 +247,46 @@ const LoginPage: React.FC = () => {
               sx={{ mt: 1 }}
               onSubmit={handleSubmit(handleLogin)}
             >
-              <Controller
-                name="company_id"
-                control={control}
-                rules={{ required: "Company is required" }}
-                render={({ field }) => (
-                  <Autocomplete
-                    options={companies}
-                    getOptionLabel={(option) => option.name}
-                    onChange={(_event, value) =>
-                      field.onChange(value?.id || null)
-                    }
-                    value={companies.find((c) => c.id === field.value) || null}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        margin="normal"
-                        required
-                        fullWidth
-                        label="Company Name"
-                        error={!!errors.company_id}
-                        helperText={errors.company_id?.message}
-                        size="small"
-                      />
-                    )}
-                  />
-                )}
-              />
+              <Grid item xs={12} sm={6}>
+                <Controller
+                  name="company_id"
+                  control={control}
+                  rules={{ required: "Company is required" }}
+                  render={({ field }) => (
+                    <Autocomplete
+                      options={dropdownData.companyList}
+                      getOptionLabel={(option) => option.name}
+                      value={
+                        dropdownData.companyList.find(
+                          (item) => item.id === field.value
+                        ) || null
+                      }
+                      onChange={(_, newValue) => field.onChange(newValue?.id)}
+                      onInputChange={(_, newInputValue) => {
+                        setSearchParams((prev) => ({
+                          ...prev,
+                          bus: newInputValue,
+                        }));
+                        fetchCompanyList(0, newInputValue);
+                      }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Select Company"
+                          error={!!errors.company_id}
+                          helperText={errors.company_id?.message}
+                          required
+                          fullWidth
+                        />
+                      )}
+                      ListboxProps={{
+                        onScroll: (event) => handleScroll(event, "company"),
+                        style: { maxHeight: 200, overflow: "auto" },
+                      }}
+                    />
+                  )}
+                />
+              </Grid>
 
               <TextField
                 margin="normal"
@@ -253,11 +321,7 @@ const LoginPage: React.FC = () => {
                   ),
                 }}
               />
-              {error && (
-                <Typography color="error" variant="body2" sx={{ mt: 2 }}>
-                  {error}
-                </Typography>
-              )}
+
               <Button
                 type="submit"
                 fullWidth

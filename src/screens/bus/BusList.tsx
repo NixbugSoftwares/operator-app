@@ -10,6 +10,7 @@ import {
   TableRow,
   TextField,
   Tooltip,
+  Typography,
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { companyBusListApi } from "../../slices/appSlice";
@@ -126,200 +127,232 @@ const BusListingTable = () => {
     }
   };
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: { xs: "column", md: "row" },
-        width: "100%",
-        height: "100%",
-        gap: 2,
-      }}
+<Box
+  sx={{
+    display: "flex",
+    flexDirection: { xs: "column", md: "row" },
+    width: "100%",
+    height: "100%",
+    gap: 2,
+  }}
+>
+  <Box
+    sx={{
+      flex: selectedBus ? { xs: "0 0 100%", md: "0 0 65%" } : "0 0 100%",
+      maxWidth: selectedBus ? { xs: "100%", md: "65%" } : "100%",
+      transition: "all 0.3s ease",
+      height: "100%",
+      display: "flex",
+      flexDirection: "column",
+      overflow: "hidden",
+    }}
+  >
+    <Tooltip
+      title={
+        !canManageBus
+          ? "You don't have permission, contact the admin"
+          : "Click to open the Bus creation form"
+      }
+      placement="top-end"
     >
-      <Box
-        sx={{
-          flex: selectedBus ? { xs: "0 0 100%", md: "0 0 65%" } : "0 0 100%",
-          maxWidth: selectedBus ? { xs: "100%", md: "65%" } : "100%",
-          transition: "all 0.3s ease",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
-        <Tooltip
-            title={
-              !canManageBus
-                ? "You don't have permission, contact the admin"
-                : "Click to open the Bus creation form"
-            }
-            placement="top-end"
-          >
-            <span style={{ cursor: !canManageBus ? "not-allowed" : "pointer" }}>
-              <Button
-                sx={{
-                  ml: "auto",
-                  mr: 2,
-                  mb: 2,
-                  backgroundColor: !canManageBus
-                    ? "#6c87b7 !important"
-                    : "#00008B",
-                  color: "white",
-                   display: 'flex', justifyContent: 'flex-end'
-                }}
-                variant="contained"
-                onClick={() => setOpenCreateModal(true)}
-                disabled={!canManageBus}
-              >
-                Add New Bus
-              </Button>
-            </span>
-          </Tooltip>
-        
-          
-        
+      <span style={{ cursor: !canManageBus ? "not-allowed" : "pointer" }}>
+        <Button
+          sx={{
+            ml: "auto",
+            mr: 2,
+            mb: 2,
+            backgroundColor: !canManageBus
+              ? "#6c87b7 !important"
+              : "#00008B",
+            color: "white",
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+          variant="contained"
+          onClick={() => setOpenCreateModal(true)}
+          disabled={!canManageBus}
+        >
+          Add New Bus
+        </Button>
+      </span>
+    </Tooltip>
 
-        <TableContainer
-           sx={{
+<TableContainer
+  sx={{
     flex: 1,
     maxHeight: "calc(100vh - 100px)",
     overflowY: "auto",
     borderRadius: 2,
     border: "1px solid #e0e0e0",
   }}
-        >
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                {["ID", "Name", "Registration Number", "Capacity"].map(
-                  (label, index) => {
-                    const key = [
-                      "id",
-                      "name",
-                      "registrationNumber",
-                      "capacity",
-                    ][index] as keyof typeof search;
-
-                    const isNumberField = key === "id" || key === "capacity";
-
-                    return (
-                      <TableCell key={label}>
-                        <b
-                          style={{
-                            display: "block",
-                            textAlign: "center",
-                            fontSize: selectedBus ? "0.8rem" : "1rem",
-                          }}
-                        >
-                          {label}
-                        </b>
-                        <TextField
-                          variant="outlined"
-                          size="small"
-                          placeholder="Search"
-                          value={search[key]}
-                          onChange={(e) => handleSearchChange(e, key)}
-                          fullWidth
-                          type={isNumberField ? "number" : "text"}
-                          sx={{
-                            "& .MuiInputBase-root": {
-                              height: 40,
-                              padding: "4px",
-                              textAlign: "center",
-                              fontSize: selectedBus ? "0.8rem" : "1rem",
-                            },
-                            "& .MuiInputBase-input": {
-                              textAlign: "center",
-                              fontSize: selectedBus ? "0.8rem" : "1rem",
-                            },
-                          }}
-                        />
-                      </TableCell>
-                    );
-                  }
-                )}
-              </TableRow>
-            </TableHead>
-
-            <TableBody>
-              {busList.length > 0 ? (
-                busList.map((row) => {
-                  return (
-                    <TableRow
-                      key={row.id}
-                      hover
-                      onClick={() => handleRowClick(row)}
-                      sx={{
-                        cursor: "pointer",
-                        backgroundColor:
-                          selectedBus?.id === row.id ? "#E3F2FD" : "inherit",
-                        "&:hover": {
-                          backgroundColor: "#E3F2FD",
-                        },
-                      }}
-                    >
-                      <TableCell>{row.id}</TableCell>
-                      <TableCell>{row.name}</TableCell>
-                      <TableCell>{row.registrationNumber}</TableCell>
-                      <TableCell>{row.capacity}</TableCell>
-                    </TableRow>
-                  );
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    No Bus found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        <PaginationControls
-          page={page}
-          onPageChange={(newPage) => handleChangePage(null, newPage)}
-          isLoading={isLoading}
-          hasNextPage={hasNextPage}
-        />
-      </Box>
-      {/* Right Side - Account Details Card */}
-      {selectedBus && (
-        <Box
-          sx={{
-            flex: { xs: "0 0 100%", md: "0 0 35%" },
-            maxWidth: { xs: "100%", md: "35%" },
-            transition: "all 0.3s ease",
-            bgcolor: "grey.100",
-            p: 2,
-            mt: { xs: 2, md: 0 },
-            overflowY: "auto",
-            overflowX: "hidden",
-            height: "100%",
-          }}
-        >
-          <BusDetailsCard
-            bus={selectedBus}
-            onUpdate={() => {}}
-            onDelete={() => {}}
-            onBack={() => setSelectedBus(null)}
-            refreshList={(value: any) => refreshList(value)}
-            canManageBus={canManageBus}
-            onCloseDetailCard={() => setSelectedBus(null)}
+>
+  <Table stickyHeader>
+    <TableHead>
+      <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+        {[
+          { label: "ID", width: "80px" },
+          { label: "Name", width: "180px" },
+          { label: "Registration Number", width: "180px" },
+          { label: "Capacity", width: "120px" },
+        ].map((col) => (
+          <TableCell
+            key={col.label}
+            sx={{
+              width: col.width,
+              minWidth: col.width,
+              textAlign: "center",
+              backgroundColor: "#fafafa",
+              fontWeight: 600,
+              fontSize: "0.875rem",
+              borderBottom: "1px solid #ddd",
+            }}
+          >
+            {col.label}
+          </TableCell>
+        ))}
+      </TableRow>
+      <TableRow>
+        <TableCell>
+          <TextField
+            variant="outlined"
+            size="small"
+            placeholder="Search"
+            value={search.id}
+            onChange={(e) => handleSearchChange(e, "id")}
+            fullWidth
+            type="number"
+            sx={{
+              "& .MuiInputBase-root": { height: 40 },
+              "& .MuiInputBase-input": { textAlign: "center" },
+            }}
           />
-        </Box>
+        </TableCell>
+        <TableCell>
+          <TextField
+            variant="outlined"
+            size="small"
+            placeholder="Search"
+            value={search.name}
+            onChange={(e) => handleSearchChange(e, "name")}
+            fullWidth
+            sx={{
+              "& .MuiInputBase-root": { height: 40 },
+              "& .MuiInputBase-input": { textAlign: "center" },
+            }}
+          />
+        </TableCell>
+        <TableCell>
+          <TextField
+            variant="outlined"
+            size="small"
+            placeholder="Search"
+            value={search.registrationNumber}
+            onChange={(e) => handleSearchChange(e, "registrationNumber")}
+            fullWidth
+            sx={{
+              "& .MuiInputBase-root": { height: 40 },
+              "& .MuiInputBase-input": { textAlign: "center" },
+            }}
+          />
+        </TableCell>
+        <TableCell>
+          <TextField
+            variant="outlined"
+            size="small"
+            placeholder="Search"
+            value={search.capacity}
+            onChange={(e) => handleSearchChange(e, "capacity")}
+            fullWidth
+            type="number"
+            sx={{
+              "& .MuiInputBase-root": { height: 40 },
+              "& .MuiInputBase-input": { textAlign: "center" },
+            }}
+          />
+        </TableCell>
+      </TableRow>
+    </TableHead>
+    <TableBody>
+      {busList.length > 0 ? (
+        busList.map((row) => (
+          <TableRow
+            key={row.id}
+            hover
+            onClick={() => handleRowClick(row)}
+            sx={{
+              cursor: "pointer",
+              backgroundColor:
+                selectedBus?.id === row.id ? "#E3F2FD" : "inherit",
+              "&:hover": { backgroundColor: "#E3F2FD" },
+            }}
+          >
+            <TableCell sx={{ textAlign: "center" }}>{row.id}</TableCell>
+            <TableCell>
+              <Typography noWrap>{row.name}</Typography>
+            </TableCell>
+            <TableCell>
+              <Typography noWrap>{row.registrationNumber}</Typography>
+            </TableCell>
+            <TableCell sx={{ textAlign: "center" }}>{row.capacity}</TableCell>
+          </TableRow>
+        ))
+      ) : (
+        <TableRow>
+          <TableCell colSpan={4} align="center">
+            No Bus found.
+          </TableCell>
+        </TableRow>
       )}
+    </TableBody>
+  </Table>
+</TableContainer>
 
-      {/* Create Account Modal */}
-      <FormModal
-        open={openCreateModal}
-        onClose={() => setOpenCreateModal(false)}
-      >
-        <BusCreationForm
-          refreshList={refreshList}
-          onClose={() => setOpenCreateModal(false)}
-        />
-      </FormModal>
+    <PaginationControls
+      page={page}
+      onPageChange={(newPage) => handleChangePage(null, newPage)}
+      isLoading={isLoading}
+      hasNextPage={hasNextPage}
+    />
+  </Box>
+  {/* Right Side - Bus Details Card */}
+  {selectedBus && (
+    <Box
+      sx={{
+        flex: { xs: "0 0 100%", md: "0 0 35%" },
+        maxWidth: { xs: "100%", md: "35%" },
+        transition: "all 0.3s ease",
+        bgcolor: "grey.100",
+        p: 2,
+        mt: { xs: 2, md: 0 },
+        overflowY: "auto",
+        overflowX: "hidden",
+        height: "100%",
+      }}
+    >
+      <BusDetailsCard
+        bus={selectedBus}
+        onUpdate={() => {}}
+        onDelete={() => {}}
+        onBack={() => setSelectedBus(null)}
+        refreshList={(value: any) => refreshList(value)}
+        canManageBus={canManageBus}
+        onCloseDetailCard={() => setSelectedBus(null)}
+      />
     </Box>
+  )}
+
+  {/* Create Bus Modal */}
+  <FormModal
+    open={openCreateModal}
+    onClose={() => setOpenCreateModal(false)}
+  >
+    <BusCreationForm
+      refreshList={refreshList}
+      onClose={() => setOpenCreateModal(false)}
+    />
+  </FormModal>
+</Box>
+// ...existing code...
   );
 };
 

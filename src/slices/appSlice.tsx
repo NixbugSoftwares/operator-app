@@ -66,6 +66,12 @@ interface BusListParams {
 
 }
 
+interface LandmarkListParams {
+  limit?: number;
+  offset?: number;
+  id?: number;
+  name?: string;
+}
 interface RouteListParams {
   limit?: number;
   offset?: number;
@@ -108,6 +114,15 @@ interface DutyListParams {
   name?: string;
   status?: number;
   type?: number;
+}
+
+interface paperTicketListParams {
+  limit?: number;
+  offset?: number;
+  id?: number;
+  service_id?: number;
+  pickup_point?:number;
+  dropping_point?:number;
 }
 
 //Logout API
@@ -155,6 +170,32 @@ export const loginUserAssignedRoleApi = createAsyncThunk<any[], number | undefin
     }
   }
 );
+
+
+export const companyUpdateApi = createAsyncThunk(
+  "/company",
+  async (
+    { formData }: { companyId: number; formData: FormData },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await commonApi.apiCall(
+        "patch",
+        `/company`,
+        formData,
+        true,
+        "application/x-www-form-urlencoded"
+      );
+      return response;
+    } catch (error: any) {
+      console.error("Backend Error Response:", error.response?.data); // Log the full error response
+      return rejectWithValue(
+        error?.response?.data?.message || "company update failed"
+      );
+    }
+  }
+);
+
 
 // *************************************************Operators Account*****************************************************************
 
@@ -222,7 +263,7 @@ export const operatorCreationApi = createAsyncThunk(
 
 //Update Operator
 export const operatorUpdationApi = createAsyncThunk(
-  "/executive/account",
+  "/account",
   async (
     { formData }: { accountId: number; formData: FormData },
     { rejectWithValue }
@@ -589,6 +630,8 @@ export const landmarkListApi = createAsyncThunk(
     }
   }
 );
+
+
 //route list Api
 
 export const busRouteListApi = createAsyncThunk(
@@ -1233,6 +1276,76 @@ export const dutyDeleteApi = createAsyncThunk(
 )
 
 
+//*********************************************paper ticket**************************************
+
+//Paper ticket listing Api
+export const paperTicketListingApi = createAsyncThunk(
+  "/paper-ticket",
+  async (params: paperTicketListParams, { rejectWithValue }) => {
+    const { limit, offset, id, service_id, pickup_point, dropping_point } = params;
+    const queryParams = {
+      limit,
+      offset,
+      ...(id && { id }),
+      ...(service_id && { service_id }),
+      ...(pickup_point && { pickup_point }),
+      ...(dropping_point && { dropping_point }),
+    };
+    try {
+      const response = await commonApi.apiCall(
+        "get",
+        "/company/service/paper_ticket",
+        queryParams,
+        true,
+        "application/json"
+      );
+      if (!response) throw new Error("No response received");
+      return {
+        data: response.data || response,
+      };
+    } catch (error: any) {
+      console.error("API Error:", error);
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to fetch paper ticket list"
+      );
+    }
+  }
+);
+//for landmark
+export const landmarkNameApi = createAsyncThunk(
+  "/landmark",
+  async (params: LandmarkListParams, { rejectWithValue }) => {
+    const { limit, offset, id, name } = params;
+    const queryParams = {
+      limit,
+      offset,
+      ...(id && { id }),
+      ...(name && { name }),
+    };
+    try {
+      const response = await commonApi.apiCall(
+        "get",
+        "/landmark",
+        queryParams,
+        true,
+        "application/json"
+      );
+      if (!response) throw new Error("No response received");
+      return {
+        data: response.data || response,
+      };
+    } catch (error: any) {
+      console.error("API Error:", error);
+      return rejectWithValue(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to fetch landmark list"
+      );
+    }
+  }
+);
 // Slice
 export const appSlice = createSlice({
   name: "app",

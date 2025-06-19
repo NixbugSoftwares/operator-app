@@ -16,6 +16,12 @@ const initialState: AuthState = {
   error: null,
 };
 
+export interface CompanyListParams {
+  limit?: number;
+  offset?: number;
+  id?: number;
+  name?: string;
+}
 
 export const LoginApi = createAsyncThunk(
   "token",
@@ -37,37 +43,41 @@ export const LoginApi = createAsyncThunk(
 
 
 //listing company
+
+
+
 export const companyListApi = createAsyncThunk(
   "/company",
-  async (_, { rejectWithValue }) => {
+  async (params: CompanyListParams, { rejectWithValue }) => {
+    const { limit, offset, id, name } = params;
+    const queryParams = {
+      limit,
+      offset,
+      ...(id && { id }),
+      ...(name && { name }),
+    };
     try {
       const response = await commonApi.apiCall(
         "get",
         "/company",
-        {},
+        queryParams,
         false,
         "application/json"
       );
-      console.log("Full API Response==================>", response);
-
-      if (Array.isArray(response)) {
-        return response;
-      }
-
-      if (!response || !response.data) {
-        throw new Error("Invalid response format");
-      }
-
-      return response.data;
+      if (!response) throw new Error("No response received");
+      return {
+        data: response.data || response,
+      };
     } catch (error: any) {
-      console.log("Error fetching company list=====================>", error);
+      console.error("API Error:", error);
       return rejectWithValue(
-        error?.response?.data?.message || "Failed to fetch company list"
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to fetch company list"
       );
     }
   }
 );
-
 
 
 

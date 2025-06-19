@@ -14,6 +14,8 @@ const Fare = lazy(() => import("../screens/fare/Fare"));
 const Service=lazy(() => import("../screens/service/service"));
 const Schedule = lazy(() => import("../screens/schedule/schedule"));
 const Duty = lazy(() => import("../screens/duty/duty"));
+const PaperTicket = lazy(() => import("../screens/ticket/ticket"));
+const Profile = lazy(() => import("../common/profile/profile"));
 const LoadingIndicator = memo(() => (
   <div
     style={{
@@ -31,7 +33,7 @@ const HomeRouter: React.FC = () => {
   return (
     <Suspense fallback={<LoadingIndicator />}>
       <Routes>
-        <Route path="/operators" element={<Operators />} />
+        <Route path="/operator" element={<Operators />} />
         <Route path="/role" element={<OperatorRole />} />
         <Route path="/bus" element={<Bus />} />
         <Route path="/busroute" element={<BusRoute />} />
@@ -39,9 +41,13 @@ const HomeRouter: React.FC = () => {
         <Route path="/service" element={<Service />} />
         <Route path="/schedule" element={<Schedule />} />
         <Route path="/duty" element={<Duty />} />
+        <Route path="/ticket" element={<PaperTicket />} />
+        <Route path="/profile" element={<Profile />} />
+        
+
         <Route
           path="*"
-          element={<Navigate to="/operators" replace />}
+          element={<Navigate to="/operator" replace />}
         />
        
       </Routes>

@@ -146,3 +146,16 @@ export interface Duty{
   status:string
   type:string
 }
+
+
+export interface PaperTicket {
+  id: number;
+  service_id: number;
+  sequence_id: number;
+  duty_id: number;
+  pickup_point: number;
+  dropping_point: number;
+  pickupName: string;
+  droppingName: string;
+  amount: number;
+}

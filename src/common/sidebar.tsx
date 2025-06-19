@@ -10,6 +10,7 @@ import {
   Typography,
   Divider,
   IconButton,
+  Collapse,
 } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -23,6 +24,9 @@ import PowerSettingsNewIcon from "@mui/icons-material/PowerSettingsNew";
 import AssignmentIndRoundedIcon from '@mui/icons-material/AssignmentIndRounded';
 import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
+import PersonIcon from '@mui/icons-material/Person';
+import ExpandLess from "@mui/icons-material/ExpandLess";
+import ExpandMore from "@mui/icons-material/ExpandMore";
 import { useTheme, useMediaQuery } from "@mui/material";
 import LogoutConfirmationModal from "./logoutModal";
 const Sidebar: React.FC = () => {
@@ -32,7 +36,7 @@ const Sidebar: React.FC = () => {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
-
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const sections = [
     {
       title: "Dashboard",
@@ -81,6 +85,9 @@ const Sidebar: React.FC = () => {
           "& .MuiDrawer-paper": {
             width: 240,
             boxSizing: "border-box",
+            display: "flex",
+            flexDirection: "column",
+            height: "100vh",
           },
         }}
       >
@@ -123,8 +130,10 @@ const Sidebar: React.FC = () => {
                           location.pathname === item.path
                             ? "primary.light"
                             : "inherit",
+                             borderRadius: 1,
                         "&:hover": {
                           backgroundColor: "#E3F2FD",
+                           borderRadius: 1,
                         },
                       }}
                     >
@@ -140,16 +149,67 @@ const Sidebar: React.FC = () => {
         </Box>
 
         {/* *******************************************************logout section******************************************************** */}
-        <Box sx={{ mt: "auto", p: 2 }}>
+        <Box sx={{ p: 2, borderTop: "1px solid #eee" }}>
           <List>
             <ListItem disablePadding>
-              <ListItemButton onClick={() => setIsLogoutModalOpen(true)}>
+              <ListItemButton
+                onClick={() => setUserMenuOpen((prev) => !prev)}
+                sx={{
+                  borderRadius: 1,
+                  mb: 1,
+                }}
+              >
                 <ListItemIcon>
-                  <PowerSettingsNewIcon color="error" />
+                  <PersonIcon />
                 </ListItemIcon>
-                <ListItemText primary="Logout" sx={{ color: "error.main" }} />
+                <ListItemText primary="User" />
+                {userMenuOpen ? < ExpandMore /> : <ExpandLess />}
               </ListItemButton>
             </ListItem>
+            <Collapse in={userMenuOpen} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItem disablePadding>
+                  <ListItemButton
+                    onClick={() => {
+                      navigate("/profile");
+                      if (isSmallScreen) setIsOpen(false);
+                      setUserMenuOpen(false);
+                    }}
+                    sx={{
+                      pl: 4,
+                      backgroundColor:
+                        location.pathname === "/profile"
+                          ? "primary.light"
+                          : "inherit",
+                      "&:hover": {
+                        backgroundColor: "#E3F2FD",
+                      },
+                      borderRadius: 1,
+                      mb: 1,
+                    }}
+                  >
+                    <ListItemIcon>
+                      <PersonIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="Profile" />
+                  </ListItemButton>
+                </ListItem>
+                <ListItem disablePadding>
+                  <ListItemButton
+                    onClick={() => {
+                      setIsLogoutModalOpen(true);
+                      setUserMenuOpen(false);
+                    }}
+                    sx={{ pl: 4 }}
+                  >
+                    <ListItemIcon>
+                      <PowerSettingsNewIcon color="error" />
+                    </ListItemIcon>
+                    <ListItemText primary="Logout" sx={{ color: "error.main" }} />
+                  </ListItemButton>
+                </ListItem>
+              </List>
+            </Collapse>
           </List>
         </Box>
       </Drawer>
