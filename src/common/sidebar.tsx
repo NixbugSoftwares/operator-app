@@ -23,7 +23,7 @@ import ScheduleIcon from '@mui/icons-material/Schedule';
 import PowerSettingsNewIcon from "@mui/icons-material/PowerSettingsNew";
 import AssignmentIndRoundedIcon from '@mui/icons-material/AssignmentIndRounded';
 import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded';
-import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
+// import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import PersonIcon from '@mui/icons-material/Person';
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
@@ -49,7 +49,7 @@ const Sidebar: React.FC = () => {
         { label: "Service", path: "/service", icon: <AssignmentIndRoundedIcon /> },
         { label: "schedule", path: "/schedule", icon: <ScheduleIcon /> },
         {label:"Duty",path:"/duty",icon:<AssignmentTurnedInRoundedIcon/>},
-        {label:"Ticket",path:"/ticket",icon:<ConfirmationNumberIcon/>},
+        // {label:"Ticket",path:"/ticket",icon:<ConfirmationNumberIcon/>},
       ],
     },
   ];

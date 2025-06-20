@@ -151,11 +151,14 @@ export interface Duty{
 export interface PaperTicket {
   id: number;
   service_id: number;
-  sequence_id: number;
   duty_id: number;
+  sequence_id: number;
   pickup_point: number;
   dropping_point: number;
   pickupName: string;
   droppingName: string;
   amount: number;
+  distance: number;
+  ticket_types: { name: string; count: number; }[];
+  created_on: string | null;
 }

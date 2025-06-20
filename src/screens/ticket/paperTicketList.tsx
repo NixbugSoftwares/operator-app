@@ -17,7 +17,7 @@ import type { AppDispatch } from "../../store/Store";
 import { showErrorToast } from "../../common/toastMessageHelper";
 import { PaperTicket } from "../../types/type";
 import PaginationControls from "../../common/paginationControl";
-// import AccountDetailsCard from "./AccountDetail";
+import TicketDetailsCard from "./papperTicketDetails";
 interface PaperTicketListingTableProps {
   serviceId?: number;
 }
@@ -55,10 +55,8 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
         // Fetch names for duty and landmarks in parallel
         const ticketsWithNames = await Promise.all(
           items.map(async (ticket: any) => {
-            let dutyName = ticket.duty_id;
             let pickupName = ticket.pickup_point;
             let droppingName = ticket.dropping_point;
-
             try {
               // Fetch pickup landmark name
               if (ticket.pickup_point) {
@@ -83,7 +81,6 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
                 droppingName = dropRes.data?.[0]?.name || ticket.dropping_point;
               }
             } catch (err) {
-              // fallback to IDs if error
             }
 
             return {
@@ -91,12 +88,14 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
               service_id: ticket.service_id,
               sequence_id: ticket.sequence_id,
               duty_id: ticket.duty_id,
-              dutyName,
               pickup_point: ticket.pickup_point,
               pickupName,
               dropping_point: ticket.dropping_point,
               droppingName,
               amount: ticket.amount,
+              distance: ticket.distance,
+              created_on: ticket.created_on,
+              ticket_types: ticket.ticket_types,
             };
           })
         );
@@ -378,15 +377,10 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
             height: "100%",
           }}
         >
-          {/* <AccountDetailsCard
-            account={selectedAccount}
-            canManageOperator={canManageOperator}
-            onUpdate={() => {}}
-            onDelete={() => {}}
-            onBack={() => setSelectedAccount(null)}
-            refreshList={(value: any) => refreshList(value)}
-            onCloseDetailCard={() => setSelectedAccount(null)}
-          /> */}
+          <TicketDetailsCard
+            ticket={selectedPaperTicket}
+            onBack={() => setSelectedPaperTicket(null)}
+          />
         </Box>
       )}
     </Box>

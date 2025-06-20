@@ -307,6 +307,16 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
               }}
             />
           </Box>
+          <Box sx={{ mt: 2, textAlign: "center"  }}>
+        <Button
+          variant="outlined"
+          color="primary"
+          sx={{ width: "300px" }}
+          onClick={() => navigate(`/ticket?service_id=${service.id}`)}
+        >
+          View All Tickets
+        </Button>
+      </Box>
         </Card>
 
         {/* Action Buttons */}
@@ -408,15 +418,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
           </Box>
         </CardActions>
       </Card>
-      <Box sx={{ mt: 2, textAlign: "center" }}>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => navigate(`/ticket?service_id=${service.id}`)}
-        >
-          View All Tickets
-        </Button>
-      </Box>
+      
 
       {/* Delete Confirmation Modal */}
       <Dialog

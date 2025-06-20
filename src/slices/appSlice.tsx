@@ -123,6 +123,7 @@ interface paperTicketListParams {
   service_id?: number;
   pickup_point?:number;
   dropping_point?:number;
+  amount?: number;  
 }
 
 //Logout API
@@ -1282,7 +1283,7 @@ export const dutyDeleteApi = createAsyncThunk(
 export const paperTicketListingApi = createAsyncThunk(
   "/paper-ticket",
   async (params: paperTicketListParams, { rejectWithValue }) => {
-    const { limit, offset, id, service_id, pickup_point, dropping_point } = params;
+    const { limit, offset, id, service_id, pickup_point, dropping_point, amount } = params;
     const queryParams = {
       limit,
       offset,
@@ -1290,6 +1291,7 @@ export const paperTicketListingApi = createAsyncThunk(
       ...(service_id && { service_id }),
       ...(pickup_point && { pickup_point }),
       ...(dropping_point && { dropping_point }),
+      ...(amount && { amount }),
     };
     try {
       const response = await commonApi.apiCall(
