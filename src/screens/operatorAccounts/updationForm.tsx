@@ -112,23 +112,25 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
     dispatch(fetchRoleMappingApi(accountId))
       .unwrap()
       .then((roleMapping) => {
-        if (roleMapping) {
-          const formData = {
-            ...accountData,
-            role: roleMapping.role_id,
-            roleAssignmentId: roleMapping.id,
-          };
-          reset(formData);
-        } else {
-          reset(accountData);
-          setRoleMappingError(true);
-        }
-      })
-      .catch((error: any) => {
-        showErrorToast(error);
-        setRoleMappingError(true);
-        reset(accountData);
-      });
+  // Check for null, undefined, or empty object
+  if (roleMapping && Object.keys(roleMapping).length > 0) {
+    const formData = {
+      ...accountData,
+      role: roleMapping.role_id,
+      roleAssignmentId: roleMapping.id,
+    };
+    reset(formData);
+    setRoleMappingError(false);
+  } else {
+    reset(accountData);
+    setRoleMappingError(true); // Show error if mapping is missing (e.g., deleted)
+  }
+})
+.catch((error: any) => {
+  showErrorToast(error);
+  reset(accountData);
+  setRoleMappingError(true); // Show error if API call fails
+});
   }, [accountId, dispatch, reset, accountData]);
 
   const handleAccountUpdate: SubmitHandler<IAccountFormInputs> = async (data) => {

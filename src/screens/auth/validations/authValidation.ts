@@ -45,12 +45,12 @@ export const accountFormSchema = yup.object().shape({
   fullName: yup
     .string()
     .nullable()
-    .notRequired()
+    .required("Full name is required")
     .test({
       name: 'fullNameValidation',
       message: (params) => {
         const value = params.value;
-        if (!value) return ''; // Skip validation if empty
+        if (!value) return ''; 
         if (/[0-9]/.test(value)) return 'Numbers are not allowed in the full name';
         if (/[^A-Za-z ]/.test(value)) return 'Special characters are not allowed';
         if (!/[A-Za-z]$/.test(value)) return 'Full name must end with a letter';
@@ -63,7 +63,6 @@ export const accountFormSchema = yup.object().shape({
 
   phoneNumber: yup
     .string()
-    .nullable()
     .notRequired()
     .matches(/^[1-9][0-9]{9}$/, "Invalid phone number format"),
  

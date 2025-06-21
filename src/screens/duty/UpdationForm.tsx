@@ -71,6 +71,8 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
   onCloseDetailCard,
   dutyData,
 }) => {
+  console.log("DutyUpdateForm props:", { dutyId, dutyData });
+  
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
   const [currentStatus, setCurrentStatus] = useState<number>(2);
@@ -106,6 +108,12 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
       type: getInitialTypeValue(dutyData.type),
       service_id: dutyData.service_id,
     },
+  });
+console.log("Initial form values:", {
+    id: dutyData.id,
+    status: getInitialStatusValue(dutyData.status),
+    type: getInitialTypeValue(dutyData.type),
+    service_id: dutyData.service_id,
   });
 
   useEffect(() => {
@@ -158,7 +166,6 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
             service: items.length === rowsPerPage,
           }));
 
-          // Set the selected service if we have the service_id
           if (pageNumber === 0 && dutyData.service_id && isFirstLoad.current) {
             const foundService = formattedList.find(
               (item: DropdownItem) => item.id === dutyData.service_id

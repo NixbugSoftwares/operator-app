@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback,  } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -9,7 +10,9 @@ import {
   TextField,
   Box,
   Typography,
+  Button,
 } from "@mui/material";
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import { useDispatch } from "react-redux";
 import { paperTicketListingApi, landmarkNameApi } from "../../slices/appSlice";
@@ -189,7 +192,7 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
 
     fetchLandmarkIdsAndTickets();
   }, [page, debouncedSearch, fetchTicketList, serviceId, dispatch]);
-
+const navigate = useNavigate();
   return (
     <Box
       sx={{
@@ -213,6 +216,20 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
           overflow: "hidden",
         }}
       >
+        <Box sx={{ mb: 2, display: "flex", alignItems: "center" }}>
+          <Button
+            onClick={() => navigate("/service")}
+            startIcon={<ArrowBackIcon />}
+            variant="outlined"
+            sx={{
+              borderRadius: 2,
+              boxShadow: "none",
+              bgcolor: "background.paper",
+            }}
+          >
+            Back to Service
+          </Button>
+        </Box>
         <TableContainer
   sx={{
     flex: 1,

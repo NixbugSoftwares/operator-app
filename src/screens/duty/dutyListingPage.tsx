@@ -131,7 +131,6 @@ const DutyListingTable = () => {
                     : duty.type === 3
                     ? "Kili"
                     : "Other",
-                
               };
             } catch (error) {
               console.error(
@@ -248,210 +247,208 @@ const DutyListingTable = () => {
           }
           placement="top-end"
         >
-          <span style={{ cursor: !canManageDuty ? "not-allowed" : "pointer" }}>
-            <Button
-              sx={{
-                ml: "auto",
-                mr: 2,
-                mb: 2,
-                backgroundColor: !canManageDuty
-                  ? "#6c87b7 !important"
-                  : "#00008B",
-                color: "white",
-                display: "flex",
-                justifyContent: "flex-end",
-              }}
-              variant="contained"
-              onClick={() => setOpenCreateModal(true)}
-              disabled={!canManageDuty}
-            >
-              Add New Duty
-            </Button>
-          </span>
+          <Button
+            sx={{
+              ml: "auto",
+              mr: 2,
+              mb: 2,
+              backgroundColor: !canManageDuty
+                ? "#6c87b7 !important"
+                : "#00008B",
+              color: "white",
+              display: "flex",
+              justifyContent: "flex-end",
+            }}
+            variant="contained"
+            onClick={() => setOpenCreateModal(true)}
+            disabled={!canManageDuty}
+            style={{ cursor: !canManageDuty ? "not-allowed" : "pointer" }}
+          >
+            Add New Duty
+          </Button>
         </Tooltip>
 
         <TableContainer
-  sx={{
-    flex: 1,
-    maxHeight: "calc(100vh - 100px)",
-    overflowY: "auto",
-    borderRadius: 2,
-    border: "1px solid #e0e0e0",
-  }}
->
-  <Table stickyHeader>
-    <TableHead>
-      <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-        {[
-          { label: "ID", width: "80px" },
-          { label: "Type", width: "120px" },
-          { label: "Status", width: "120px" },
-          { label: "Operator", width: "200px" },
-          { label: "Service", width: "200px" },
-        ].map((col, _index) => (
-          <TableCell
-            key={col.label}
-            sx={{
-              width: col.width,
-              minWidth: col.width,
-              textAlign: "center",
-              backgroundColor: "#fafafa",
-              fontWeight: 600,
-              fontSize: "0.875rem",
-              borderBottom: "1px solid #ddd",
-            }}
-          >
-            {col.label}
-          </TableCell>
-        ))}
-      </TableRow>
-      <TableRow>
-        <TableCell>
-          <TextField
-            variant="outlined"
-            size="small"
-            placeholder="Search"
-            value={search.id}
-            onChange={(e) => handleSearchChange(e, "id")}
-            fullWidth
-            type="number"
-            sx={{
-              "& .MuiInputBase-root": { height: 40 },
-              "& .MuiInputBase-input": { textAlign: "center" },
-            }}
-          />
-        </TableCell>
-        <TableCell>
-          <Select
-            value={search.type}
-            onChange={(e) => handleSelectChange(e, "type")}
-            displayEmpty
-            size="small"
-            fullWidth
-            sx={{ height: 40 }}
-          >
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="Driver">Driver</MenuItem>
-            <MenuItem value="Conductor">Conductor</MenuItem>
-            <MenuItem value="Kili">Kili</MenuItem>
-            <MenuItem value="Other">Other</MenuItem>
-          </Select>
-        </TableCell>
-        <TableCell>
-          <Select
-            value={search.status}
-            onChange={(e) => handleSelectChange(e, "status")}
-            displayEmpty
-            size="small"
-            fullWidth
-            sx={{ height: 40 }}
-          >
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="Assigned">Assigned</MenuItem>
-            <MenuItem value="Started">Started</MenuItem>
-            <MenuItem value="Terminated">Terminated</MenuItem>
-            <MenuItem value="Finished">Finished</MenuItem>
-          </Select>
-        </TableCell>
-        <TableCell />
-        <TableCell />
-      </TableRow>
-    </TableHead>
+          sx={{
+            flex: 1,
+            maxHeight: "calc(100vh - 100px)",
+            overflowY: "auto",
+            borderRadius: 2,
+            border: "1px solid #e0e0e0",
+          }}
+        >
+          <Table stickyHeader>
+            <TableHead>
+              <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                {[
+                  { label: "ID", width: "80px" },
+                  { label: "Type", width: "120px" },
+                  { label: "Status", width: "120px" },
+                  { label: "Operator", width: "200px" },
+                  { label: "Service", width: "200px" },
+                ].map((col, _index) => (
+                  <TableCell
+                    key={col.label}
+                    sx={{
+                      width: col.width,
+                      minWidth: col.width,
+                      textAlign: "center",
+                      backgroundColor: "#fafafa",
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                      borderBottom: "1px solid #ddd",
+                    }}
+                  >
+                    {col.label}
+                  </TableCell>
+                ))}
+              </TableRow>
+              <TableRow>
+                <TableCell>
+                  <TextField
+                    variant="outlined"
+                    size="small"
+                    placeholder="Search"
+                    value={search.id}
+                    onChange={(e) => handleSearchChange(e, "id")}
+                    fullWidth
+                    type="number"
+                    sx={{
+                      "& .MuiInputBase-root": { height: 40 },
+                      "& .MuiInputBase-input": { textAlign: "center" },
+                    }}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Select
+                    value={search.type}
+                    onChange={(e) => handleSelectChange(e, "type")}
+                    displayEmpty
+                    size="small"
+                    fullWidth
+                    sx={{ height: 40 }}
+                  >
+                    <MenuItem value="">All</MenuItem>
+                    <MenuItem value="Driver">Driver</MenuItem>
+                    <MenuItem value="Conductor">Conductor</MenuItem>
+                    <MenuItem value="Kili">Kili</MenuItem>
+                    <MenuItem value="Other">Other</MenuItem>
+                  </Select>
+                </TableCell>
+                <TableCell>
+                  <Select
+                    value={search.status}
+                    onChange={(e) => handleSelectChange(e, "status")}
+                    displayEmpty
+                    size="small"
+                    fullWidth
+                    sx={{ height: 40 }}
+                  >
+                    <MenuItem value="">All</MenuItem>
+                    <MenuItem value="Assigned">Assigned</MenuItem>
+                    <MenuItem value="Started">Started</MenuItem>
+                    <MenuItem value="Terminated">Terminated</MenuItem>
+                    <MenuItem value="Finished">Finished</MenuItem>
+                  </Select>
+                </TableCell>
+                <TableCell />
+                <TableCell />
+              </TableRow>
+            </TableHead>
 
-    <TableBody>
-      {dutyList.length > 0 ? (
-        dutyList.map((row) => (
-          <TableRow
-            key={row.id}
-            hover
-            onClick={() => handleRowClick(row)}
-            sx={{
-              cursor: "pointer",
-              backgroundColor:
-                selectedDuty?.id === row.id ? "#E3F2FD" : "inherit",
-              "&:hover": { backgroundColor: "#E3F2FD" },
-            }}
-          >
-            <TableCell sx={{ textAlign: "center" }}>{row.id}</TableCell>
-            <TableCell>
-  <Chip
-    label={row.type}
-    size="small"
-    sx={{
-      width: 100,
-      textAlign: "center",
-      backgroundColor:
-        row.type === "Driver"
-          ? "rgba(33, 150, 243, 0.12)" // blue
-          : row.type === "Conductor"
-          ? "rgba(156, 39, 176, 0.12)" // purple
-          : row.type === "Kili"
-          ? "rgba(0, 188, 212, 0.12)" // cyan
-          : "rgba(189, 189, 189, 0.12)", // grey
-      color:
-        row.type === "Driver"
-          ? "#1976D2"
-          : row.type === "Conductor"
-          ? "#8E24AA"
-          : row.type === "Kili"
-          ? "#0097A7"
-          : "#616161",
-      fontWeight: 600,
-      fontSize: "0.75rem",
-      borderRadius: "8px",
-    }}
-  />
-</TableCell>
+            <TableBody>
+              {dutyList.length > 0 ? (
+                dutyList.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    hover
+                    onClick={() => handleRowClick(row)}
+                    sx={{
+                      cursor: "pointer",
+                      backgroundColor:
+                        selectedDuty?.id === row.id ? "#E3F2FD" : "inherit",
+                      "&:hover": { backgroundColor: "#E3F2FD" },
+                    }}
+                  >
+                    <TableCell sx={{ textAlign: "center" }}>{row.id}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={row.type}
+                        size="small"
+                        sx={{
+                          width: 100,
+                          textAlign: "center",
+                          backgroundColor:
+                            row.type === "Driver"
+                              ? "rgba(76, 175, 80, 0.12)"
+                              : row.type === "Conductor"
+                              ? "rgba(33, 150, 243, 0.12)"
+                              : row.type === "Kili"
+                              ? "rgba(255, 152, 0, 0.15)"
+                              : "rgba(189, 189, 189, 0.12)",
+                          color:
+                            row.type === "Driver"
+                              ? "#388E3C"
+                              : row.type === "Conductor"
+                              ? "#1976D2"
+                              : row.type === "Kili"
+                              ? "#FF9800"
+                              : "#616161",
+                          fontWeight: 600,
+                          fontSize: "0.75rem",
+                          borderRadius: "8px",
+                        }}
+                      />
+                    </TableCell>
 
-<TableCell>
-  <Chip
-    label={row.status}
-    size="small"
-    sx={{
-      width: 100,
-      textAlign: "center",
-      backgroundColor:
-        row.status === "Assigned"
-          ? "rgba(255, 193, 7, 0.12)" // amber
-          : row.status === "Started"
-          ? "rgba(76, 175, 80, 0.12)" // green
-          : row.status === "Terminated"
-          ? "rgba(244, 67, 54, 0.12)" // red
-          : "rgba(158, 158, 158, 0.12)", // grey
-      color:
-        row.status === "Assigned"
-          ? "#FF9800"
-          : row.status === "Started"
-          ? "#388E3C"
-          : row.status === "Terminated"
-          ? "#D32F2F"
-          : "#757575",
-      fontWeight: 600,
-      fontSize: "0.75rem",
-      borderRadius: "8px",
-    }}
-  />
-</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={row.status}
+                        size="small"
+                        sx={{
+                          width: 100,
+                          textAlign: "center",
+                          backgroundColor:
+                            row.status === "Assigned"
+                              ? "rgba(33, 150, 243, 0.12)"
+                              : row.status === "Started"
+                              ? "rgba(76, 175, 80, 0.12)"
+                              : row.status === "Terminated"
+                              ? "rgba(244, 67, 54, 0.12)"
+                              : "rgba(158, 158, 158, 0.12)",
+                          color:
+                            row.status === "Assigned"
+                              ? "#1976D2"
+                              : row.status === "Started"
+                              ? "#388E3C"
+                              : row.status === "Terminated"
+                              ? "#D32F2F"
+                              : "#616161",
+                          fontWeight: 600,
+                          fontSize: "0.75rem",
+                          borderRadius: "8px",
+                        }}
+                      />
+                    </TableCell>
 
-            <TableCell>
-              <Typography noWrap>{row.operatorName}</Typography>
-            </TableCell>
-            <TableCell>
-              <Typography noWrap>{row.serviceName}</Typography>
-            </TableCell>
-          </TableRow>
-        ))
-      ) : (
-        <TableRow>
-          <TableCell colSpan={5} align="center">
-            No Duty found.
-          </TableCell>
-        </TableRow>
-      )}
-    </TableBody>
-  </Table>
-</TableContainer>
-
+                    <TableCell>
+                      <Typography noWrap>{row.operatorName}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography noWrap>{row.serviceName}</Typography>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} align="center">
+                    No Duty found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
         <PaginationControls
           page={page}

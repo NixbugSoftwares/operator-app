@@ -83,6 +83,7 @@ const DutyCreationForm: React.FC<IOperatorCreationFormProps> = ({
           limit: rowsPerPage,
           offset,
           fullName: searchText,
+          
         })
       )
         .unwrap()
@@ -94,10 +95,10 @@ const DutyCreationForm: React.FC<IOperatorCreationFormProps> = ({
 
           const formattedList = items.map((item: any) => ({
             id: item.id,
-            name: item.full_name ?? "-",
+            name: item.full_name ?? item.username,
           }));
 
-          console.log("fullname", formattedList.name);
+
           setDropdownData((prev) => ({
             ...prev,
             operatorList:

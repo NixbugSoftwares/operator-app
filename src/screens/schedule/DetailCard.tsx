@@ -47,16 +47,16 @@ interface ServiceCardProps {
   onCloseDetailCard: () => void;
 }
 
-const createdTriggerMap: Record<string, { label: string; color: string }> = {
-  Automatic: { label: "Automatic", color: "#616161" },
-  Manual: { label: "Manual", color: "#2E7D32" },
-  Disabled: { label: "Disabled", color: "#C62828" },
+const ticketModeMap: Record<string, { label: string; color: string; bg: string }> = {
+  Hybrid:       { label: "Hybrid",       color: "#009688", bg: "rgba(0, 150, 136, 0.15)" },      // Teal
+  Digital:      { label: "Digital",      color: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" },     // Blue
+  Conventional: { label: "Conventional", color: "#FF5722", bg: "rgba(255, 87, 34, 0.15)" },      // Deep Orange
 };
 
-const ticketModeMap: Record<string, { label: string; color: string }> = {
-  Hybrid: { label: "Hybrid", color: "#FF8F00" },
-  Digital: { label: "Digital", color: "#0097A7" },
-  Conventional: { label: "Conventional", color: "#616161" },
+const triggerModeMap: Record<string, { label: string; color: string; bg: string }> = {
+  Automatic: { label: "Automatic", color: "#1976D2", bg: "rgba(33, 150, 243, 0.12)" }, // Blue
+  Manual:    { label: "Manual",    color: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" },  // Orange
+  Disabled:  { label: "Disabled",  color: "#D32F2F", bg: "rgba(244, 67, 54, 0.12)" },  // Red
 };
 
 const dayMap = [
@@ -209,44 +209,44 @@ const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
               <b>Fare :</b> {fareName}
             </Typography>
             <Typography
-              variant="body1"
-              sx={{ display: "flex", alignItems: "center", gap: 1 }}
-            >
-              <b>Ticket Mode:</b>
-              <Chip
-                label={ticketModeMap[schedule.ticket_mode]?.label || "Unknown"}
-                sx={{
-                  bgcolor: `${ticketModeMap[schedule.ticket_mode]?.color}20`,
-                  color: ticketModeMap[schedule.ticket_mode]?.color,
-                  fontWeight: 600,
-                  borderRadius: "12px",
-                  px: 1.5,
-                  fontSize: "0.75rem",
-                  width: 150,
-                }}
-                size="small"
-              />
-            </Typography>
+  variant="body1"
+  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+>
+  <b>Ticket Mode:</b>
+  <Chip
+    label={ticketModeMap[String(schedule.ticket_mode)]?.label || "Unknown"}
+    sx={{
+      bgcolor: ticketModeMap[String(schedule.ticket_mode)]?.bg,
+      color: ticketModeMap[String(schedule.ticket_mode)]?.color,
+      fontWeight: 600,
+      borderRadius: "12px",
+      px: 1.5,
+      fontSize: "0.75rem",
+      width: 150,
+    }}
+    size="small"
+  />
+</Typography>
 
-            <Typography
-              variant="body1"
-              sx={{ display: "flex", alignItems: "center", gap: 1 }}
-            >
-              <b>Trigger Mode:</b>
-              <Chip
-                label={createdTriggerMap[schedule.trigger_mode]?.label || "Unknown"}
-                sx={{
-                  bgcolor: `${createdTriggerMap[schedule.trigger_mode]?.color}20`,
-                  color: createdTriggerMap[schedule.trigger_mode]?.color,
-                  fontWeight: 600,
-                  borderRadius: "12px",
-                  px: 1.5,
-                  fontSize: "0.75rem",
-                  width: 150,
-                }}
-                size="small"
-              />
-            </Typography>
+<Typography
+  variant="body1"
+  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+>
+  <b>Trigger Mode:</b>
+  <Chip
+    label={triggerModeMap[String(schedule.trigger_mode)]?.label || "Unknown"}
+    sx={{
+      bgcolor: triggerModeMap[String(schedule.trigger_mode)]?.bg,
+      color: triggerModeMap[String(schedule.trigger_mode)]?.color,
+      fontWeight: 600,
+      borderRadius: "12px",
+      px: 1.5,
+      fontSize: "0.75rem",
+      width: 150,
+    }}
+    size="small"
+  />
+</Typography>
             <Typography variant="body1">
   <b>Active Days:</b>{" "}
   {schedule.frequency && Array.isArray(schedule.frequency)

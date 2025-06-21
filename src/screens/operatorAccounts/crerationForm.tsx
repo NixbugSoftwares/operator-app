@@ -31,7 +31,7 @@ import {
 interface IAccountFormInputs {
   username: string;
   password: string;
-  fullName?: string;  
+  fullName: string;  
   phoneNumber?: string;  
   email?: string;  
   gender?: number;  
@@ -220,6 +220,7 @@ finally {
             margin="normal"
             fullWidth
             label="Full Name"
+            required
             {...register("fullName")}
             error={!!errors.fullName}
             helperText={errors.fullName?.message}

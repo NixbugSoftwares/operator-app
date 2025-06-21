@@ -43,18 +43,18 @@ interface Route {
 }
 
 const BusRouteListing = () => {
-  
   const [showCreationForm, setShowCreationForm] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const [routeList, setRouteList] = useState<Route[]>([]);
   const [landmarks, setLandmarks] = useState<SelectedLandmark[]>([]);
   const [routeToDelete, setRouteToDelete] = useState<Route | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [selectedRoute, setSelectedRoute] = useState<{id: number;
+  const [selectedRoute, setSelectedRoute] = useState<{
+    id: number;
     name: string;
     starting_time: string;
   } | null>(null);
-  
+
   const mapRef = useRef<{
     clearRoutePath: () => void;
     toggleAddLandmarkMode?: () => void;
@@ -67,9 +67,9 @@ const BusRouteListing = () => {
   const [newRouteLandmarks, setNewRouteLandmarks] = useState<
     SelectedLandmark[]
   >([]);
-  const [routeStartingTime, setRouteStartingTime] = useState('');
-  const [search, setSearch] = useState({ id: "", name: "", });
-   const [debouncedSearch, setDebouncedSearch] = useState(search);
+  const [routeStartingTime, setRouteStartingTime] = useState("");
+  const [search, setSearch] = useState({ id: "", name: "" });
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
   const debounceRef = useRef<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(0);
@@ -79,41 +79,37 @@ const BusRouteListing = () => {
     state.app.permissions.includes("manage_route")
   );
 
-
-
-
-
-    const handleStartingTimeChange = (time: string) => {
+  const handleStartingTimeChange = (time: string) => {
     setRouteStartingTime(time);
   };
 
- 
-
-  const fetchRoute= useCallback((pageNumber: number, searchParams = {}) => {
-    setIsLoading(true);
-    const offSet= pageNumber * rowsPerPage;
-    dispatch(busRouteListApi({ limit: rowsPerPage, offset: offSet, ...searchParams }))
-      .unwrap()
-      .then((res) => {
-        const items = res.data || [];
-        console.log("items", items);
-        const formattedRoute = items.map((route: any) => ({
-          id: route.id,
-          name: route.name,
-          starting_time: route.starting_time
-        }))
-        setRouteList(formattedRoute);
-        setHasNextPage(items.length === rowsPerPage);
-
-      })
-              .catch((error) => {
-                console.error("Fetch Error:", error);
-                showErrorToast(error.message || "Failed to fetch Bus Route list");
-              })
-              .finally(() => setIsLoading(false));
-          },
-          [dispatch]
-        );
+  const fetchRoute = useCallback(
+    (pageNumber: number, searchParams = {}) => {
+      setIsLoading(true);
+      const offSet = pageNumber * rowsPerPage;
+      dispatch(
+        busRouteListApi({ limit: rowsPerPage, offset: offSet, ...searchParams })
+      )
+        .unwrap()
+        .then((res) => {
+          const items = res.data || [];
+          console.log("items", items);
+          const formattedRoute = items.map((route: any) => ({
+            id: route.id,
+            name: route.name,
+            starting_time: route.starting_time,
+          }));
+          setRouteList(formattedRoute);
+          setHasNextPage(items.length === rowsPerPage);
+        })
+        .catch((error) => {
+          console.error("Fetch Error:", error);
+          showErrorToast(error.message || "Failed to fetch Bus Route list");
+        })
+        .finally(() => setIsLoading(false));
+    },
+    [dispatch]
+  );
 
   useEffect(() => {
     const fetchRouteLandmarks = async () => {
@@ -151,39 +147,38 @@ const BusRouteListing = () => {
     };
   }, []);
 
- const handleSearchChange = useCallback(
-     (
-       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-       column: keyof typeof search
-     ) => {
-       const value = e.target.value;
-       setSearch((prev) => ({ ...prev, [column]: value }));
- 
-       if (debounceRef.current) clearTimeout(debounceRef.current);
-       debounceRef.current = window.setTimeout(() => {
-         setDebouncedSearch((prev) => ({ ...prev, [column]: value }));
-         setPage(0);
-       }, 700);
-     },
-     []
-   );
+  const handleSearchChange = useCallback(
+    (
+      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+      column: keyof typeof search
+    ) => {
+      const value = e.target.value;
+      setSearch((prev) => ({ ...prev, [column]: value }));
+
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = window.setTimeout(() => {
+        setDebouncedSearch((prev) => ({ ...prev, [column]: value }));
+        setPage(0);
+      }, 700);
+    },
+    []
+  );
 
   const handleChangePage = useCallback(
-      (_event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
-        setPage(newPage);
-      },
-      []
-    );
+    (_event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
+      setPage(newPage);
+    },
+    []
+  );
 
-    useEffect(() => {
-        const searchParams: any = {
-          ...(debouncedSearch.id && { id: debouncedSearch.id }),
-          ...(debouncedSearch.name && { name: debouncedSearch.name }),
-          
-        };
-    
-        fetchRoute(page, searchParams);
-      }, [page, debouncedSearch, fetchRoute]);
+  useEffect(() => {
+    const searchParams: any = {
+      ...(debouncedSearch.id && { id: debouncedSearch.id }),
+      ...(debouncedSearch.name && { name: debouncedSearch.name }),
+    };
+
+    fetchRoute(page, searchParams);
+  }, [page, debouncedSearch, fetchRoute]);
 
   const toggleCreationForm = () => {
     setShowCreationForm(!showCreationForm);
@@ -195,7 +190,6 @@ const BusRouteListing = () => {
   const handleRouteCreated = () => {
     setShowCreationForm(true);
     setLandmarks([]);
- 
   };
 
   const handleAddLandmark = (landmark: SelectedLandmark) => {
@@ -313,10 +307,9 @@ const BusRouteListing = () => {
               onSuccess={handleRouteCreated}
               onCancel={toggleCreationForm}
               onClearRoute={() => mapRef.current?.clearRoutePath()}
-              mapRef={mapRef} 
+              mapRef={mapRef}
               onStartingTimeChange={handleStartingTimeChange}
               refreshList={refreshList}
-
             />
           </>
         ) : (
@@ -365,15 +358,18 @@ const BusRouteListing = () => {
               </Tooltip>
             </Stack>
 
-            <TableContainer  sx={{
-    flex: 1,
-    maxHeight: "calc(100vh - 100px)",
-    overflowY: "auto",
-    borderRadius: 2,
-    border: "1px solid #e0e0e0", }}>
+            <TableContainer
+              sx={{
+        flex: 1,
+        maxHeight: "calc(100vh - 180px)", 
+        overflowY: "auto",
+        borderRadius: 2,
+        border: "1px solid #e0e0e0",
+      }}
+            >
               <Table stickyHeader>
                 <TableHead>
-                  <TableRow sx={{ backgroundColor: "#f5f5f5" }} >
+                  <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
                     <TableCell sx={{ width: "20%" }}>
                       <Box
                         display="flex"
@@ -427,79 +423,81 @@ const BusRouteListing = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                 {routeList.length>0?(
-                  routeList.map((row) => (
-                   
-               
-                        <TableRow key={row.id} hover>
-                          <TableCell>{row.id}</TableCell>
-                          <TableCell
-                            sx={{
-                              cursor: "pointer",
-                            }}
-                            onClick={() =>
-                              setSelectedRoute({
-                                id: row.id,
-                                name: row.name,
-                                starting_time: row.starting_time,
-                              })
+                  {routeList.length > 0 ? (
+                    routeList.map((row) => (
+                      <TableRow key={row.id} hover>
+                        <TableCell>{row.id}</TableCell>
+                        <TableCell
+                          sx={{
+                            cursor: "pointer",
+                          }}
+                          onClick={() =>
+                            setSelectedRoute({
+                              id: row.id,
+                              name: row.name,
+                              starting_time: row.starting_time,
+                            })
+                          }
+                        >
+                          {row.name}
+                        </TableCell>
+                        <TableCell sx={{ textAlign: "center", boxShadow: 1 }}>
+                          <Tooltip
+                            title={
+                              !canManageRoutes
+                                ? "You don't have permission, contact the admin"
+                                : " DELETE the route"
                             }
+                            placement="top-end"
                           >
-                            {row.name}
-                          </TableCell>
-                          <TableCell sx={{ textAlign: "center", boxShadow: 1 }}>
-                            <Tooltip
-                              title={
-                                !canManageRoutes
-                                  ? "You don't have permission, contact the admin"
-                                  : " DELETE the route"
-                              }
-                              placement="top-end"
+                            <span
+                              style={{
+                                cursor: !canManageRoutes
+                                  ? "not-allowed"
+                                  : "default",
+                              }}
                             >
-                              <span
-                                style={{
-                                  cursor: !canManageRoutes
-                                    ? "not-allowed"
-                                    : "default",
+                              <Button
+                                variant="contained"
+                                color="error"
+                                size="small"
+                                startIcon={<DeleteIcon />}
+                                disabled={!canManageRoutes}
+                                onClick={() => handleDeleteClick(row)}
+                                sx={{
+                                  ml: "auto",
+                                  mr: 2,
+                                  mb: 2,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1,
+                                  textTransform: "none",
+                                  borderRadius: 2,
+                                  fontWeight: 500,
+                                  boxShadow: "none",
+                                  backgroundColor: !canManageRoutes
+                                    ? "#f46a6a"
+                                    : "#d32f2f",
+                                  color: "#fff",
+                                  "&:hover": {
+                                    backgroundColor: !canManageRoutes
+                                      ? "#f46a6a"
+                                      : "#b71c1c",
+                                    boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+                                  },
+                                  "&.Mui-disabled": {
+                                    backgroundColor: "#f46a6a",
+                                    color: "#ffffff99",
+                                  },
                                 }}
                               >
-                               <Button
-  variant="contained"
-  color="error"
-  size="small"
-  startIcon={<DeleteIcon />}
-  disabled={!canManageRoutes}
-  onClick={() => handleDeleteClick(row)}
-  sx={{
-    ml: "auto",
-    mr: 2,
-    mb: 2,
-    display: "flex",
-    alignItems: "center",
-    gap: 1,
-    textTransform: "none",
-    borderRadius: 2,
-    fontWeight: 500,
-    boxShadow: "none",
-    backgroundColor: !canManageRoutes ? "#f46a6a" : "#d32f2f",
-    color: "#fff",
-    "&:hover": {
-      backgroundColor: !canManageRoutes ? "#f46a6a" : "#b71c1c",
-      boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
-    },
-    "&.Mui-disabled": {
-      backgroundColor: "#f46a6a",
-      color: "#ffffff99",
-    },
-  }}
->
-  Delete
-</Button>
-                              </span>
-                            </Tooltip>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                                Delete
+                              </Button>
+                            </span>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    ))
                   ) : (
                     <TableRow>
                       <TableCell colSpan={3} align="center">
@@ -510,13 +508,25 @@ const BusRouteListing = () => {
                 </TableBody>
               </Table>
             </TableContainer>
-<PaginationControls
-          page={page}
-          onPageChange={(newPage) => handleChangePage(null, newPage)}
-          isLoading={isLoading}
-          hasNextPage={hasNextPage}
-        />
-           
+            <Box
+      sx={{
+        position: "absolute",
+        left: 0,
+        bottom: 0,
+        width: "100%",
+        bgcolor: "#fff",
+        borderTop: "1px solid #e0e0e0",
+        zIndex: 2,
+        p: 1,
+      }}
+    >
+      <PaginationControls
+        page={page}
+        onPageChange={(newPage) => handleChangePage(null, newPage)}
+        isLoading={isLoading}
+        hasNextPage={hasNextPage}
+      />
+    </Box>
           </>
         )}
       </Box>
@@ -541,7 +551,7 @@ const BusRouteListing = () => {
           mode={selectedRoute ? "view" : "create"}
           isEditing={isEditingRoute}
           selectedLandmarks={isEditingRoute ? newRouteLandmarks : landmarks}
-           startingTime={routeStartingTime} 
+          startingTime={routeStartingTime}
         />
       </Box>
 
@@ -562,9 +572,7 @@ const BusRouteListing = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
-          <Button 
-          onClick={handleRouteDelete}
-           color="error" autoFocus>
+          <Button onClick={handleRouteDelete} color="error" autoFocus>
             Delete
           </Button>
         </DialogActions>

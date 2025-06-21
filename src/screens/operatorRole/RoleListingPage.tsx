@@ -177,7 +177,6 @@ const RoleListingTable = () => {
           }
           placement="top-end"
         >
-          <span style={{ cursor: !canManageRole ? "not-allowed" : "default" }}>
             <Button
               sx={{
                 ml: "auto",
@@ -196,10 +195,10 @@ const RoleListingTable = () => {
               variant="contained"
               disabled={!canManageRole}
               onClick={() => setOpenCreateModal(true)}
+              style={{ cursor: !canManageRole ? "not-allowed" : "default" }}
             >
               Add Role
             </Button>
-          </span>
         </Tooltip>
 
         <TableContainer

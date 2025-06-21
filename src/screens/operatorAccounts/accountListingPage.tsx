@@ -175,34 +175,33 @@ const AccountListingTable = () => {
     }}
   >
     <Tooltip
-      title={
-        !canManageOperator
-          ? "You don't have permission, contact the admin"
-          : "Click to open the account creation form"
-      }
-      placement="top-end"
-    >
-      <span style={{ cursor: !canManageOperator ? "not-allowed" : "pointer" }}>
-        <Button
-          sx={{
-            ml: "auto",
-            mr: 2,
-            mb: 2,
-            backgroundColor: !canManageOperator
-              ? "#6c87b7 !important"
-              : "#00008B",
-            color: "white",
-            display: "flex",
-            justifyContent: "flex-end",
-          }}
-          variant="contained"
-          onClick={() => setOpenCreateModal(true)}
-          disabled={!canManageOperator}
-        >
-          Create Account
-        </Button>
-      </span>
-    </Tooltip>
+  title={
+    !canManageOperator
+      ? "You don't have permission, contact the admin"
+      : "Click to open the account creation form"
+  }
+  placement="top-end"
+>
+  <Button
+    sx={{
+      ml: "auto",
+      mr: 2,
+      mb: 2,
+      backgroundColor: !canManageOperator
+        ? "#6c87b7 !important"
+        : "#00008B",
+      color: "white",
+      display: "flex",
+      justifyContent: "flex-end",
+    }}
+    variant="contained"
+    onClick={() => setOpenCreateModal(true)}
+    disabled={!canManageOperator}
+    style={{ cursor: !canManageOperator ? "not-allowed" : "pointer" }}
+  >
+    Create Account
+  </Button>
+</Tooltip>
     <TableContainer
       sx={{
         flex: 1,

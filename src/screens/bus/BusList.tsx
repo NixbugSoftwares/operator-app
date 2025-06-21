@@ -155,7 +155,6 @@ const BusListingTable = () => {
       }
       placement="top-end"
     >
-      <span style={{ cursor: !canManageBus ? "not-allowed" : "pointer" }}>
         <Button
           sx={{
             ml: "auto",
@@ -171,10 +170,10 @@ const BusListingTable = () => {
           variant="contained"
           onClick={() => setOpenCreateModal(true)}
           disabled={!canManageBus}
+          style={{ cursor: !canManageBus ? "not-allowed" : "pointer" }}
         >
           Add New Bus
         </Button>
-      </span>
     </Tooltip>
 
 <TableContainer

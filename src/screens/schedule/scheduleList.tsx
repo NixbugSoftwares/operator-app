@@ -223,28 +223,25 @@ const ScheduleListingTable = () => {
           }
           placement="top-end"
         >
-          <span
+          <Button
+            sx={{
+              ml: "auto",
+              mr: 2,
+              mb: 2,
+              backgroundColor: !canManageSchedule
+                ? "#6c87b7 !important"
+                : "#00008B",
+              color: "white",
+              display: "flex",
+              justifyContent: "flex-end",
+            }}
+            variant="contained"
+            onClick={() => setOpenCreateModal(true)}
+            disabled={!canManageSchedule}
             style={{ cursor: !canManageSchedule ? "not-allowed" : "pointer" }}
           >
-            <Button
-              sx={{
-                ml: "auto",
-                mr: 2,
-                mb: 2,
-                backgroundColor: !canManageSchedule
-                  ? "#6c87b7 !important"
-                  : "#00008B",
-                color: "white",
-                display: "flex",
-                justifyContent: "flex-end",
-              }}
-              variant="contained"
-              onClick={() => setOpenCreateModal(true)}
-              disabled={!canManageSchedule}
-            >
-              Add New Schedule
-            </Button>
-          </span>
+            Add New Schedule
+          </Button>
         </Tooltip>
 
         <TableContainer
@@ -379,16 +376,16 @@ const ScheduleListingTable = () => {
                           textAlign: "center",
                           backgroundColor:
                             String(row.ticket_mode) === "Hybrid"
-                              ? "rgba(255, 193, 7, 0.12)"
+                              ? "rgba(0, 150, 136, 0.15)"
                               : String(row.ticket_mode) === "Digital"
-                              ? "rgba(0, 188, 212, 0.12)"
-                              : "rgba(158, 158, 158, 0.12)",
+                              ? "rgba(33, 150, 243, 0.15)"
+                              : "rgba(255, 87, 34, 0.15)",
                           color:
                             String(row.ticket_mode) === "Hybrid"
-                              ? "#FF8F00"
+                              ? "#009688"
                               : String(row.ticket_mode) === "Digital"
-                              ? "#0097A7"
-                              : "#616161",
+                              ? "#2196F3"
+                              : "#FF5722",
                           fontWeight: 600,
                           fontSize: "0.75rem",
                           borderRadius: "8px",
@@ -404,20 +401,20 @@ const ScheduleListingTable = () => {
                           textAlign: "center",
                           backgroundColor:
                             String(row.trigger_mode) === "Automatic"
-                              ? "rgba(158, 158, 158, 0.12)"
+                              ? "rgba(33, 150, 243, 0.12)"
                               : String(row.trigger_mode) === "Manual"
-                              ? "rgba(76, 175, 80, 0.12)"
+                              ? "rgba(255, 152, 0, 0.15)"
                               : String(row.trigger_mode) === "Disabled"
                               ? "rgba(244, 67, 54, 0.12)"
-                              : "rgba(103, 58, 183, 0.12)",
+                              : "rgba(158, 158, 158, 0.12)",
                           color:
                             String(row.trigger_mode) === "Automatic"
-                              ? "#616161"
+                              ? "#1976D2"
                               : String(row.trigger_mode) === "Manual"
-                              ? "#2E7D32"
+                              ? "#FF9800"
                               : String(row.trigger_mode) === "Disabled"
-                              ? "#C62828"
-                              : "#4527A0",
+                              ? "#D32F2F"
+                              : "#616161",
                           fontWeight: 600,
                           fontSize: "0.75rem",
                           borderRadius: "8px",

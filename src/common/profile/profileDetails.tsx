@@ -70,6 +70,17 @@ const ProfilePage: React.FC = () => {
   const getStatus = (value: number): UserStatus => {
     return value === 1 ? 'Active' : 'Suspended';
   };
+  const getCompanyStatus = (value: number): CompanyStatus => {
+    switch (value) {
+      case 1: return 'Validating';
+      case 2: return 'Verified';
+      default: return 'Suspended';
+    }
+  };
+
+  const getCompanyType = (value: number): CompanyType => {
+    return value === 1 ? 'Private' : 'Government';
+  };
 
   const getStatusColor = (status: UserStatus | CompanyStatus) => {
     switch (status) {
@@ -113,8 +124,8 @@ const ProfilePage: React.FC = () => {
             location: company.location,
             phoneNumber: company.phone_number,
             address: company.address,
-            status: company.status,
-            type: company.type,
+            status: getCompanyStatus(company.status),
+            type: getCompanyType(company.type),
           },
         });
       }

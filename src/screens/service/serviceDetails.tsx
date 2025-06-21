@@ -18,6 +18,7 @@ import {
 
 import { Delete as DeleteIcon } from "@mui/icons-material";
 import AssignmentIndRoundedIcon from "@mui/icons-material/AssignmentIndRounded";
+import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import { useAppDispatch } from "../../store/Hooks";
 import {
   serviceDeleteApi,
@@ -50,22 +51,57 @@ interface ServiceCardProps {
   onCloseDetailCard: () => void;
 }
 
-const statusMap: Record<string, { label: string; color: string }> = {
-  Created: { label: "Created", color: "#616161" },
-  Started: { label: "Started", color: "#2E7D32" },
-  Terminated: { label: "Terminated", color: "#C62828" },
-  Ended: { label: "Ended", color: "#4527A0" },
+const statusMap: Record<string, { label: string; color: string; bg: string }> =
+  {
+    Created: {
+      label: "Created",
+      color: "#1976D2",
+      bg: "rgba(33, 150, 243, 0.12)",
+    }, // Blue
+    Started: {
+      label: "Started",
+      color: "#388E3C",
+      bg: "rgba(76, 175, 80, 0.12)",
+    }, // Green
+    Terminated: {
+      label: "Terminated",
+      color: "#D32F2F",
+      bg: "rgba(244, 67, 54, 0.12)",
+    }, // Red
+    Ended: {
+      label: "Ended",
+      color: "#616161",
+      bg: "rgba(158, 158, 158, 0.12)",
+    }, // Grey
+  };
+
+const ticketModeMap: Record<
+  string,
+  { label: string; color: string; bg: string }
+> = {
+  Hybrid: { label: "Hybrid", color: "#009688", bg: "rgba(0, 150, 136, 0.15)" }, // Teal
+  Digital: {
+    label: "Digital",
+    color: "#2196F3",
+    bg: "rgba(33, 150, 243, 0.15)",
+  }, // Blue
+  Conventional: {
+    label: "Conventional",
+    color: "#FF5722",
+    bg: "rgba(255, 87, 34, 0.15)",
+  }, // Deep Orange
 };
 
-const ticketModeMap: Record<string, { label: string; color: string }> = {
-  Hybrid: { label: "Hybrid", color: "#FF8F00" },
-  Digital: { label: "Digital", color: "#0097A7" },
-  Conventional: { label: "Conventional", color: "#616161" },
-};
-
-const createdModeMap: Record<string, { label: string; color: string }> = {
-  Manual: { label: "Manual", color: "#FF8F00" },
-  Automatic: { label: "Automatic", color: "#0097A7" },
+const createdModeMap: Record<
+  string,
+  { label: string; color: string; bg: string }
+> = {
+  Manual: { label: "Manual", color: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" }, // Orange
+  Automatic: {
+    label: "Automatic",
+    color: "#3F51B5",
+    bg: "rgba(63, 81, 181, 0.15)",
+  }, // Indigo
 };
 
 const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
@@ -83,9 +119,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
   const [routeName, setRouteName] = useState("Route not found");
   const [busName, setBusName] = useState("Bus not found");
   const [fareName, setFareName] = useState("Fare not found");
-  const navigate = useNavigate(); 
-
-
+  const navigate = useNavigate();
 
   const fetchRouteName = async () => {
     try {
@@ -215,11 +249,30 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
               variant="body1"
               sx={{ display: "flex", alignItems: "center", gap: 1 }}
             >
+              <b>Status:</b>
+              <Chip
+                label={statusMap[service.status]?.label || "Unknown"}
+                sx={{
+                  bgcolor: statusMap[service.status]?.bg,
+                  color: statusMap[service.status]?.color,
+                  fontWeight: "bold",
+                  borderRadius: "12px",
+                  px: 1.5,
+                  fontSize: "0.75rem",
+                  width: 150,
+                }}
+                size="small"
+              />
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{ display: "flex", alignItems: "center", gap: 1 }}
+            >
               <b>Ticket Mode:</b>
               <Chip
                 label={ticketModeMap[service.ticket_mode]?.label || "Unknown"}
                 sx={{
-                  bgcolor: `${ticketModeMap[service.ticket_mode]?.color}20`,
+                  bgcolor: ticketModeMap[service.ticket_mode]?.bg,
                   color: ticketModeMap[service.ticket_mode]?.color,
                   fontWeight: 600,
                   borderRadius: "12px",
@@ -238,7 +291,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
               <Chip
                 label={createdModeMap[service.created_mode]?.label || "Unknown"}
                 sx={{
-                  bgcolor: `${createdModeMap[service.created_mode]?.color}20`,
+                  bgcolor: createdModeMap[service.created_mode]?.bg,
                   color: createdModeMap[service.created_mode]?.color,
                   fontWeight: "bold",
                   borderRadius: "12px",
@@ -249,25 +302,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
                 size="small"
               />
             </Typography>
-            <Typography
-              variant="body1"
-              sx={{ display: "flex", alignItems: "center", gap: 1 }}
-            >
-              <b>Status:</b>
-              <Chip
-                label={statusMap[service.status]?.label || "Unknown"}
-                sx={{
-                  bgcolor: `${statusMap[service.status]?.color}20`,
-                  color: statusMap[service.status]?.color,
-                  fontWeight: "bold",
-                  borderRadius: "12px",
-                  px: 1.5,
-                  fontSize: "0.75rem",
-                  width: 150,
-                }}
-                size="small"
-              />
-            </Typography>
+
             <Typography variant="body1">
               <b>Starting Date:</b>{" "}
               {formatUTCDateToLocal(service.starting_date)}
@@ -283,9 +318,9 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
               InputProps={{
                 readOnly: true,
                 sx: {
-                  cursor: "default", 
+                  cursor: "default",
                   "& input": {
-                    userSelect: "none", 
+                    userSelect: "none",
                   },
                 },
               }}
@@ -297,7 +332,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
                     borderColor: "grey.300",
                   },
                   "&.Mui-focused fieldset": {
-                    borderColor: "grey.300", 
+                    borderColor: "grey.300",
                   },
                 },
                 "& .MuiInputBase-inputMultiline": {
@@ -307,16 +342,17 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
               }}
             />
           </Box>
-          <Box sx={{ mt: 2, textAlign: "center"  }}>
-        <Button
-          variant="outlined"
-          color="primary"
-          sx={{ width: "300px" }}
-          onClick={() => navigate(`/ticket?service_id=${service.id}`)}
-        >
-          View All Tickets
-        </Button>
-      </Box>
+          <Box sx={{ mt: 2, textAlign: "center" }}>
+            <Button
+              variant="outlined"
+              color="secondary"
+              sx={{ width: "300px" }}
+              onClick={() => navigate(`/ticket?service_id=${service.id}`)}
+            >
+              <ConfirmationNumberIcon sx={{ mr: 1 }} />
+              View All Tickets
+            </Button>
+          </Box>
         </Card>
 
         {/* Action Buttons */}
@@ -418,7 +454,6 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
           </Box>
         </CardActions>
       </Card>
-      
 
       {/* Delete Confirmation Modal */}
       <Dialog

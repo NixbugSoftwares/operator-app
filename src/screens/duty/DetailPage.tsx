@@ -39,19 +39,19 @@ interface DutyCardProps {
   canManageDuty: boolean;
   onCloseDetailCard: () => void;
 }
-const statusMap: Record<string, { label: string; color: string }> = {
-  Assigned: { label: "Assigned", color: "#42a5f5" },
-  Started: { label: "Started", color: "#66bb6a" },
-  Terminated: { label: "Terminated", color: "#ef5350" },
-  Finished: { label: "Finished", color: "#ab47bc" },
+const statusMap: Record<string, { label: string; color: string; bg: string }> = {
+  Assigned:    { label: "Assigned",    color: "#1976D2", bg: "rgba(33, 150, 243, 0.12)" }, // Blue
+  Started:     { label: "Started",     color: "#388E3C", bg: "rgba(76, 175, 80, 0.12)" },  // Green
+  Terminated:  { label: "Terminated",  color: "#D32F2F", bg: "rgba(244, 67, 54, 0.12)" },  // Red
+  Finished:    { label: "Finished",    color: "#616161", bg: "rgba(158, 158, 158, 0.12)" } // Grey
 };
 
-const typeMap: Record<string, { label: string; color: string }> = {
-    Driver: { label: "Driver", color: "#42a5f5" },
-    Conductor: { label: "Conductor", color: "#66bb6a" },
-    Kili: { label: "Kili", color: "#ef5350" },
-    Other: { label: "Other", color: "#ab47bc" },
-}
+const typeMap: Record<string, { label: string; color: string; bg: string }> = {
+  Driver:     { label: "Driver",     color: "#388E3C", bg: "rgba(76, 175, 80, 0.12)" },      // Green
+  Conductor:  { label: "Conductor",  color: "#1976D2", bg: "rgba(33, 150, 243, 0.12)" },     // Blue
+  Kili:       { label: "Kili",       color: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" },      // Orange
+  Other:      { label: "Other",      color: "#616161", bg: "rgba(189, 189, 189, 0.12)" }     // Grey
+};
 const DutyDetailsCard: React.FC<DutyCardProps> = ({
   duty,
   refreshList,
@@ -134,36 +134,38 @@ const canDeleteDuty =
             <Typography variant="body2" color="textSecondary">
               <b>Service:</b> {duty.serviceName}
             </Typography>
-            <Typography variant="body1" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        <b>Status:</b>
-        <Chip
-          label={statusMap[duty.status]?.label || "Unknown"}
-          sx={{
-            bgcolor: `${statusMap[duty.status]?.color}20`,
-            color: statusMap[duty.status]?.color,
-            fontWeight: "bold",
-            borderRadius: "12px",
-            px: 1.5,
-            fontSize: "0.75rem",
-          }}
-          size="small"
-        />
-      </Typography>
-      <Typography variant="body1" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        <b>Type:</b>
-        <Chip
-          label={typeMap[duty.type]?.label || "Unknown"}
-          sx={{
-            bgcolor: `${typeMap[duty.type]?.color}20`,
-            color: statusMap[duty.type]?.color,
-            fontWeight: "bold",
-            borderRadius: "12px",
-            px: 1.5,
-            fontSize: "0.75rem",
-          }}
-          size="small"
-        />
-      </Typography>
+          <Typography variant="body1" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+  <b>Status:</b>
+  <Chip
+    label={statusMap[duty.status]?.label || "Unknown"}
+    sx={{
+      bgcolor: statusMap[duty.status]?.bg,
+      color: statusMap[duty.status]?.color,
+      fontWeight: "bold",
+      borderRadius: "12px",
+      px: 1.5,
+      fontSize: "0.75rem",
+      width: 120,
+    }}
+    size="small"
+  />
+</Typography>
+<Typography variant="body1" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+  <b>Type:</b>
+  <Chip
+    label={typeMap[duty.type]?.label || "Unknown"}
+    sx={{
+      bgcolor: typeMap[duty.type]?.bg,
+      color: typeMap[duty.type]?.color,
+      fontWeight: "bold",
+      borderRadius: "12px",
+      px: 1.5,
+      fontSize: "0.75rem",
+      width: 120,
+    }}
+    size="small"
+  />
+</Typography>
           </Box>
           
         </Card>

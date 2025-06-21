@@ -90,17 +90,27 @@ const ServiceListingTable = () => {
     (pageNumber: number, searchParams: Partial<SearchFilter> = {}) => {
       setIsLoading(true);
       const offset = pageNumber * rowsPerPage;
-      
+
       // Convert display values to backend values
       const backendSearchParams = {
-  ...searchParams,
-  ticket_mode: searchParams.ticket_mode ? +getTicketModeBackendValue(searchParams.ticket_mode) : undefined,
-  status: searchParams.status ? +getStatusBackendValue(searchParams.status) : undefined,
-  created_mode: searchParams.created_mode ? +getCreatedModeBackendValue(searchParams.created_mode) : undefined
-};
+        ...searchParams,
+        ticket_mode: searchParams.ticket_mode
+          ? +getTicketModeBackendValue(searchParams.ticket_mode)
+          : undefined,
+        status: searchParams.status
+          ? +getStatusBackendValue(searchParams.status)
+          : undefined,
+        created_mode: searchParams.created_mode
+          ? +getCreatedModeBackendValue(searchParams.created_mode)
+          : undefined,
+      };
 
       dispatch(
-        serviceListingApi({ limit: rowsPerPage, offset, ...backendSearchParams })
+        serviceListingApi({
+          limit: rowsPerPage,
+          offset,
+          ...backendSearchParams,
+        })
       )
         .unwrap()
         .then((res) => {
@@ -204,7 +214,9 @@ const ServiceListingTable = () => {
     >
       <Box
         sx={{
-          flex: selectedService ? { xs: "0 0 100%", md: "0 0 65%" } : "0 0 100%",
+          flex: selectedService
+            ? { xs: "0 0 100%", md: "0 0 65%" }
+            : "0 0 100%",
           maxWidth: selectedService ? { xs: "100%", md: "65%" } : "100%",
           transition: "all 0.3s ease",
           height: "100%",
@@ -221,26 +233,25 @@ const ServiceListingTable = () => {
           }
           placement="top-end"
         >
-          <span style={{ cursor: !canManageService ? "not-allowed" : "pointer" }}>
-            <Button
-              sx={{
-                ml: "auto",
-                mr: 2,
-                mb: 2,
-                backgroundColor: !canManageService
-                  ? "#6c87b7 !important"
-                  : "#00008B",
-                color: "white",
-                display: 'flex',
-                justifyContent: 'flex-end'
-              }}
-              variant="contained"
-              onClick={() => setOpenCreateModal(true)}
-              disabled={!canManageService}
-            >
-              Add New Service
-            </Button>
-          </span>
+          <Button
+            sx={{
+              ml: "auto",
+              mr: 2,
+              mb: 2,
+              backgroundColor: !canManageService
+                ? "#6c87b7 !important"
+                : "#00008B",
+              color: "white",
+              display: "flex",
+              justifyContent: "flex-end",
+            }}
+            variant="contained"
+            onClick={() => setOpenCreateModal(true)}
+            disabled={!canManageService}
+            style={{ cursor: !canManageService ? "not-allowed" : "pointer" }}
+          >
+            Add New Service
+          </Button>
         </Tooltip>
 
         <TableContainer
@@ -258,8 +269,8 @@ const ServiceListingTable = () => {
                 {[
                   { label: "ID", width: 80, key: "id" },
                   { label: "Name", width: 200, key: "name" },
-                  { label: "Ticket Mode", width: 160, key: "ticket_mode" },
                   { label: "Status", width: 160, key: "status" },
+                  { label: "Ticket Mode", width: 160, key: "ticket_mode" },
                   { label: "Created Mode", width: 160, key: "created_mode" },
                 ].map((col) => (
                   <TableCell
@@ -284,15 +295,30 @@ const ServiceListingTable = () => {
                 {[
                   { key: "id", isNumber: true },
                   { key: "name", isNumber: false },
-                  { key: "ticket_mode", isSelect: true, options: ["Hybrid", "Digital", "Conventional"] },
-                  { key: "status", isSelect: true, options: ["Created", "Started", "Terminated", "Ended"] },
-                  { key: "created_mode", isSelect: true, options: ["Manual", "Automatic"] },
+                  {
+                    key: "status",
+                    isSelect: true,
+                    options: ["Created", "Started", "Terminated", "Ended"],
+                  },
+                  {
+                    key: "ticket_mode",
+                    isSelect: true,
+                    options: ["Hybrid", "Digital", "Conventional"],
+                  },
+                  
+                  {
+                    key: "created_mode",
+                    isSelect: true,
+                    options: ["Manual", "Automatic"],
+                  },
                 ].map(({ key, isNumber, isSelect, options }) => (
                   <TableCell key={key}>
                     {isSelect ? (
                       <Select
                         value={search[key as keyof SearchFilter]}
-                        onChange={(e) => handleSelectChange(e, key as keyof SearchFilter)}
+                        onChange={(e) =>
+                          handleSelectChange(e, key as keyof SearchFilter)
+                        }
                         displayEmpty
                         size="small"
                         fullWidth
@@ -311,7 +337,9 @@ const ServiceListingTable = () => {
                         size="small"
                         placeholder="Search"
                         value={search[key as keyof SearchFilter]}
-                        onChange={(e) => handleSearchChange(e, key as keyof SearchFilter)}
+                        onChange={(e) =>
+                          handleSearchChange(e, key as keyof SearchFilter)
+                        }
                         fullWidth
                         type={isNumber ? "number" : "text"}
                         sx={{
@@ -353,22 +381,26 @@ const ServiceListingTable = () => {
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={row.ticket_mode}
+                        label={row.status}
                         size="small"
                         sx={{
                           width: 100,
                           textAlign: "center",
                           backgroundColor:
-                            row.ticket_mode === "Hybrid"
-                              ? "rgba(255, 193, 7, 0.12)"
-                              : row.ticket_mode === "Digital"
-                              ? "rgba(0, 188, 212, 0.12)"
+                            row.status === "Created"
+                              ? "rgba(33, 150, 243, 0.12)"
+                              : row.status === "Started"
+                              ? "rgba(76, 175, 80, 0.12)"
+                              : row.status === "Terminated"
+                              ? "rgba(244, 67, 54, 0.12)"
                               : "rgba(158, 158, 158, 0.12)",
                           color:
-                            row.ticket_mode === "Hybrid"
-                              ? "#FF8F00"
-                              : row.ticket_mode === "Digital"
-                              ? "#0097A7"
+                            row.status === "Created"
+                              ? "#1976D2"
+                              : row.status === "Started"
+                              ? "#388E3C"
+                              : row.status === "Terminated"
+                              ? "#D32F2F"
                               : "#616161",
                           fontWeight: 600,
                           fontSize: "0.75rem",
@@ -378,33 +410,30 @@ const ServiceListingTable = () => {
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={row.status}
+                        label={row.ticket_mode}
                         size="small"
                         sx={{
                           width: 100,
                           textAlign: "center",
                           backgroundColor:
-                            row.status === "Created"
-                              ? "rgba(158, 158, 158, 0.12)"
-                              : row.status === "Started"
-                              ? "rgba(76, 175, 80, 0.12)"
-                              : row.status === "Terminated"
-                              ? "rgba(244, 67, 54, 0.12)"
-                              : "rgba(103, 58, 183, 0.12)",
+                            row.ticket_mode === "Hybrid"
+                              ? "rgba(0, 150, 136, 0.15)" 
+                              : row.ticket_mode === "Digital"
+                              ? "rgba(33, 150, 243, 0.15)" 
+                              : "rgba(255, 87, 34, 0.15)", 
                           color:
-                            row.status === "Created"
-                              ? "#616161"
-                              : row.status === "Started"
-                              ? "#2E7D32"
-                              : row.status === "Terminated"
-                              ? "#C62828"
-                              : "#4527A0",
+                            row.ticket_mode === "Hybrid"
+                              ? "#009688" 
+                              : row.ticket_mode === "Digital"
+                              ? "#2196F3" 
+                              : "#FF5722", 
                           fontWeight: 600,
                           fontSize: "0.75rem",
                           borderRadius: "8px",
                         }}
                       />
                     </TableCell>
+                    
                     <TableCell>
                       <Chip
                         label={row.created_mode}
@@ -414,12 +443,12 @@ const ServiceListingTable = () => {
                           textAlign: "center",
                           backgroundColor:
                             row.created_mode === "Manual"
-                              ? "rgba(255, 193, 7, 0.12)"
-                              : "rgba(0, 188, 212, 0.12)",
+                              ? "rgba(255, 152, 0, 0.15)" 
+                              : "rgba(63, 81, 181, 0.15)", 
                           color:
                             row.created_mode === "Manual"
-                              ? "#FF8F00"
-                              : "#0097A7",
+                              ? "#FF9800" 
+                              : "#3F51B5", 
                           fontWeight: 600,
                           fontSize: "0.75rem",
                           borderRadius: "8px",
