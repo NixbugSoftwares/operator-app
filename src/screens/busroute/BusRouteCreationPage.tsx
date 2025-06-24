@@ -73,29 +73,30 @@ const BusRouteCreation = ({
 
   // Convert local time to UTC time string
   const convertLocalToUTC = (
-    hour: number,
-    minute: number,
-    period: string,
-    dayOffset: number = 0
-  ) => {
-    let utcHour = hour;
-    if (period === "PM" && hour !== 12) {
-      utcHour += 12;
-    } else if (period === "AM" && hour === 12) {
-      utcHour = 0;
-    }
+  hour: number,
+  minute: number,
+  period: string,
+  dayOffset: number = 0
+) => {
+  let istHour = hour;
+  if (period === "PM" && hour !== 12) {
+    istHour += 12;
+  } else if (period === "AM" && hour === 12) {
+    istHour = 0;
+  }
 
-    const utcTime = new Date(
-      Date.UTC(1970, 0, 1 + dayOffset, utcHour, minute, 0)
-    );
+  // Create IST date
+  const istDate = new Date(Date.UTC(1970, 0, 1 + dayOffset, istHour, minute, 0));
+  // Subtract 5 hours 30 minutes to get UTC
+  istDate.setUTCHours(istDate.getUTCHours() - 5, istDate.getUTCMinutes() - 30);
 
-    return {
-      displayTime: utcTime.toISOString().slice(11, 19),
-      fullTime: utcTime.toISOString(),
-      dayOffset,
-      timestamp: utcTime.getTime(),
-    };
+  return {
+    displayTime: istDate.toISOString().slice(11, 19),
+    fullTime: istDate.toISOString(),
+    dayOffset,
+    timestamp: istDate.getTime(),
   };
+};
 
   const calculateTimeDeltas = (
     startingTime: string,
@@ -127,7 +128,7 @@ const BusRouteCreation = ({
     );
     const fullTime = displayTime + "Z";
     setValue("starting_time", fullTime);
-    onStartingTimeChange(fullTime); // Notify parent component
+    onStartingTimeChange(fullTime); 
   }, [
     localHour,
     localMinute,
@@ -204,6 +205,7 @@ const BusRouteCreation = ({
 
         return dispatch(routeLandmarkCreationApi(landmarkFormData)).unwrap();
       });
+console.log("Landmark promises:", landmarkPromises);
 
       await Promise.all(landmarkPromises);
       showSuccessToast("Route and landmarks created successfully");
@@ -221,15 +223,28 @@ const BusRouteCreation = ({
       setIsSubmitting(false);
     }
   };
+function formatTimeForDisplayIST(isoString: string, showDayLabel = true) {
+  const date = new Date(isoString);
+  date.setTime(date.getTime() + (5 * 60 + 30) * 60 * 1000);
+  let hours = date.getUTCHours();
+  const minutes = date.getUTCMinutes();
+  const period = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours % 12 || 12;
 
-  const formatTimeForDisplay = (isoString: string) => {
-    const date = new Date(isoString);
-    const hours = date.getUTCHours();
-    const minutes = date.getUTCMinutes();
-    const period = hours >= 12 ? "PM" : "AM";
-    const displayHours = hours % 12 || 12;
-    return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
-  };
+  const dayOffset = Math.floor((date.getTime() - Date.UTC(1970, 0, 1)) / (86400 * 1000));
+  const userDay = dayOffset + 1;
+
+  let suffix = "th";
+  if (userDay % 10 === 1 && userDay % 100 !== 11) suffix = "st";
+  else if (userDay % 10 === 2 && userDay % 100 !== 12) suffix = "nd";
+  else if (userDay % 10 === 3 && userDay % 100 !== 13) suffix = "rd";
+
+  const timeStr = `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
+  if (showDayLabel) {
+    return `${timeStr} (${userDay}${suffix} day)`;
+  }
+  return timeStr;
+}
 
   return (
     <Box
@@ -469,11 +484,12 @@ const BusRouteCreation = ({
                               }}
                             />
                             <span>
-                              Arrive:{" "}
-                              {formatTimeForDisplay(
-                                landmark.arrivalTime.fullTime
-                              )}
-                            </span>
+  Arrive:{" "}
+  {formatTimeForDisplayIST(
+    landmark.arrivalTime.fullTime,
+    index !== 0 // false for first, true for others
+  )}
+</span>
                           </Box>
                           <Box sx={{ display: "flex", alignItems: "center" }}>
                             <ArrowUpwardIcon
@@ -483,12 +499,13 @@ const BusRouteCreation = ({
                                 color: "success.main",
                               }}
                             />
-                            <span>
-                              Depart:{" "}
-                              {formatTimeForDisplay(
-                                landmark.departureTime.fullTime
-                              )}
-                            </span>
+                           <span>
+  Depart:{" "}
+  {formatTimeForDisplayIST(
+    landmark.departureTime.fullTime,
+    index !== 0 // false for first, true for others
+  )}
+</span>
                           </Box>
                         </Box>
                       </Box>

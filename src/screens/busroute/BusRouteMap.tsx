@@ -608,29 +608,60 @@ const MapComponent = React.forwardRef(
     };
 
     //*************************************** time selection and logics for adding landmarks **********************************
+
+    const convertUTCToIST12Hour = (utcTime: string) => {
+      // utcTime is like "07:00:00" or "07:00:00Z"
+      const timeStr = utcTime.replace("Z", "");
+      const [h, m] = timeStr.split(":").map(Number);
+
+      // Create a date in UTC
+      const utcDate = new Date(Date.UTC(1970, 0, 1, h, m, 0));
+      // Add 5 hours 30 minutes to get IST
+      utcDate.setUTCHours(
+        utcDate.getUTCHours() + 5,
+        utcDate.getUTCMinutes() + 30
+      );
+
+      let istHour = utcDate.getUTCHours();
+      const istMinute = utcDate.getUTCMinutes();
+      const period = istHour >= 12 ? "PM" : "AM";
+      const displayHour = istHour % 12 || 12;
+
+      return {
+        hour: displayHour,
+        minute: istMinute,
+        period,
+      };
+    };
+
     const convertLocalToUTC = (
       hour: number,
       minute: number,
       period: string,
       dayOffset: number = 0
     ) => {
-      let utcHour = hour;
+      let istHour = hour;
       if (period === "PM" && hour !== 12) {
-        utcHour += 12;
+        istHour += 12;
       } else if (period === "AM" && hour === 12) {
-        utcHour = 0;
+        istHour = 0;
       }
 
-      // ✅ Apply dayOffset directly to the day argument in Date.UTC()
-      const utcTime = new Date(
-        Date.UTC(1970, 0, 1 + dayOffset, utcHour, minute, 0)
+      // Create IST date
+      const istDate = new Date(
+        Date.UTC(1970, 0, 1 + dayOffset, istHour, minute, 0)
+      );
+      // Subtract 5 hours 30 minutes to get UTC
+      istDate.setUTCHours(
+        istDate.getUTCHours() - 5,
+        istDate.getUTCMinutes() - 30
       );
 
       return {
-        displayTime: utcTime.toISOString().slice(11, 19),
-        fullTime: utcTime.toISOString(),
+        displayTime: istDate.toISOString().slice(11, 19),
+        fullTime: istDate.toISOString(),
         dayOffset,
-        timestamp: utcTime.getTime(), // helpful for delta calculation
+        timestamp: istDate.getTime(),
       };
     };
 
@@ -640,18 +671,14 @@ const MapComponent = React.forwardRef(
       setIsFirstLandmark(firstLandmark);
 
       if (firstLandmark && startingTime) {
-        const timeStr = startingTime.replace("Z", "");
-        const [hours, minutes] = timeStr.split(":").map(Number);
+        // Use helper to convert UTC to IST for display
+        const { hour, minute, period } = convertUTCToIST12Hour(startingTime);
 
-        // Convert to 12-hour format
-        const displayHours = hours % 12 || 12;
-        const period = hours >= 12 ? "PM" : "AM";
-
-        setArrivalHour(displayHours);
-        setArrivalMinute(minutes);
+        setArrivalHour(hour);
+        setArrivalMinute(minute);
         setArrivalAmPm(period);
-        setDepartureHour(displayHours);
-        setDepartureMinute(minutes);
+        setDepartureHour(hour);
+        setDepartureMinute(minute);
         setDepartureAmPm(period);
         setArrivalDayOffset(0);
         setDepartureDayOffset(0);
@@ -669,7 +696,7 @@ const MapComponent = React.forwardRef(
         departureMinute !== undefined
       );
     };
-    
+
     const getTimestamp = (
       hour: number,
       minute: number,
@@ -705,29 +732,26 @@ const MapComponent = React.forwardRef(
         return;
       }
       if (departureTS < arrivalTS) {
-        setShowTimeError("Departure time must be after or equal to arrival time.");
+        setShowTimeError(
+          "Departure time must be after or equal to arrival time."
+        );
         return;
-      } 
-        setShowTimeError("");
+      }
+      setShowTimeError("");
 
       // For first landmark, force times to match starting time
       if (isFirstLandmark && startingTime) {
-        const timeStr = startingTime.replace("Z", "");
-        const [hours, minutes] = timeStr.split(":").map(Number);
+        // Use the startingTime directly as UTC
+        const arrivalUTC = {
+          displayTime: startingTime.replace("Z", ""),
+          fullTime: `1970-01-01T${startingTime.replace("Z", "")}Z`,
+          dayOffset: 0,
+          timestamp: new Date(
+            `1970-01-01T${startingTime.replace("Z", "")}Z`
+          ).getTime(),
+        };
 
-        const arrivalUTC = convertLocalToUTC(
-          hours % 12 || 12,
-          minutes,
-          hours >= 12 ? "PM" : "AM",
-          0
-        );
-
-        const departureUTC = convertLocalToUTC(
-          hours % 12 || 12,
-          minutes,
-          hours >= 12 ? "PM" : "AM",
-          0
-        );
+        const departureUTC = { ...arrivalUTC };
 
         const landmarkWithDistance = {
           ...selectedLandmark,
@@ -735,7 +759,7 @@ const MapComponent = React.forwardRef(
           departureTime: departureUTC,
           arrivalDayOffset: 0,
           departureDayOffset: 0,
-          distance_from_start: 0, // Starting point has 0 distance
+          distance_from_start: 0,
         };
 
         onAddLandmark(landmarkWithDistance);
@@ -771,10 +795,9 @@ const MapComponent = React.forwardRef(
     };
 
     const handleClose = () => {
-  setShowTimeError("");
-  setIsModalOpen(false);
-};
-
+      setShowTimeError("");
+      setIsModalOpen(false);
+    };
 
     return (
       <Box height="100%">
@@ -861,10 +884,10 @@ const MapComponent = React.forwardRef(
                   : "For ending landmarks, arrival and departure time must be the same."}
               </Alert>
               {showTimeError && (
-  <Box mb={2}>
-    <Alert severity="error">{showTimeError}</Alert>
-  </Box>
-)}
+                <Box mb={2}>
+                  <Alert severity="error">{showTimeError}</Alert>
+                </Box>
+              )}
             </Box>
 
             <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
@@ -1007,7 +1030,7 @@ const MapComponent = React.forwardRef(
 
             {(selectedLandmarks.length > 0 || propLandmarks.length > 0) && (
               <TextField
-              required
+                required
                 label="Distance from Start (meters)"
                 type="number"
                 fullWidth
@@ -1023,7 +1046,7 @@ const MapComponent = React.forwardRef(
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleClose} >Cancel</Button>
+            <Button onClick={handleClose}>Cancel</Button>
             <Button
               onClick={handleAddLandmark}
               color="primary"

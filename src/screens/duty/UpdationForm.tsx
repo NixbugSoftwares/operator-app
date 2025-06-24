@@ -81,10 +81,10 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
     serviceList: [] as DropdownItem[],
   });
   const [hasMore, setHasMore] = useState({ service: true });
-  const [selectedService, setSelectedService] = useState<DropdownItem | null>(
+  const [_selectedService, setSelectedService] = useState<DropdownItem | null>(
     null
   );
-  const [searchText, setSearchText] = useState("");
+  const [searchText, _setSearchText] = useState("");
 
   const getInitialStatusValue = (statusLabel: string): number => {
     const option = statusOptions.find((opt) => opt.label === statusLabel);
@@ -314,47 +314,36 @@ console.log("Initial form values:", {
           />
 
           <Controller
-            name="service_id"
-            control={control}
-            render={({ field }) => (
-              <Autocomplete
-                options={dropdownData.serviceList}
-                getOptionLabel={(option) => option.name}
-                value={selectedService}
-                onChange={(_, newValue) => {
-                  setSelectedService(newValue);
-                  field.onChange(newValue?.id || null);
-                }}
-                onInputChange={(_, newInputValue) => {
-                  setSearchText(newInputValue);
-                  if (newInputValue === "") {
-                    // When clearing the input, reset the selection
-                    setSelectedService(null);
-                    field.onChange(null);
-                  }
-                  fetchServiceList(0, newInputValue);
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Select Service"
-                    error={!!errors.service_id}
-                    helperText={errors.service_id?.message}
-                    fullWidth
-                    margin="normal"
-                  />
-                )}
-                ListboxProps={{
-                  onScroll: (event) => handleScroll(event, "service"),
-                  style: { maxHeight: 200, overflow: "auto" },
-                }}
-                loading={loading}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-                clearOnBlur={false}
-                clearOnEscape
-              />
-            )}
-          />
+  name="service_id"
+  control={control}
+  render={({ field }) => (
+    <Autocomplete
+      options={dropdownData.serviceList}
+      getOptionLabel={(option) => option.name}
+      value={dropdownData.serviceList.find((item) => item.id === field.value) || null}
+      onChange={(_, newValue) => field.onChange(newValue?.id || null)}
+      onInputChange={(_, newInputValue) => fetchServiceList(0, newInputValue)}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Select Service"
+          error={!!errors.service_id}
+          helperText={errors.service_id?.message}
+          fullWidth
+          margin="normal"
+        />
+      )}
+      ListboxProps={{
+        onScroll: (event) => handleScroll(event, "service"),
+        style: { maxHeight: 200, overflow: "auto" },
+      }}
+      loading={loading}
+      isOptionEqualToValue={(option, value) => option.id === value.id}
+      clearOnBlur={false}
+      clearOnEscape
+    />
+  )}
+/>
 
           <Controller
             name="type"

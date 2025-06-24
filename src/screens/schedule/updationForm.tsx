@@ -90,9 +90,9 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
     route: true,
     fare: true,
   });
-  const [selectedBus, setSelectedBus] = useState<DropdownItem | null>(null);
-  const [selectedRoute, setSelectedRoute] = useState<DropdownItem | null>(null);
-  const [selectedFare, setSelectedFare] = useState<DropdownItem | null>(null);
+  const [_selectedBus, setSelectedBus] = useState<DropdownItem | null>(null);
+  const [_selectedRoute, setSelectedRoute] = useState<DropdownItem | null>(null);
+  const [_selectedFare, setSelectedFare] = useState<DropdownItem | null>(null);
   const isFirstLoad = useRef(true);
   const [isReady, setIsReady] = useState(false);
 
@@ -380,40 +380,39 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
           />
 
           <Controller
-            name="bus_id"
-            control={control}
-            rules={{ required: "Bus is required" }}
-            render={({ field }) => (
-              <Autocomplete
-                options={dropdownData.busList}
-                getOptionLabel={(option) => option.name}
-                value={selectedBus}
-                onChange={(_, newValue) => {
-                  setSelectedBus(newValue);
-                  field.onChange(newValue?.id || null);
-                }}
-                onInputChange={(_, newInputValue) => {
-                  fetchDropdownData("bus", 0, newInputValue);
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Select Bus"
-                    error={!!errors.bus_id}
-                    helperText={errors.bus_id?.message}
-                    fullWidth
-                    margin="normal"
-                  />
-                )}
-                ListboxProps={{
-                  onScroll: (event) => handleScroll(event, "bus"),
-                  style: { maxHeight: 200, overflow: "auto" },
-                }}
-                loading={loading}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-              />
-            )}
-          />
+  name="bus_id"
+  control={control}
+  rules={{ required: "Bus is required" }}
+  render={({ field }) => (
+    <Autocomplete
+      options={dropdownData.busList}
+      getOptionLabel={(option) => option.name}
+      value={dropdownData.busList.find((item) => item.id === field.value) || null}
+      onChange={(_, newValue) => {
+        field.onChange(newValue?.id || null);
+      }}
+      onInputChange={(_, newInputValue) => {
+        fetchDropdownData("bus", 0, newInputValue);
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Select Bus"
+          error={!!errors.bus_id}
+          helperText={errors.bus_id?.message}
+          fullWidth
+          margin="normal"
+        />
+      )}
+      ListboxProps={{
+        onScroll: (event) => handleScroll(event, "bus"),
+        style: { maxHeight: 200, overflow: "auto" },
+      }}
+      loading={loading}
+      isOptionEqualToValue={(option, value) => option.id === value.id}
+    />
+  )}
+/>
 
           <Controller
             name="route_id"
@@ -422,7 +421,7 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
               <Autocomplete
                 options={dropdownData.routeList}
                 getOptionLabel={(option) => option.name}
-                value={selectedRoute}
+                value={dropdownData.routeList.find((item) => item.id === field.value) || null}
                 onChange={(_, newValue) => {
                   setSelectedRoute(newValue);
                   field.onChange(newValue?.id || null);
@@ -457,7 +456,7 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
               <Autocomplete
                 options={dropdownData.fareList}
                 getOptionLabel={(option) => option.name}
-                value={selectedFare}
+                value={dropdownData.fareList.find((item) => item.id === field.value) || null}
                 onChange={(_, newValue) => {
                   setSelectedFare(newValue);
                   field.onChange(newValue?.id || null);

@@ -144,65 +144,78 @@ const BusRouteDetailsPage = ({
     : 0;
   const totalDuration = formatDuration(totalDurationSeconds);
 
+  function formatTimeForDisplayIST(isoString: string) {
+  const date = new Date(isoString);
+  // Add 5 hours 30 minutes to UTC to get IST
+  date.setUTCHours(date.getUTCHours() + 5, date.getUTCMinutes() + 30);
+  let hours = date.getUTCHours();
+  const minutes = date.getUTCMinutes();
+  const period = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours % 12 || 12;
+  return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
+}
+
+
   // Helper function to calculate actual time from starting time and delta seconds
   const calculateActualTime = (startingTime: string, deltaSeconds: string) => {
-    if (!startingTime || !deltaSeconds) return "N/A";
+  if (!startingTime || !deltaSeconds) return "N/A";
 
-    try {
-      // Parse starting time as UTC
-      let timeString = startingTime;
-      if (!timeString.includes("T")) {
-        timeString = `1970-01-01T${timeString}`;
-      }
-
-      const startDate = new Date(timeString);
-      const delta = parseInt(deltaSeconds, 10); // Delta is already in seconds
-
-      // Add delta seconds to starting time
-      const resultDate = new Date(startDate.getTime() + delta * 1000);
-
-      // Calculate day offset
-      const dayOffset = Math.floor(delta / 86400);
-
-      // Format as HH:MM AM/PM in UTC with day indicator
-      const timeStr = resultDate.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-        timeZone: "UTC",
-      });
-
-      return dayOffset > 0 ? `${timeStr} (Day +${dayOffset})` : timeStr;
-    } catch (e) {
-      console.error("Error calculating actual time:", e);
-      return "N/A";
-    }
-  };
-
-  const convertLocalToUTC = (
-    hour: number,
-    minute: number,
-    period: string,
-    dayOffset: number = 0
-  ) => {
-    let utcHour = hour;
-    if (period === "PM" && hour !== 12) {
-      utcHour += 12;
-    } else if (period === "AM" && hour === 12) {
-      utcHour = 0;
+  try {
+    // Parse starting time as UTC
+    let timeString = startingTime;
+    if (!timeString.includes("T")) {
+      timeString = `1970-01-01T${timeString}`;
     }
 
-    const utcTime = new Date(
-      Date.UTC(1970, 0, 1 + dayOffset, utcHour, minute, 0)
-    );
+    const startDate = new Date(timeString);
+    const delta = parseInt(deltaSeconds, 10); // Delta is already in seconds
 
-    return {
-      displayTime: utcTime.toISOString().slice(11, 19),
-      fullTime: utcTime.toISOString(),
-      dayOffset,
-      timestamp: utcTime.getTime(),
-    };
+    // Add delta seconds to starting time
+    const resultDate = new Date(startDate.getTime() + delta * 1000);
+
+    // Convert to IST
+    resultDate.setUTCHours(resultDate.getUTCHours() + 5, resultDate.getUTCMinutes() + 30);
+    let hours = resultDate.getUTCHours();
+    const minutes = resultDate.getUTCMinutes();
+    const period = hours >= 12 ? "PM" : "AM";
+    const displayHours = hours % 12 || 12;
+
+    // Calculate day offset (in IST)
+    const dayOffset = Math.floor((resultDate.getTime() - Date.UTC(1970, 0, 1)) / (86400 * 1000));
+
+    const timeStr = `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
+    return dayOffset > 0 ? `${timeStr} (Day +${dayOffset})` : timeStr;
+  } catch (e) {
+    console.error("Error calculating actual time:", e);
+    return "N/A";
+  }
+};
+
+ const convertLocalToUTC = (
+  hour: number,
+  minute: number,
+  period: string,
+  dayOffset: number = 0
+) => {
+  let istHour = hour;
+  if (period === "PM" && hour !== 12) {
+    istHour += 12;
+  } else if (period === "AM" && hour === 12) {
+    istHour = 0;
+  }
+
+  // Create IST date
+  const istDate = new Date(Date.UTC(1970, 0, 1 + dayOffset, istHour, minute, 0));
+  // Subtract 5 hours 30 minutes to get UTC
+  istDate.setTime(istDate.getTime() - (5 * 60 + 30) * 60 * 1000);
+
+  return {
+    displayTime: istDate.toISOString().slice(11, 19),
+    fullTime: istDate.toISOString(),
+    dayOffset,
+    timestamp: istDate.getTime(),
   };
+};
 
   // Helper function to format delta seconds into human-readable format
   const formatDeltaTime = (deltaSeconds: string) => {
@@ -221,68 +234,17 @@ const BusRouteDetailsPage = ({
     return result.trim();
   };
 
-  const formatTimeForDisplay = (isoString: string) => {
-    const date = new Date(isoString);
-    const hours = date.getUTCHours();
-    const minutes = date.getUTCMinutes();
-    const period = hours >= 12 ? "PM" : "AM";
-    const displayHours = hours % 12 || 12;
-    return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
-  };
+ const formatTimeForDisplay = (isoString: string) => {
+  const date = new Date(isoString);
+  // Add 5 hours 30 minutes to UTC to get IST
+  date.setUTCHours(date.getUTCHours() + 5, date.getUTCMinutes() + 30);
+  let hours = date.getUTCHours();
+  const minutes = date.getUTCMinutes();
+  const period = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours % 12 || 12;
+  return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
+};
 
-  // const calculateTimeDeltas = (
-  //   startingTime: string,
-  //   landmarks: SelectedLandmark[],
-  //   timeType: "arrival" | "departure"
-  // ) => {
-  //   const startTimeStr = startingTime.endsWith("Z")
-  //     ? startingTime.slice(0, -1)
-  //     : startingTime;
-  //   const [startH, startM, startS] = startTimeStr.split(":").map(Number);
-  //   const startDate = new Date(Date.UTC(1970, 0, 1, startH, startM, startS));
-
-  //   return landmarks.map((landmark) => {
-  //     const timeObj =
-  //       timeType === "arrival" ? landmark.arrivalTime : landmark.departureTime;
-  //     const landmarkDate = new Date(timeObj.fullTime);
-  //     const deltaSeconds =
-  //       (landmarkDate.getTime() - startDate.getTime()) / 1000;
-  //     return Math.max(0, Math.floor(deltaSeconds));
-  //   });
-  // };
-
-  // const calculateTimeInSeconds = (timeString: string) => {
-  //   const [hours, minutes] = timeString.split(":").map(Number);
-  //   return hours * 3600 + minutes * 60;
-  // };
-
-  // const calculateDeltaWithDayOffset = (
-  //   startTime: string,
-  //   targetTime: string,
-  //   previousTime: string | null,
-  //   previousDelta: number | null
-  // ) => {
-  //   const startSeconds = calculateTimeInSeconds(startTime);
-  //   const targetSeconds = calculateTimeInSeconds(targetTime);
-
-  //   let dayOffset = 0;
-  //   if (previousTime && previousDelta !== null) {
-  //     const prevSeconds = calculateTimeInSeconds(previousTime);
-  //     if (targetSeconds < prevSeconds) {
-  //       // Crossed midnight
-  //       dayOffset = Math.floor(previousDelta / 86400) + 1;
-  //     } else {
-  //       dayOffset = Math.floor(previousDelta / 86400);
-  //     }
-  //   }
-
-  //   const delta = dayOffset * 86400 + (targetSeconds - startSeconds);
-  //   if (targetSeconds < startSeconds) {
-  //     // If target time is earlier than start time, add 24 hours
-  //     return delta + 86400;
-  //   }
-  //   return delta;
-  // };
 
   const updateParentMapLandmarks = (landmarks: RouteLandmark[]) => {
     const mapLandmarks = landmarks.map((lm) => ({
@@ -461,21 +423,22 @@ const BusRouteDetailsPage = ({
     }
   };
   // Initialize the time values when editMode becomes true
-  useEffect(() => {
-    if (editMode && routeStartingTime) {
-      // Extract time from routeStartingTime (format: "HH:MM:SS")
-      const timePart = routeStartingTime.includes("1970-01-01T")
-        ? routeStartingTime.replace("1970-01-01T", "").replace("Z", "")
-        : routeStartingTime;
-
-      const [hours, minutes] = timePart.split(":").map(Number);
-
-      // Convert to 12-hour format
-      setLocalHour(hours % 12 || 12);
-      setLocalMinute(minutes);
-      setAmPm(hours >= 12 ? "PM" : "AM");
-    }
-  }, [editMode, routeStartingTime]);
+ useEffect(() => {
+  if (editMode && routeStartingTime) {
+    // Extract time from routeStartingTime (format: "HH:MM:SS" or ISO)
+    let date = new Date(routeStartingTime.includes("T")
+      ? routeStartingTime
+      : `1970-01-01T${routeStartingTime}Z`
+    );
+    // Convert to IST
+    date.setTime(date.getTime() + (5 * 60 + 30) * 60 * 1000);
+    const hours = date.getUTCHours();
+    const minutes = date.getUTCMinutes();
+    setLocalHour(hours % 12 || 12);
+    setLocalMinute(minutes);
+    setAmPm(hours >= 12 ? "PM" : "AM");
+  }
+}, [editMode, routeStartingTime]);
   const validateTimes = () => {
     return (
       arrivalHour !== null &&
@@ -802,7 +765,7 @@ const BusRouteDetailsPage = ({
                   <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
                     Starting:{" "}
                     <Box component="span" sx={{ fontWeight: 600 }}>
-                      {formatTimeForDisplay(routeStartingTime)}
+                      {formatTimeForDisplayIST(routeStartingTime)}
                     </Box>
                   </Typography>
                 </Box>
