@@ -194,7 +194,7 @@ return (
               onClick={() => setViewMode("create")}
               disabled={!canManageFare}
             >
-              Create New Fare
+              Add New Fare
             </Button>
           </span>
         </Tooltip>

@@ -99,102 +99,104 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
   useEffect(() => {
     // Fetch available roles
     dispatch(operatorRoleListApi({}))
-        .unwrap()
-        .then((res: { data: any[] }) => {
-          setRoles(res.data.map((role) => ({ id: role.id, name: role.name })));
-        })
-    
-        .catch((err: any) => {
-          showErrorToast(err);
-        });
+      .unwrap()
+      .then((res: { data: any[] }) => {
+        setRoles(res.data.map((role) => ({ id: role.id, name: role.name })));
+      })
+
+      .catch((err: any) => {
+        showErrorToast(err);
+      });
 
     // Fetch role mapping for this account
     dispatch(fetchRoleMappingApi(accountId))
       .unwrap()
       .then((roleMapping) => {
-  // Check for null, undefined, or empty object
-  if (roleMapping && Object.keys(roleMapping).length > 0) {
-    const formData = {
-      ...accountData,
-      role: roleMapping.role_id,
-      roleAssignmentId: roleMapping.id,
-    };
-    reset(formData);
-    setRoleMappingError(false);
-  } else {
-    reset(accountData);
-    setRoleMappingError(true); // Show error if mapping is missing (e.g., deleted)
-  }
-})
-.catch((error: any) => {
-  showErrorToast(error);
-  reset(accountData);
-  setRoleMappingError(true); // Show error if API call fails
-});
+        // Check for null, undefined, or empty object
+        if (roleMapping && Object.keys(roleMapping).length > 0) {
+          const formData = {
+            ...accountData,
+            role: roleMapping.role_id,
+            roleAssignmentId: roleMapping.id,
+          };
+          reset(formData);
+          setRoleMappingError(false);
+        } else {
+          reset(accountData);
+          setRoleMappingError(true); // Show error if mapping is missing (e.g., deleted)
+        }
+      })
+      .catch((error: any) => {
+        showErrorToast(error);
+        reset(accountData);
+        setRoleMappingError(true); // Show error if API call fails
+      });
   }, [accountId, dispatch, reset, accountData]);
 
-  const handleAccountUpdate: SubmitHandler<IAccountFormInputs> = async (data) => {
-  try {
-    setLoading(true);
-    const formData = new FormData();
-    formData.append("id", accountId.toString());
+  const handleAccountUpdate: SubmitHandler<IAccountFormInputs> = async (
+    data
+  ) => {
+    try {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append("id", accountId.toString());
 
-    if (data.username) formData.append("username", data.username);
-    if (data.password) formData.append("password", data.password);
-    formData.append("gender", data.gender?.toString() || "");
-    if (data.fullName) formData.append("full_name", data.fullName);
-    if (data.phoneNumber)
-      formData.append("phone_number", `+91${data.phoneNumber}`);
-    if (data.email) formData.append("email_id", data.email);
+      if (data.username) formData.append("username", data.username);
+      if (data.password) formData.append("password", data.password);
+      formData.append("gender", data.gender?.toString() || "");
+      if (data.fullName) formData.append("full_name", data.fullName);
+      if (data.phoneNumber)
+        formData.append("phone_number", `+91${data.phoneNumber}`);
+      if (data.email) formData.append("email_id", data.email);
 
-    if (canManageOperator && data.status) {
-      formData.append("status", data.status.toString());
-    }
-
-    // Update account
-    const accountResponse = await dispatch(
-      operatorUpdationApi({ accountId, formData })
-    ).unwrap();
-
-    if (!accountResponse?.id) {
-      showErrorToast("Account update failed! Please try again.");
-      onClose();
-      return;
-    }
-
-    // Only handle role assignment if allowed
-    if (canManageOperator && data.role) {
-      try {
-        if (data.roleAssignmentId) {
-          await dispatch(
-            roleAssignUpdateApi({
-              id: data.roleAssignmentId,
-              role_id: data.role,
-            })
-          ).unwrap();
-        } else {
-          await dispatch(
-            operatorRoleAssignApi({
-              operator_id: accountId,
-              role_id: data.role,
-            })
-          ).unwrap();
-        }
-      } catch {
-        showErrorToast("Account updated, but role assignment failed!");
+      if (canManageOperator && data.status) {
+        formData.append("status", data.status.toString());
       }
-    }
 
-    showSuccessToast("Account Updated successfully!");
-    onCloseDetailCard();
-    refreshList("refresh");
-    onClose();
-  } catch {
-    showErrorToast("Something went wrong. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
+      // Update account
+      const accountResponse = await dispatch(
+        operatorUpdationApi({ accountId, formData })
+      ).unwrap();
+
+      if (!accountResponse?.id) {
+        showErrorToast("Account update failed! Please try again.");
+        onClose();
+        return;
+      }
+
+      // Only handle role assignment if allowed
+      if (canManageOperator && data.role) {
+        try {
+          if (data.roleAssignmentId) {
+            await dispatch(
+              roleAssignUpdateApi({
+                id: data.roleAssignmentId,
+                role_id: data.role,
+              })
+            ).unwrap();
+          } else {
+            await dispatch(
+              operatorRoleAssignApi({
+                operator_id: accountId,
+                role_id: data.role,
+              })
+            ).unwrap();
+          }
+        } catch {
+          showErrorToast("Account updated, but role assignment failed!");
+        }
+      }
+
+      showSuccessToast("Account Updated successfully!");
+      onCloseDetailCard();
+      refreshList("refresh");
+      onClose();
+    } catch {
+      showErrorToast("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Container component="main" maxWidth="xs">
@@ -273,33 +275,33 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
             size="small"
           />
 
-         {canManageOperator && (
-  <Controller
-    name="role"
-    control={control}
-    rules={{ required: "Role is required" }}
-    render={({ field }) => (
-      <TextField
-        margin="normal"
-        required
-        fullWidth
-        select
-        label="Role"
-        value={field.value || ""}
-        onChange={field.onChange}
-        error={!!errors.role}
-        helperText={errors.role?.message}
-        size="small"
-      >
-        {roles.map((role) => (
-          <MenuItem key={role.id} value={role.id}>
-            {role.name}
-          </MenuItem>
-        ))}
-      </TextField>
-    )}
-  />
-)}
+          {canManageOperator && (
+            <Controller
+              name="role"
+              control={control}
+              rules={{ required: "Role is required" }}
+              render={({ field }) => (
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  select
+                  label="Role"
+                  value={field.value || ""}
+                  onChange={field.onChange}
+                  error={!!errors.role}
+                  helperText={errors.role?.message}
+                  size="small"
+                >
+                  {roles.map((role) => (
+                    <MenuItem key={role.id} value={role.id}>
+                      {role.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+          )}
 
           <Controller
             name="gender"
@@ -325,29 +327,29 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
           />
 
           {canManageOperator && !isLoggedInUser && (
-  <Controller
-    name="status"
-    control={control}
-    render={({ field }) => (
-      <TextField
-        margin="normal"
-        fullWidth
-        select
-        label="Status"
-        {...field}
-        error={!!errors.status}
-        size="small"
-        defaultValue={accountData.status}
-      >
-        {statusOptions.map((option) => (
-          <MenuItem key={option.value} value={option.value}>
-            {option.label}
-          </MenuItem>
-        ))}
-      </TextField>
-    )}
-  />
-)}
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  margin="normal"
+                  fullWidth
+                  select
+                  label="Status"
+                  {...field}
+                  error={!!errors.status}
+                  size="small"
+                  defaultValue={accountData.status}
+                >
+                  {statusOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+          )}
 
           <TextField
             margin="normal"

@@ -20,7 +20,8 @@ import Point from "ol/geom/Point";
 import { Style, Icon } from "ol/style";
 import { showErrorToast } from "../../common/toastMessageHelper";
 import companyLocation from "../../assets/png/companyLocation.png";
-
+import { useSelector } from "react-redux";
+import { RootState } from "../../store/Store";
 interface MapComponentProps {
   onSelectLocation?: (coordinates: {
     lat: number;
@@ -36,6 +37,10 @@ const MapComponent: React.FC<MapComponentProps> = ({
   isOpen,
   initialCoordinates,
 }) => {
+
+  const canManageCompany = useSelector((state: RootState) =>
+    state.app.permissions.includes("manage_company")
+  );
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<Map | null>(null);
   const [mapType, setMapType] = useState<"osm" | "satellite" | "hybrid">("osm");
@@ -286,15 +291,17 @@ const MapComponent: React.FC<MapComponentProps> = ({
               <MenuItem value="hybrid">Hybrid</MenuItem>
             </Select>
           </FormControl>
-
-          <Button
+          {canManageCompany && (
+            <Button
             onClick={() => setIsMarkingEnabled(!isMarkingEnabled)}
             variant="contained"
             size="small"
             color={isMarkingEnabled ? "secondary" : "primary"}
           >
-            {isMarkingEnabled ? "Disable Marking" : "Enable Marking"}
+            {isMarkingEnabled ? "Disable Marking" : "Update Location"}
           </Button>
+          )}
+          
         </Box>
 
         <Typography variant="body2">

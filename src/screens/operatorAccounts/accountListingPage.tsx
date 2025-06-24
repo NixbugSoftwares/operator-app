@@ -199,7 +199,7 @@ const AccountListingTable = () => {
     disabled={!canManageOperator}
     style={{ cursor: !canManageOperator ? "not-allowed" : "pointer" }}
   >
-    Create Account
+    Add New operator
   </Button>
 </Tooltip>
     <TableContainer

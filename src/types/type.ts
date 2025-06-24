@@ -13,8 +13,19 @@ export  interface Account {
   email_id: string;
   phoneNumber: string;
   status: string;
+  created_on: string;
 }
-
+export interface Company {
+  id: number;
+  name: string;
+  ownerName: string;
+  location: string;
+  phoneNumber: string;
+  address: string;
+  email: string;
+  status: string;
+  companyType: string;
+}
 
 export interface RoleDetails{
   manage_operator: boolean

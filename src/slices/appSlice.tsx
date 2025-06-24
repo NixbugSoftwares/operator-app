@@ -189,7 +189,7 @@ export const companyUpdateApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      console.error("Backend Error Response:", error.response?.data); // Log the full error response
+      console.error("Backend Error Response:", error.response?.data); 
       return rejectWithValue(
         error?.response?.data?.message || "company update failed"
       );

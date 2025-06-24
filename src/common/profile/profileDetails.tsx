@@ -1,148 +1,295 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  Box,
-  Typography,
   Avatar,
-  Divider,
+  Box,
   Chip,
-  Grid,
   CircularProgress,
-  Button,
-  Card,
-  CardContent,
-  Container,
+  Grid,
+  Paper,
   Stack,
-} from '@mui/material';
-import {  Person, Business, Phone, Email, Female, Male, Transgender } from '@mui/icons-material';
-import { useDispatch } from 'react-redux';
-import { operatorListApi } from '../../slices/appSlice';
-import { companyListApi } from '../../slices/authSlice';
-import localStorageHelper from '../../utils/localStorageHelper';
-import { showErrorToast } from '../toastMessageHelper'; 
+  Typography,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  IconButton,
+  useTheme,
+} from "@mui/material";
+import {
+  Person,
+  Phone,
+  Email,
+  Female,
+  Male,
+  Transgender,
+  Check,
+  Close,
+  Edit,
+} from "@mui/icons-material";
+import { useDispatch } from "react-redux";
+import {
+  fetchRoleMappingApi,
+  operatorListApi,
+  operatorRoleAssignApi,
+  operatorRoleListApi,
+  operatorUpdationApi,
+  roleAssignUpdateApi,
+} from "../../slices/appSlice";
+import { companyListApi } from "../../slices/authSlice";
+import localStorageHelper from "../../utils/localStorageHelper";
+import { showErrorToast, showSuccessToast } from "../toastMessageHelper";
+import { Account, Company } from "../../types/type";
+import { SubmitHandler, useForm } from "react-hook-form";
+import { useSelector } from "react-redux";
+import { RootState } from "../../store/Store";
+import CompanyDetailsCard from "./compnayDetails";
 
-// Types
-type Gender = 'Male' | 'Female' | 'Transgender' | 'Other';
-type UserStatus = 'Active' | 'Suspended';
-type CompanyStatus = 'Validating' | 'Verified' | 'Suspended';
-type CompanyType = 'Private' | 'Government';
-
-interface Company {
-  id: number;
-  name: string;
-  contactPerson: string;
-  location: string;
-  phoneNumber: string;
-  address: string;
-  status: CompanyStatus;
-  type: CompanyType;
-}
-
-interface UserProfile {
-  id: number;
-  username: string;
-  gender: Gender;
-  status: UserStatus;
-  fullName: string;
-  phoneNumber: string;
-  emailId: string;
-  company: Company;
+interface IAccountFormInputs {
+  username?: string;
+  password?: string;
+  fullName?: string;
+  phoneNumber?: string;
+  email?: string;
+  gender?: number;
+  role?: number;
+  roleAssignmentId?: number;
+  status?: number;
 }
 
 const ProfilePage: React.FC = () => {
+  const theme = useTheme();
   const dispatch = useDispatch<any>();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [showCompany, setShowCompany] = useState(false);
+  const [profile, setProfile] = useState<Account | null>(null);
+  const [company, setCompany] = useState<Company | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  const user = localStorageHelper.getItem('@user');
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<IAccountFormInputs>();
+  const [genderValue, setGenderValue] = useState<number>(0);
+  const [roles, setRoles] = useState<{ id: number; name: string }[]>([]);
+  const [roleAssignmentId, setRoleAssignmentId] = useState<number | undefined>(undefined);
+  const [role, setRole] = useState<number | undefined>(undefined);
+  const user = localStorageHelper.getItem("@user");
   const userId = user?.userId;
   const companyId = user?.company_id;
+  const canManageOperator = useSelector((state: RootState) =>
+    state.app.permissions.includes("manage_operator")
+  );
 
-  const getGender = (value: number): Gender => {
+  const getGender = (value: number): string => {
     switch (value) {
-      case 1: return 'Female';
-      case 2: return 'Male';
-      case 3: return 'Transgender';
-      default: return 'Other';
+      case 1: return "Female";
+      case 2: return "Male";
+      case 3: return "Transgender";
+      default: return "Other";
     }
   };
-
-  const getStatus = (value: number): UserStatus => {
-    return value === 1 ? 'Active' : 'Suspended';
+    const getStatus = (value: number): string => {
+    return value === 1 ? "Active" : "Suspended";
   };
-  const getCompanyStatus = (value: number): CompanyStatus => {
+  const getStatusColor = (value: string) => {
     switch (value) {
-      case 1: return 'Validating';
-      case 2: return 'Verified';
-      default: return 'Suspended';
+      case "Active": return "success";
+      case "Suspended": return "error";
+      default: return "default";
     }
   };
 
-  const getCompanyType = (value: number): CompanyType => {
-    return value === 1 ? 'Private' : 'Government';
+  const formatUTCDateToLocal = (dateString: string | null): string => {
+    if (!dateString || dateString.trim() === "") return "Not added yet";
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? "Not added yet" : date.toLocaleDateString();
+  };
+  const formatPhoneNumber = (phone: string | undefined): string => {
+    if (!phone) return "";
+    const digits = phone.replace(/\D/g, "");
+    return digits.length > 10 ? digits.slice(-10) : digits;
   };
 
-  const getStatusColor = (status: UserStatus | CompanyStatus) => {
-    switch (status) {
-      case 'Active':
-      case 'Verified':
-        return 'success';
-      case 'Validating':
-        return 'warning';
-      case 'Suspended':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
+  useEffect(() => {
+    dispatch(operatorRoleListApi({}))
+      .unwrap()
+      .then((res: { data: any[] }) => {
+        setRoles(res.data.map((role) => ({ id: role.id, name: role.name })));
+      });
+    dispatch(fetchRoleMappingApi(userId))
+      .unwrap()
+      .then((roleMapping: { role_id?: number; id?: number }) => {
+        if (roleMapping && Object.keys(roleMapping).length > 0) {
+          setRole(roleMapping.role_id);
+          setRoleAssignmentId(roleMapping.id);
+          reset((formValues) => ({
+            ...formValues,
+            role: roleMapping.role_id,
+            roleAssignmentId: roleMapping.id,
+          }));
+        } else {
+          setRole(undefined);
+          setRoleAssignmentId(undefined);
+          reset((formValues) => ({
+            ...formValues,
+            role: undefined,
+            roleAssignmentId: undefined,
+          }));
+        }
+      });
+  }, [dispatch, userId, reset]);
 
-  const fetchData = useCallback(async () => {
+  const fetchUserData = useCallback(async () => {
     try {
       setIsLoading(true);
-
-      const [accountRes, companyRes] = await Promise.all([
+      const [accountRes] = await Promise.all([
         dispatch(operatorListApi({ id: userId, limit: 1, offset: 0 })).unwrap(),
-        dispatch(companyListApi({ id: companyId, limit: 1, offset: 0 })).unwrap(),
       ]);
 
-      const user = accountRes.data?.[0]; 
-      const company = companyRes.data?.[0];
-
-      if (user && company) {
-        setProfile({
+      const user = accountRes.data?.[0];
+      if (user) {
+        const profileData = {
           id: user.id,
           username: user.username,
           fullName: user.full_name,
           gender: getGender(user.gender),
+          genderValue: user.gender,
           status: getStatus(user.status),
-          emailId: user.email_id,
-          phoneNumber: user.phone_number,
-          company: {
-            id: company.id,
-            name: company.name,
-            contactPerson: company.contact_person,
-            location: company.location,
-            phoneNumber: company.phone_number,
-            address: company.address,
-            status: getCompanyStatus(company.status),
-            type: getCompanyType(company.type),
-          },
+          email_id: user.email_id,
+          phoneNumber: formatPhoneNumber(user.phone_number),
+          created_on: user.created_on,
+          role: role,
+          roleAssignmentId: roleAssignmentId,
+        };
+        setProfile(profileData);
+        setGenderValue(user.gender);
+        reset({
+          fullName: user.full_name,
+          phoneNumber: formatPhoneNumber(user.phone_number),
+          email: user.email_id,
+          gender: user.gender,
+          role: role,
+          roleAssignmentId: roleAssignmentId,
         });
       }
     } catch (error: any) {
-      showErrorToast(error.message || 'Failed to load profile');
+      showErrorToast(error.message || "Failed to load profile");
     } finally {
       setIsLoading(false);
     }
-  }, [dispatch, userId, companyId]);
+  }, [dispatch, userId, companyId, reset]);
+
+  const fetchCompanyData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const [companyRes] = await Promise.all([
+        dispatch(companyListApi({ id: companyId, limit: 1, offset: 0 })).unwrap(),
+      ]);
+
+      const company = companyRes.data?.[0];
+      if (company) {
+        console.log("Company Data:", company);
+        
+        const companyData = {
+          id: company.id,
+          name: company.name ?? "-",
+          address: company.address ?? "-",
+          location: company.location ?? "-",
+          ownerName: company.contact_person,
+          phoneNumber: company.phone_number ?? "-",
+          email: company.email_id ?? "-",
+          companyType: company.type === 1 ? "private" : "government",
+          status:
+            company.status === 1
+              ? "Validating"
+              : company.status === 2
+              ? "Verified"
+              : "Suspended",
+        };
+        setCompany(companyData);
+
+      }
+    } catch (error: any) {
+      showErrorToast(error.message || "Failed to load company profile");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [dispatch, userId, companyId, reset]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchUserData();
+    fetchCompanyData();
+  }, [fetchUserData, fetchCompanyData]);
+
+  const handleEditField = (field: string) => {
+    setEditingField(field);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingField(null);
+    fetchUserData(); 
+  };
+
+  const handleAccountUpdate: SubmitHandler<IAccountFormInputs> = async (data) => {
+    try {
+      setIsLoading(true);
+      const formData = new FormData();
+      formData.append("id", userId.toString());
+
+      if (editingField === "fullName" && data.fullName) formData.append("full_name", data.fullName);
+      if (editingField === "phoneNumber" && data.phoneNumber) formData.append("phone_number", `+91${data.phoneNumber}`);
+      if (editingField === "email" && data.email) formData.append("email_id", data.email);
+      if (editingField === "gender") formData.append("gender", data.gender?.toString() || "");
+      if (editingField === "role" && data.role) formData.append("role", data.role.toString());
+      const accountResponse = await dispatch(
+        operatorUpdationApi({ accountId: userId, formData })
+      ).unwrap();
+
+      if (!accountResponse?.id) {
+        showErrorToast("Account update failed! Please try again.");
+        return;
+      }
+      if (editingField === "role" && data.role && canManageOperator) {
+        try {
+          if (roleAssignmentId) {
+            await dispatch(
+              roleAssignUpdateApi({
+                id: roleAssignmentId,
+                role_id: data.role,
+              })
+            ).unwrap();
+          } else {
+            const roleAssignResponse = await dispatch(
+              operatorRoleAssignApi({
+                operator_id: userId,
+                role_id: data.role,
+              })
+            ).unwrap();
+            if (roleAssignResponse.id) {
+              setRoleAssignmentId(roleAssignResponse.id);
+            }
+          }
+        } catch (error) {
+          showErrorToast("Account updated, but role assignment failed!");
+          console.error("Role assignment error:", error);
+          return;
+        }
+      }
+
+      showSuccessToast("Profile updated successfully!");
+      setEditingField(null);
+      await fetchUserData();
+    } catch (error) {
+      console.error("Update error:", error);
+      showErrorToast("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
         <CircularProgress size={60} />
       </Box>
     );
@@ -150,188 +297,322 @@ const ProfilePage: React.FC = () => {
 
   if (!profile) {
     return (
-      <Box sx={{ textAlign: 'center', mt: 5 }}>
+      <Box sx={{ textAlign: "center", mt: 5 }}>
         <Typography variant="h6">No profile data available.</Typography>
       </Box>
     );
   }
 
-  return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {!showCompany ? (
-        // Profile View
-        <Box sx={{ maxWidth: 600, margin: '0 auto' }}>
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Avatar
+  const renderEditableField = (field: string, label: string, value: string | number, icon: React.ReactNode) => {
+    if (editingField === field) {
+      return (
+        <Box 
+          component="form" 
+          onSubmit={handleSubmit(handleAccountUpdate)} 
+          sx={{ 
+            width: '100%',
+            p: 2,
+            backgroundColor: theme.palette.mode === 'light' ? theme.palette.grey[50] : theme.palette.grey[800],
+            borderRadius: 1,
+            mb: 1
+          }}
+        >
+          <Grid container alignItems="center" spacing={2}>
+            <Grid item>
+              <Avatar sx={{ 
+                bgcolor: "background.paper", 
+                color: "primary.main",
+                width: 40,
+                height: 40
+              }}>
+                {icon}
+              </Avatar>
+            </Grid>
+            <Grid item xs>
+              {field === "fullName" && (
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  size="small"
+                  defaultValue={value}
+                  {...register(field as "fullName", { required: `${label} is required` })}
+                  error={!!errors[field as keyof typeof errors]}
+                  helperText={errors[field as keyof typeof errors]?.message}
+                />
+              )}
+              {field === "email" && (
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  size="small"
+                  defaultValue={value}
+                  {...register(field as "email", {
+                    required: `${label} is required`,
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: "Invalid email address",
+                    },
+                  })}
+                  error={!!errors.email}
+                  helperText={errors.email?.message}
+                />
+              )}
+              {field === "phoneNumber" && (
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  size="small"
+                  defaultValue={value}
+                  {...register(field as "phoneNumber", {
+                    required: `${label} is required`,
+                    pattern: {
+                      value: /^[0-9]{10}$/,
+                      message: "Invalid phone number (10 digits required)",
+                    },
+                  })}
+                  error={!!errors.phoneNumber}
+                  helperText={errors.phoneNumber?.message}
+                />
+              )}
+              {field === "gender" && (
+                <FormControl fullWidth size="small">
+                  <Select
+                    value={genderValue}
+                    {...register("gender")}
+                    onChange={(e) => setGenderValue(Number(e.target.value))}
+                  >
+                    <MenuItem value={1}>Female</MenuItem>
+                    <MenuItem value={2}>Male</MenuItem>
+                    <MenuItem value={3}>Transgender</MenuItem>
+                    <MenuItem value={0}>Other</MenuItem>
+                  </Select>
+                </FormControl>
+              )}
+              {field === "role" && canManageOperator && (
+                <FormControl fullWidth size="small">
+                  <Select
+                    value={role || ""}
+                    {...register("role", { required: "Role is required" })}
+                    onChange={(e) => setRole(Number(e.target.value))}
+                    error={!!errors.role}
+                  >
+                    {roles.map((r) => (
+                      <MenuItem key={r.id} value={r.id}>
+                        {r.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+            </Grid>
+            <Grid item>
+              <Stack direction="row" spacing={0.5}>
+                <IconButton type="submit" color="primary" size="small">
+                  <Check fontSize="small" />
+                </IconButton>
+                <IconButton onClick={handleCancelEdit} color="error" size="small">
+                  <Close fontSize="small" />
+                </IconButton>
+              </Stack>
+            </Grid>
+          </Grid>
+        </Box>
+      );
+    }
+
+    return (
+      <Box 
+        sx={{ 
+          p: 2,
+          borderRadius: 1,
+          '&:hover': {
+            backgroundColor: theme.palette.mode === 'light' ? theme.palette.grey[50] : theme.palette.grey[800],
+          },
+          mb: 1
+        }}
+      >
+        <Grid container alignItems="center" spacing={2}>
+          <Grid item>
+            <Avatar sx={{ 
+              bgcolor: "background.paper", 
+              color: "primary.main",
+              width: 40,
+              height: 40
+            }}>
+              {icon}
+            </Avatar>
+          </Grid>
+          <Grid item xs>
+            <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>
+              {label}
+            </Typography>
+            <Typography variant="body1" color="text.primary" fontWeight={500}>
+              {value || "Not provided"}
+            </Typography>
+          </Grid>
+          <Grid item>
+            <IconButton 
+              onClick={() => handleEditField(field)} 
+              color="primary"
+              size="small"
               sx={{
-                width: 120,
-                height: 120,
-                fontSize: 48,
-                margin: '0 auto 16px',
-                bgcolor: 'primary.main',
+                opacity: 0.7,
+                '&:hover': {
+                  opacity: 1
+                }
               }}
             >
-              {profile.fullName.charAt(0)}
-            </Avatar>
-            <Typography variant="h4" fontWeight="bold">
-              {profile.fullName}
-            </Typography>
-            <Typography variant="subtitle1" color="text.secondary">
-              @{profile.username}
-            </Typography>
-            <Chip
-              label={profile.status}
-              color={getStatusColor(profile.status)}
-              size="small"
-              sx={{ mt: 1 }}
-            />
-          </Box>
+              <Edit fontSize="small" />
+            </IconButton>
+          </Grid>
+        </Grid>
+      </Box>
+    );
+  };
 
-          <Card elevation={3} sx={{ mb: 3 }}>
-            <CardContent>
-              <Grid container spacing={3}>
-                {[
-                  { icon: <Person />, label: 'Full Name', value: profile.fullName },
-                  { icon: <Phone />, label: 'Phone', value: profile.phoneNumber },
-                  { icon: <Email />, label: 'Email', value: profile.emailId },
-                  {
-                    icon: profile.gender === 'Male' ? <Male /> : 
-                          profile.gender === 'Female' ? <Female /> : <Transgender />,
-                    label: 'Gender',
-                    value: profile.gender,
-                  },
-                ].map((item, index) => (
-                  <React.Fragment key={index}>
-                    <Grid item xs={12} sm={6}>
-                      <Stack direction="row" spacing={2} alignItems="center">
-                        <Avatar sx={{ bgcolor: 'action.selected' }}>{item.icon}</Avatar>
-                        <Box>
-                          <Typography variant="subtitle2" color="text.secondary">
-                            {item.label}
-                          </Typography>
-                          <Typography variant="body1">{item.value}</Typography>
-                        </Box>
-                      </Stack>
-                    </Grid>
-                  </React.Fragment>
-                ))}
-              </Grid>
-            </CardContent>
-          </Card>
-
-          <Box sx={{ textAlign: 'center', mt: 3 }}>
-            <Button
-              variant="outlined"
-              startIcon={<Business />}
-              onClick={() => setShowCompany(true)}
-              sx={{ px: 4 }}
-            >
-              View Company Details
-            </Button>
-          </Box>
-        </Box>
-      ) : (
-        // Company Details View
+  return (
+    <Box sx={{ width: '100%', p: { xs: 2, sm: 3 } }}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: { xs: 2, sm: 4 },
+          borderRadius: 2,
+          maxWidth: 1000,
+          margin: '0 auto',
+          backgroundColor: theme.palette.background.paper,
+          boxShadow: theme.shadows[2]
+        }}
+      >
         <Grid container spacing={4}>
-          <Grid item xs={12} md={6}>
-            <Card elevation={3}>
-              <CardContent>
-                <Box sx={{ textAlign: 'center', mb: 3 }}>
-                  <Avatar
-                    sx={{
-                      width: 100,
-                      height: 100,
-                      fontSize: 40,
-                      margin: '0 auto 16px',
-                      bgcolor: 'secondary.main',
-                    }}
-                  >
-                    {profile.company.name.charAt(0)}
-                  </Avatar>
-                  <Typography variant="h5" fontWeight="bold">
-                    {profile.company.name}
-                  </Typography>
-                  <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: 1 }}>
-                    <Chip
-                      label={profile.company.status}
-                      color={getStatusColor(profile.company.status)}
-                      size="small"
-                    />
-                    <Chip
-                      label={profile.company.type}
-                      color={profile.company.type === 'Private' ? 'primary' : 'secondary'}
-                      size="small"
-                    />
-                  </Stack>
-                </Box>
-
-                <Divider sx={{ my: 2 }} />
-
-                <Grid container spacing={2}>
-                  {[
-                    { label: 'Contact Person', value: profile.company.contactPerson },
-                    { label: 'Location', value: profile.company.location },
-                    { label: 'Phone', value: profile.company.phoneNumber },
-                    { label: 'Address', value: profile.company.address },
-                  ].map((item, index) => (
-                    <Grid item xs={12} key={index}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        {item.label}
-                      </Typography>
-                      <Typography variant="body1" sx={{ wordBreak: 'break-word' }}>
-                        {item.value}
-                      </Typography>
-                    </Grid>
-                  ))}
-                </Grid>
-              </CardContent>
-            </Card>
+          {/* Left Column - Profile Summary */}
+          <Grid item xs={12} md={4}>
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center',
+              position: 'sticky',
+              top: 20
+            }}>
+              <Avatar
+                sx={{
+                  width: 120,
+                  height: 120,
+                  fontSize: 48,
+                  bgcolor: 'primary.main',
+                  mb: 2,
+                  border: `4px solid ${theme.palette.primary.light}`
+                }}
+              >
+                {profile.fullName.charAt(0)}
+              </Avatar>
+              <Typography variant="h6" gutterBottom textAlign="center">
+                {profile.fullName}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                @{profile.username}
+              </Typography>
+              <Chip
+                label={profile.status}
+                color={getStatusColor(profile.status)}
+                size="small"
+                sx={{ 
+                  mt: 1,
+                  fontWeight: 600,
+                  px: 1
+                }}
+              />
+            </Box>
           </Grid>
 
-          <Grid item xs={12} md={6}>
-            <Box
-              sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-              }}
-            >
-              <Card elevation={3}>
-                <CardContent>
-                  <Box sx={{ textAlign: 'center', mb: 2 }}>
-                    <Avatar
-                      sx={{
-                        width: 80,
-                        height: 80,
-                        fontSize: 32,
-                        margin: '0 auto 16px',
-                        bgcolor: 'primary.main',
-                      }}
-                    >
-                      {profile.fullName.charAt(0)}
-                    </Avatar>
-                    <Typography variant="h6">{profile.fullName}</Typography>
-                    <Typography variant="subtitle1" color="text.secondary">
-                      @{profile.username}
-                    </Typography>
-                  </Box>
+          {/* Right Column - Profile Details */}
+          <Grid item xs={12} md={8}>
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" fontWeight={600}>
+                Profile Information
+              </Typography>
+            </Box>
 
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    onClick={() => setShowCompany(false)}
-                    sx={{ mt: 2 }}
-                  >
-                    Back to Profile
-                  </Button>
-                </CardContent>
-              </Card>
+            <Box sx={{ 
+              backgroundColor: theme.palette.mode === 'light' ? theme.palette.grey[50] : theme.palette.grey[900],
+              p: 3,
+              borderRadius: 2
+            }}>
+              <Stack spacing={2}>
+                {renderEditableField(
+                  "fullName",
+                  "Full Name",
+                  profile.fullName,
+                  <Person />
+                )}
+
+                {renderEditableField(
+                  "email",
+                  "Email",
+                  profile.email_id,
+                  <Email />
+                )}
+
+                {renderEditableField(
+                  "phoneNumber",
+                  "Phone",
+                  profile.phoneNumber,
+                  <Phone />
+                )}
+
+                {renderEditableField(
+                  "gender",
+                  "Gender",
+                  profile.gender,
+                  profile.gender === "Male" ? (
+                    <Male />
+                  ) : profile.gender === "Female" ? (
+                    <Female />
+                  ) : (
+                    <Transgender />
+                  )
+                )}
+
+                {canManageOperator && renderEditableField(
+                  "role",
+                  "Role",
+                  roles.find((r) => r.id === role)?.name ?? "",
+                  <Person />
+                )}
+
+                <Box sx={{ 
+                  p: 2,
+                  borderRadius: 1,
+                  mb: 1
+                }}>
+                  <Grid container alignItems="center" spacing={2}>
+                    <Grid item>
+                      <Avatar sx={{ 
+                        bgcolor: "background.paper", 
+                        color: "primary.main",
+                        width: 40,
+                        height: 40
+                      }}>
+                        <Person />
+                      </Avatar>
+                    </Grid>
+                    <Grid item xs>
+                      <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>
+                        Created On
+                      </Typography>
+                      <Typography variant="body1" color="text.primary" fontWeight={500}>
+                        {formatUTCDateToLocal(profile.created_on)}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </Box>
+              </Stack>
             </Box>
           </Grid>
         </Grid>
-      )}
-    </Container>
+      </Paper>
+
+      {company && <CompanyDetailsCard company={company} companyId={company.id} />}
+    </Box>
   );
 };
 

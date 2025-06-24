@@ -197,7 +197,7 @@ const RoleListingTable = () => {
               onClick={() => setOpenCreateModal(true)}
               style={{ cursor: !canManageRole ? "not-allowed" : "default" }}
             >
-              Add Role
+              Add New Role
             </Button>
         </Tooltip>
 

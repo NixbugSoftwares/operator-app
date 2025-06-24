@@ -352,7 +352,7 @@ const BusRouteListing = () => {
                     onClick={toggleCreationForm}
                     disabled={!canManageRoutes}
                   >
-                    Create Routes
+                    Add New Routes
                   </Button>
                 </span>
               </Tooltip>
