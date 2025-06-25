@@ -99,7 +99,7 @@ const handleResponse = async (response: any) => {
 //******************************************************  errorResponse handler  **************************************** */
 const handleErrorResponse = (errorResponse: any) => {
   if (!errorResponse) {
-    showErrorToast('Network error. Please try again.');
+    // showErrorToast('Network error. Please try again.');
     return {error: 'Network error'};
   }
   const {status, data} = errorResponse.response as {status: number; data: any};
@@ -113,7 +113,7 @@ const handleErrorResponse = (errorResponse: any) => {
     console.log('validation====>', validationErrors);
     showErrorToast(validationErrors);
   } else if (status === 401) {
-    showErrorToast(errorMessage);
+    // showErrorToast(errorMessage);
     setTimeout(() => {
       if (errorMessage !== 'Invalid username or password') {
         commonHelper.logout();
@@ -121,7 +121,7 @@ const handleErrorResponse = (errorResponse: any) => {
     }, 500);
   } else {
     console.log('errormessagge====>', errorMessage);
-    showErrorToast(errorMessage);
+    // showErrorToast(errorMessage);
   }
   return {...data, error: errorMessage, status};
 };

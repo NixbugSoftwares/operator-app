@@ -215,21 +215,28 @@ const BusRouteListing = () => {
     setDeleteConfirmOpen(true);
   };
 
-  const handleRouteDelete = async () => {
-    if (!routeToDelete) return;
+ const handleRouteDelete = async () => {
+  if (!routeToDelete) return;
 
-    try {
-      const formData = new FormData();
-      formData.append("id", routeToDelete.id.toString());
-      await dispatch(routeDeleteApi(formData)).unwrap();
-      showSuccessToast("Route deleted successfully");
-    } catch (error) {
-      showErrorToast("Failed to delete route");
-    } finally {
-      setDeleteConfirmOpen(false);
-      setRouteToDelete(null);
+  try {
+    const formData = new FormData();
+    formData.append("id", routeToDelete.id.toString());
+    const result = await dispatch(routeDeleteApi(formData)).unwrap();
+    
+    if (result && result.error) {
+      throw new Error(result.error);
     }
-  };
+
+    showSuccessToast("Route deleted successfully");
+  } catch (error) {
+    showErrorToast(
+      (error instanceof Error ? error.message : "Failed to delete route")
+    );
+  } finally {
+    setDeleteConfirmOpen(false);
+    setRouteToDelete(null);
+  }
+};
 
   const handleAddLandmarkEdit = (landmark: SelectedLandmark) => {
     setNewRouteLandmarks((prev) => [...prev, landmark]);
