@@ -17,18 +17,19 @@ import MenuIcon from "@mui/icons-material/Menu";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 import Diversity3Icon from "@mui/icons-material/Diversity3";
 import RouteIcon from "@mui/icons-material/Route";
-import CorporateFareIcon from "@mui/icons-material/CorporateFare";
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import PowerSettingsNewIcon from "@mui/icons-material/PowerSettingsNew";
 import AssignmentIndRoundedIcon from '@mui/icons-material/AssignmentIndRounded';
 import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded';
+import CalculateIcon from "@mui/icons-material/Calculate";
 // import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import PersonIcon from '@mui/icons-material/Person';
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import { useTheme, useMediaQuery } from "@mui/material";
 import LogoutConfirmationModal from "./logoutModal";
+import localStorageHelper from "../utils/localStorageHelper";
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,15 +38,18 @@ const Sidebar: React.FC = () => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  
+const companyName = localStorageHelper.getItem("@companyName")?.toLowerCase();
+console.log("Company Name:", companyName);
   const sections = [
     {
-      title: "Dashboard",
+      title: companyName ? companyName : "",
       items: [
         { label: "Operator", path: "/operator", icon: <AccountCircleOutlinedIcon /> },
         { label: "Role", path: "/role", icon: <Diversity3Icon /> },
         { label: "Bus", path: "/bus", icon: <DirectionsBusIcon /> },
         { label: "Route", path: "/busroute", icon: <RouteIcon /> },
-        { label: "Fare", path: "/fare", icon: <CorporateFareIcon /> },
+        { label: "Fare", path: "/fare", icon: <CalculateIcon /> },
         { label: "Service", path: "/service", icon: <AssignmentIndRoundedIcon /> },
         { label: "schedule", path: "/schedule", icon: <ScheduleIcon /> },
         {label:"Duty",path:"/duty",icon:<AssignmentTurnedInRoundedIcon/>},
@@ -114,7 +118,7 @@ const Sidebar: React.FC = () => {
         <Box sx={{ overflow: "auto", p: 2 }}>
           {sections.map((section, index) => (
             <Box key={index} sx={{ mb: 3 }}>
-              <Typography variant="h6" sx={{ mb: 1 }}>
+              <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, textTransform: "uppercase", fontSize: { xs: "0.8rem", sm: "1rem" } }}>
                 {section.title}
               </Typography>
               <List>
@@ -147,23 +151,32 @@ const Sidebar: React.FC = () => {
             </Box>
           ))}
         </Box>
-
         {/* *******************************************************logout section******************************************************** */}
-        <Box sx={{ p: 2, borderTop: "1px solid #eee" }}>
+        <Box sx={{ px: 2, pt: 1, pb: 0, borderTop: "1px solid #eee", mt: "auto" }}>
           <List>
             <ListItem disablePadding>
               <ListItemButton
                 onClick={() => setUserMenuOpen((prev) => !prev)}
                 sx={{
                   borderRadius: 1,
-                  mb: 1,
+                  minHeight: 40,
+                  justifyContent: "center",
+                  px: 1,
+                  py: 0.5,
                 }}
               >
-                <ListItemIcon>
+                <ListItemIcon sx={{ minWidth: 32 }}>
                   <PersonIcon />
                 </ListItemIcon>
-                <ListItemText primary="User" />
-                {userMenuOpen ? < ExpandMore /> : <ExpandLess />}
+                <ListItemText
+                  primary="User"
+                  primaryTypographyProps={{
+                    fontSize: "0.95rem",
+                    fontWeight: 500,
+                  }}
+                  sx={{ m: 0 }}
+                />
+                {userMenuOpen ? <ExpandMore /> : <ExpandLess />}
               </ListItemButton>
             </ListItem>
             <Collapse in={userMenuOpen} timeout="auto" unmountOnExit>
@@ -186,9 +199,10 @@ const Sidebar: React.FC = () => {
                       },
                       borderRadius: 1,
                       mb: 1,
+                      minHeight: 36,
                     }}
                   >
-                    <ListItemIcon>
+                    <ListItemIcon sx={{ minWidth: 32 }}>
                       <PersonIcon />
                     </ListItemIcon>
                     <ListItemText primary="Profile" />
@@ -200,9 +214,9 @@ const Sidebar: React.FC = () => {
                       setIsLogoutModalOpen(true);
                       setUserMenuOpen(false);
                     }}
-                    sx={{ pl: 4 }}
+                    sx={{ pl: 4, minHeight: 36 }}
                   >
-                    <ListItemIcon>
+                    <ListItemIcon sx={{ minWidth: 32 }}>
                       <PowerSettingsNewIcon color="error" />
                     </ListItemIcon>
                     <ListItemText primary="Logout" sx={{ color: "error.main" }} />
@@ -211,6 +225,21 @@ const Sidebar: React.FC = () => {
               </List>
             </Collapse>
           </List>
+        </Box>
+        <Box sx={{ width: "100%", pb: 1, pt: 0 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              textAlign: "center",
+              color: "text.secondary",
+              width: "100%",
+              display: "block",
+            }}
+          >
+            &copy; {new Date().getFullYear()} EnteBus. All rights reserved.
+            <br />
+            Version 0.1.0
+          </Typography>
         </Box>
       </Drawer>
 

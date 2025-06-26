@@ -142,6 +142,14 @@ const LoginPage: React.FC = () => {
         };
         const access_token = response?.access_token;
         const expiresAt = Date.now() + response?.expires_in * 1000;
+        
+        const selectedCompany = dropdownData.companyList.find(
+        (company) => company.id === data.company_id
+      );
+      if (selectedCompany) {
+        localStorageHelper.storeItem("@companyName", selectedCompany.name);
+      }
+
 
         localStorageHelper.storeItem("@token", access_token);
         localStorageHelper.storeItem("@token_expires", expiresAt);

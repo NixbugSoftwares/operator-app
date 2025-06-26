@@ -5,7 +5,6 @@ import {
   Chip,
   CircularProgress,
   Grid,
-  Paper,
   Stack,
   Typography,
   TextField,
@@ -14,6 +13,7 @@ import {
   FormControl,
   IconButton,
   useTheme,
+  Divider,
 } from "@mui/material";
 import {
   Person,
@@ -25,6 +25,8 @@ import {
   Check,
   Close,
   Edit,
+  Business,
+  CalendarToday,
 } from "@mui/icons-material";
 import { useDispatch } from "react-redux";
 import {
@@ -79,7 +81,6 @@ const ProfilePage: React.FC = () => {
   const canManageOperator = useSelector((state: RootState) =>
     state.app.permissions.includes("manage_operator")
   );
-
   const getGender = (value: number): string => {
     switch (value) {
       case 1: return "Female";
@@ -470,150 +471,133 @@ const ProfilePage: React.FC = () => {
     );
   };
 
-  return (
-    <Box sx={{ width: '100%', p: { xs: 2, sm: 3 } }}>
-      <Paper
-        elevation={0}
+ return (
+  <Box sx={{ width: '100%', px: { xs: 1, sm: 2 }, py: 2 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        width: '100%',
+        borderRadius: 2,
+        boxShadow: 3,
+        backgroundColor: theme.palette.mode === 'light' ? '#fff' : theme.palette.background.default,
+        overflow: 'hidden',
+      }}
+    >
+      {/* Left: Profile Summary */}
+      <Box
         sx={{
-          p: { xs: 2, sm: 4 },
-          borderRadius: 2,
-          maxWidth: 1000,
-          margin: '0 auto',
-          backgroundColor: theme.palette.background.paper,
-          boxShadow: theme.shadows[2]
+          flex: 1,
+          p: { xs: 2, sm: 3 },
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 2,
+          backgroundColor: theme.palette.mode === 'light' ? '#f9f9f9' : theme.palette.background.paper,
         }}
       >
-        <Grid container spacing={4}>
-          {/* Left Column - Profile Summary */}
-          <Grid item xs={12} md={4}>
-            <Box sx={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
+        <Avatar
+          sx={{
+            width: 96,
+            height: 96,
+            fontSize: 40,
+            bgcolor: 'primary.main',
+            border: `4px solid ${theme.palette.primary.light}`,
+          }}
+        >
+          {profile.fullName.charAt(0)}
+        </Avatar>
+        <Typography variant="h5" fontWeight={700}>
+          {profile.fullName}
+        </Typography>
+        <Chip
+          label={profile.status}
+          color={getStatusColor(profile.status)}
+          size="medium"
+          sx={{ fontWeight: 600, px: 2, fontSize: 16 }}
+        />
+        <Stack direction="row" spacing={2} alignItems="center" divider={<Box sx={{ width: 1, height: 24, bgcolor: 'divider' }} />}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Person fontSize="small" color="primary" />
+            <Typography variant="body1" fontWeight={500}>
+              {roles.find((r) => r.id === role)?.name ?? ""}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CalendarToday fontSize="small" color="primary" />
+            <Typography variant="body1" fontWeight={500}>
+              {formatUTCDateToLocal(profile.created_on)}
+            </Typography>
+          </Box>
+        </Stack>
+        {company && (
+          <Box
+            sx={{
+              display: 'flex',
               alignItems: 'center',
-              position: 'sticky',
-              top: 20
-            }}>
-              <Avatar
-                sx={{
-                  width: 120,
-                  height: 120,
-                  fontSize: 48,
-                  bgcolor: 'primary.main',
-                  mb: 2,
-                  border: `4px solid ${theme.palette.primary.light}`
-                }}
-              >
-                {profile.fullName.charAt(0)}
-              </Avatar>
-              <Typography variant="h6" gutterBottom textAlign="center">
-                {profile.fullName}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                @{profile.username}
-              </Typography>
-              <Chip
-                label={profile.status}
-                color={getStatusColor(profile.status)}
-                size="small"
-                sx={{ 
-                  mt: 1,
-                  fontWeight: 600,
-                  px: 1
-                }}
-              />
-            </Box>
-          </Grid>
+              gap: 1,
+              mt: 1,
+              cursor: 'pointer',
+              color: 'primary.main',
+              '&:hover': { textDecoration: 'underline' },
+            }}
+            onClick={() => {
+              const el = document.getElementById('company-details');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            <Business fontSize="small" />
+            <Typography variant="body1" fontWeight={600}>
+              {company.name}
+            </Typography>
+          </Box>
+        )}
+      </Box>
 
-          {/* Right Column - Profile Details */}
-          <Grid item xs={12} md={8}>
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" fontWeight={600}>
-                Profile Information
-              </Typography>
-            </Box>
+      {/* Vertical Divider */}
+      <Box sx={{ width: '1px', backgroundColor: 'divider', display: { xs: 'none', md: 'block' } }} />
 
-            <Box sx={{ 
-              backgroundColor: theme.palette.mode === 'light' ? theme.palette.grey[50] : theme.palette.grey[900],
-              p: 3,
-              borderRadius: 2
-            }}>
-              <Stack spacing={2}>
-                {renderEditableField(
-                  "fullName",
-                  "Full Name",
-                  profile.fullName,
-                  <Person />
-                )}
+      {/* Right: Editable Fields */}
+      <Box sx={{ flex: 2, p: { xs: 2, sm: 3 } }}>
+        <Stack spacing={2}>
+          {/* Username */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar sx={{ bgcolor: 'background.paper', color: 'primary.main', width: 32, height: 32 }}>
+              <Person />
+            </Avatar>
+            <Typography variant="body1">
+              <strong>Username:</strong> @{profile.username}
+            </Typography>
+          </Box>
+          <Divider />
 
-                {renderEditableField(
-                  "email",
-                  "Email",
-                  profile.email_id,
-                  <Email />
-                )}
-
-                {renderEditableField(
-                  "phoneNumber",
-                  "Phone",
-                  profile.phoneNumber,
-                  <Phone />
-                )}
-
-                {renderEditableField(
-                  "gender",
-                  "Gender",
-                  profile.gender,
-                  profile.gender === "Male" ? (
-                    <Male />
-                  ) : profile.gender === "Female" ? (
-                    <Female />
-                  ) : (
-                    <Transgender />
-                  )
-                )}
-
-                {canManageOperator && renderEditableField(
-                  "role",
-                  "Role",
-                  roles.find((r) => r.id === role)?.name ?? "",
-                  <Person />
-                )}
-
-                <Box sx={{ 
-                  p: 2,
-                  borderRadius: 1,
-                  mb: 1
-                }}>
-                  <Grid container alignItems="center" spacing={2}>
-                    <Grid item>
-                      <Avatar sx={{ 
-                        bgcolor: "background.paper", 
-                        color: "primary.main",
-                        width: 40,
-                        height: 40
-                      }}>
-                        <Person />
-                      </Avatar>
-                    </Grid>
-                    <Grid item xs>
-                      <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>
-                        Created On
-                      </Typography>
-                      <Typography variant="body1" color="text.primary" fontWeight={500}>
-                        {formatUTCDateToLocal(profile.created_on)}
-                      </Typography>
-                    </Grid>
-                  </Grid>
-                </Box>
-              </Stack>
-            </Box>
-          </Grid>
-        </Grid>
-      </Paper>
-
-      {company && <CompanyDetailsCard company={company} companyId={company.id} />}
+          {/* Editable Fields */}
+          {renderEditableField("fullName", "Full Name", profile.fullName, <Person />)}
+          {renderEditableField("email", "Email", profile.email_id, <Email />)}
+          {renderEditableField("phoneNumber", "Phone", profile.phoneNumber, <Phone />)}
+          {renderEditableField(
+            "gender",
+            "Gender",
+            profile.gender,
+            profile.gender === "Male"
+              ? <Male />
+              : profile.gender === "Female"
+                ? <Female />
+                : <Transgender />
+          )}
+        </Stack>
+      </Box>
     </Box>
-  );
+
+    {/* Company Details Below */}
+    {company && (
+      <Box id="company-details" sx={{ mt: 4 }}>
+        <CompanyDetailsCard company={company} companyId={company.id} />
+      </Box>
+    )}
+  </Box>
+);
+
 };
 
 export default ProfilePage;
