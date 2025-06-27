@@ -131,12 +131,6 @@ const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
     fetchFareName();
   }, [schedule.route_id, schedule.bus_id, schedule.fare_id]);
 
-  const formatUTCDateToLocal = (dateString: string | null): string => {
-    if (!dateString || dateString.trim() === "") return "Not added yet";
-    const date = new Date(dateString);
-    return isNaN(date.getTime()) ? "Not added yet" : date.toLocaleDateString();
-  };
-
   const handleScheduleDelete = async () => {
     if (!schedule.id) {
       console.error("Error: Schedule ID is missing");
@@ -197,7 +191,7 @@ const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
             }}
           >
             <Typography variant="body1">
-              <b>Permit Number:</b> {formatUTCDateToLocal(schedule.permit_no)}
+              <b>Permit Number:</b> {schedule.permit_no}
             </Typography>
             <Typography variant="body1">
               <b>Route :</b> {routeName}

@@ -29,7 +29,6 @@ import {
 import localStorageHelper from "../../utils/localStorageHelper";
 
 interface IAccountFormInputs {
-  username?: string;
   password?: string;
   fullName?: string;
   phoneNumber?: string;
@@ -140,8 +139,6 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
       setLoading(true);
       const formData = new FormData();
       formData.append("id", accountId.toString());
-
-      if (data.username) formData.append("username", data.username);
       if (data.password) formData.append("password", data.password);
       formData.append("gender", data.gender?.toString() || "");
       if (data.fullName) formData.append("full_name", data.fullName);

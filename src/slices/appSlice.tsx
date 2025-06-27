@@ -179,21 +179,18 @@ export const companyUpdateApi = createAsyncThunk(
     { formData }: { companyId: number; formData: FormData },
     { rejectWithValue }
   ) => {
-    try {
-      const response = await commonApi.apiCall(
-        "patch",
-        `/company`,
-        formData,
-        true,
-        "application/x-www-form-urlencoded"
-      );
-      return response;
-    } catch (error: any) {
-      console.error("Backend Error Response:", error.response?.data); 
-      return rejectWithValue(
-        error?.response?.data?.message || "company update failed"
-      );
+    const response = await commonApi.apiCall(
+      "patch",
+      `/company`,
+      formData,
+      true,
+      "application/x-www-form-urlencoded"
+    );
+    // If response contains an error, reject
+    if (response?.error) {
+      return rejectWithValue(response.error || "company update failed");
     }
+    return response;
   }
 );
 

@@ -228,6 +228,7 @@ const BusRouteListing = () => {
     }
 
     showSuccessToast("Route deleted successfully");
+    fetchRoute(page, debouncedSearch);
   } catch (error) {
     showErrorToast(
       (error instanceof Error ? error.message : "Failed to delete route")

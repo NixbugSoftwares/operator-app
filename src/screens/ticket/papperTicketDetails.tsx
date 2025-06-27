@@ -70,7 +70,12 @@ const TicketDetailsCard: React.FC<TicketDetailsCardProps> = ({
         return "default";
     }
   };
-
+  const formatDistance = (distance: number | null | undefined): string => {
+    if (distance == null || isNaN(Number(distance)))
+      return "Distance not available";
+    if (distance < 1000) return `${distance} meters`;
+    return `${(distance / 1000).toFixed(2)} km`;
+  };
   return (
     <Card
       sx={{
@@ -162,7 +167,7 @@ const TicketDetailsCard: React.FC<TicketDetailsCardProps> = ({
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <MapIcon color="info" sx={{ mr: 1 }} />
             <Typography variant="body2">
-              {ticket.distance ? `${ticket.distance} meters` : "Distance not available"}
+              {formatDistance(ticket.distance)}
             </Typography>
           </Box>
         </Grid>
@@ -174,7 +179,7 @@ const TicketDetailsCard: React.FC<TicketDetailsCardProps> = ({
             </Typography>
           </Box>
         </Grid>
-        <Grid item >
+        <Grid item>
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <DateIcon color="info" sx={{ mr: 1 }} />
             <Typography variant="body2">
@@ -182,12 +187,15 @@ const TicketDetailsCard: React.FC<TicketDetailsCardProps> = ({
             </Typography>
           </Box>
         </Grid>
-        
       </Grid>
 
       {/* Passenger Types */}
       <Box sx={{ mb: 3 }}>
-        <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: "bold" }}>
+        <Typography
+          variant="subtitle2"
+          gutterBottom
+          sx={{ fontWeight: "bold" }}
+        >
           PASSENGER DETAILS
         </Typography>
         <Divider sx={{ mb: 2 }} />
@@ -228,7 +236,7 @@ const TicketDetailsCard: React.FC<TicketDetailsCardProps> = ({
       </Box>
 
       {/* Action Buttons */}
-      <CardActions sx={{mt: 3 }}>
+      <CardActions sx={{ mt: 3 }}>
         <Button
           variant="outlined"
           color="primary"

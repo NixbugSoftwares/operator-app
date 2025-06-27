@@ -14,6 +14,8 @@ import {
   IconButton,
   useTheme,
   Divider,
+  Button,
+  Tooltip,
 } from "@mui/material";
 import {
   Person,
@@ -28,14 +30,18 @@ import {
   Business,
   CalendarToday,
 } from "@mui/icons-material";
+import Diversity3Icon from "@mui/icons-material/Diversity3";
 import { useDispatch } from "react-redux";
 import {
+  clearRoleDetails,
   fetchRoleMappingApi,
+  logoutApi,
   operatorListApi,
   operatorRoleAssignApi,
   operatorRoleListApi,
   operatorUpdationApi,
   roleAssignUpdateApi,
+  userLoggedOut,
 } from "../../slices/appSlice";
 import { companyListApi } from "../../slices/authSlice";
 import localStorageHelper from "../../utils/localStorageHelper";
@@ -45,6 +51,7 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/Store";
 import CompanyDetailsCard from "./compnayDetails";
+import commonHelper from "../../utils/commonHelper";
 
 interface IAccountFormInputs {
   username?: string;
@@ -73,7 +80,9 @@ const ProfilePage: React.FC = () => {
   } = useForm<IAccountFormInputs>();
   const [genderValue, setGenderValue] = useState<number>(0);
   const [roles, setRoles] = useState<{ id: number; name: string }[]>([]);
-  const [roleAssignmentId, setRoleAssignmentId] = useState<number | undefined>(undefined);
+  const [roleAssignmentId, setRoleAssignmentId] = useState<number | undefined>(
+    undefined
+  );
   const [role, setRole] = useState<number | undefined>(undefined);
   const user = localStorageHelper.getItem("@user");
   const userId = user?.userId;
@@ -81,22 +90,30 @@ const ProfilePage: React.FC = () => {
   const canManageOperator = useSelector((state: RootState) =>
     state.app.permissions.includes("manage_operator")
   );
+  const [showCompanyDetails, setShowCompanyDetails] = useState(false);
   const getGender = (value: number): string => {
     switch (value) {
-      case 1: return "Female";
-      case 2: return "Male";
-      case 3: return "Transgender";
-      default: return "Other";
+      case 1:
+        return "Female";
+      case 2:
+        return "Male";
+      case 3:
+        return "Transgender";
+      default:
+        return "Other";
     }
   };
-    const getStatus = (value: number): string => {
+  const getStatus = (value: number): string => {
     return value === 1 ? "Active" : "Suspended";
   };
   const getStatusColor = (value: string) => {
     switch (value) {
-      case "Active": return "success";
-      case "Suspended": return "error";
-      default: return "default";
+      case "Active":
+        return "success";
+      case "Suspended":
+        return "error";
+      default:
+        return "default";
     }
   };
 
@@ -184,13 +201,15 @@ const ProfilePage: React.FC = () => {
     try {
       setIsLoading(true);
       const [companyRes] = await Promise.all([
-        dispatch(companyListApi({ id: companyId, limit: 1, offset: 0 })).unwrap(),
+        dispatch(
+          companyListApi({ id: companyId, limit: 1, offset: 0 })
+        ).unwrap(),
       ]);
 
       const company = companyRes.data?.[0];
       if (company) {
         console.log("Company Data:", company);
-        
+
         const companyData = {
           id: company.id,
           name: company.name ?? "-",
@@ -208,7 +227,6 @@ const ProfilePage: React.FC = () => {
               : "Suspended",
         };
         setCompany(companyData);
-
       }
     } catch (error: any) {
       showErrorToast(error.message || "Failed to load company profile");
@@ -228,20 +246,27 @@ const ProfilePage: React.FC = () => {
 
   const handleCancelEdit = () => {
     setEditingField(null);
-    fetchUserData(); 
+    fetchUserData();
   };
 
-  const handleAccountUpdate: SubmitHandler<IAccountFormInputs> = async (data) => {
+  const handleAccountUpdate: SubmitHandler<IAccountFormInputs> = async (
+    data
+  ) => {
     try {
       setIsLoading(true);
       const formData = new FormData();
       formData.append("id", userId.toString());
 
-      if (editingField === "fullName" && data.fullName) formData.append("full_name", data.fullName);
-      if (editingField === "phoneNumber" && data.phoneNumber) formData.append("phone_number", `+91${data.phoneNumber}`);
-      if (editingField === "email" && data.email) formData.append("email_id", data.email);
-      if (editingField === "gender") formData.append("gender", data.gender?.toString() || "");
-      if (editingField === "role" && data.role) formData.append("role", data.role.toString());
+      if (editingField === "fullName" && data.fullName)
+        formData.append("full_name", data.fullName);
+      if (editingField === "phoneNumber" && data.phoneNumber)
+        formData.append("phone_number", `+91${data.phoneNumber}`);
+      if (editingField === "email" && data.email)
+        formData.append("email_id", data.email);
+      if (editingField === "gender")
+        formData.append("gender", data.gender?.toString() || "");
+      if (editingField === "role" && data.role)
+        formData.append("role", data.role.toString());
       const accountResponse = await dispatch(
         operatorUpdationApi({ accountId: userId, formData })
       ).unwrap();
@@ -277,7 +302,7 @@ const ProfilePage: React.FC = () => {
         }
       }
 
-      showSuccessToast("Profile updated successfully!");
+      showSuccessToast(`${editingField} updated successfully!`);
       setEditingField(null);
       await fetchUserData();
     } catch (error) {
@@ -285,6 +310,25 @@ const ProfilePage: React.FC = () => {
       showErrorToast("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    console.log("Attempting to logout...");
+    try {
+      console.log("Dispatching logoutApi...");
+      const response = await dispatch(logoutApi({})).unwrap();
+      console.log("Logout response:", response);
+
+      localStorageHelper.clearStorage();
+      localStorageHelper.removeStoredItem("@user");
+      dispatch(clearRoleDetails());
+      commonHelper.logout();
+      dispatch(userLoggedOut());
+      showSuccessToast("Logout successful!");
+    } catch (error) {
+      console.error("Logout Error:", error);
+      showErrorToast("Logout failed. Please try again.");
     }
   };
 
@@ -304,28 +348,38 @@ const ProfilePage: React.FC = () => {
     );
   }
 
-  const renderEditableField = (field: string, label: string, value: string | number, icon: React.ReactNode) => {
+  const renderEditableField = (
+    field: string,
+    label: string,
+    value: string | number,
+    icon: React.ReactNode
+  ) => {
     if (editingField === field) {
       return (
-        <Box 
-          component="form" 
-          onSubmit={handleSubmit(handleAccountUpdate)} 
-          sx={{ 
-            width: '100%',
+        <Box
+          component="form"
+          onSubmit={handleSubmit(handleAccountUpdate)}
+          sx={{
+            width: "100%",
             p: 2,
-            backgroundColor: theme.palette.mode === 'light' ? theme.palette.grey[50] : theme.palette.grey[800],
+            backgroundColor:
+              theme.palette.mode === "light"
+                ? theme.palette.grey[50]
+                : theme.palette.grey[800],
             borderRadius: 1,
-            mb: 1
+            mb: 1,
           }}
         >
           <Grid container alignItems="center" spacing={2}>
             <Grid item>
-              <Avatar sx={{ 
-                bgcolor: "background.paper", 
-                color: "primary.main",
-                width: 40,
-                height: 40
-              }}>
+              <Avatar
+                sx={{
+                  bgcolor: "background.paper",
+                  color: "primary.main",
+                  width: 40,
+                  height: 40,
+                }}
+              >
                 {icon}
               </Avatar>
             </Grid>
@@ -336,7 +390,9 @@ const ProfilePage: React.FC = () => {
                   variant="outlined"
                   size="small"
                   defaultValue={value}
-                  {...register(field as "fullName", { required: `${label} is required` })}
+                  {...register(field as "fullName", {
+                    required: `${label} is required`,
+                  })}
                   error={!!errors[field as keyof typeof errors]}
                   helperText={errors[field as keyof typeof errors]?.message}
                 />
@@ -363,6 +419,7 @@ const ProfilePage: React.FC = () => {
                   fullWidth
                   variant="outlined"
                   size="small"
+                  type="number"
                   defaultValue={value}
                   {...register(field as "phoneNumber", {
                     required: `${label} is required`,
@@ -411,7 +468,11 @@ const ProfilePage: React.FC = () => {
                 <IconButton type="submit" color="primary" size="small">
                   <Check fontSize="small" />
                 </IconButton>
-                <IconButton onClick={handleCancelEdit} color="error" size="small">
+                <IconButton
+                  onClick={handleCancelEdit}
+                  color="error"
+                  size="small"
+                >
                   <Close fontSize="small" />
                 </IconButton>
               </Stack>
@@ -422,182 +483,285 @@ const ProfilePage: React.FC = () => {
     }
 
     return (
-      <Box 
-        sx={{ 
+      <Box
+        sx={{
           p: 2,
           borderRadius: 1,
-          '&:hover': {
-            backgroundColor: theme.palette.mode === 'light' ? theme.palette.grey[50] : theme.palette.grey[800],
+          "&:hover": {
+            backgroundColor:
+              theme.palette.mode === "light"
+                ? theme.palette.grey[50]
+                : theme.palette.grey[800],
           },
-          mb: 1
+          mb: 1,
         }}
       >
-        <Grid container alignItems="center" spacing={2}>
-          <Grid item>
-            <Avatar sx={{ 
-              bgcolor: "background.paper", 
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Avatar
+            sx={{
+              bgcolor: "background.paper",
               color: "primary.main",
-              width: 40,
-              height: 40
-            }}>
-              {icon}
-            </Avatar>
-          </Grid>
-          <Grid item xs>
-            <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>
-              {label}
-            </Typography>
-            <Typography variant="body1" color="text.primary" fontWeight={500}>
-              {value || "Not provided"}
-            </Typography>
-          </Grid>
-          <Grid item>
-            <IconButton 
-              onClick={() => handleEditField(field)} 
-              color="primary"
-              size="small"
-              sx={{
-                opacity: 0.7,
-                '&:hover': {
-                  opacity: 1
-                }
-              }}
-            >
-              <Edit fontSize="small" />
-            </IconButton>
-          </Grid>
-        </Grid>
+              width: 32,
+              height: 32,
+              fontSize: 18,
+              mr: 1,
+            }}
+          >
+            {icon}
+          </Avatar>
+          <Typography
+            variant="subtitle2"
+            color="text.secondary"
+            fontWeight={600}
+            sx={{ minWidth: 110 }}
+          >
+            {label}:
+          </Typography>
+          <Typography
+            variant="body1"
+            color="text.primary"
+            fontWeight={500}
+            sx={{ flex: 1, ml: 2 }}
+          >
+            {value || "Not provided"}
+          </Typography>
+          <IconButton
+            onClick={() => handleEditField(field)}
+            color="primary"
+            size="small"
+            sx={{
+              opacity: 0.7,
+              ml: 1,
+              "&:hover": {
+                opacity: 1,
+              },
+            }}
+          >
+            <Edit fontSize="small" />
+          </IconButton>
+        </Box>
       </Box>
     );
   };
 
- return (
-  <Box sx={{ width: '100%', px: { xs: 1, sm: 2 }, py: 2 }}>
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: { xs: 'column', md: 'row' },
-        width: '100%',
-        borderRadius: 2,
-        boxShadow: 3,
-        backgroundColor: theme.palette.mode === 'light' ? '#fff' : theme.palette.background.default,
-        overflow: 'hidden',
-      }}
-    >
-      {/* Left: Profile Summary */}
+  return (
+    <Box sx={{ width: "100%", px: { xs: 1, sm: 2 }, py: 2 }}>
       <Box
         sx={{
-          flex: 1,
-          p: { xs: 2, sm: 3 },
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 2,
-          backgroundColor: theme.palette.mode === 'light' ? '#f9f9f9' : theme.palette.background.paper,
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          width: "100%",
+          borderRadius: 2,
+          boxShadow: 3,
+          backgroundColor:
+            theme.palette.mode === "light"
+              ? "#fff"
+              : theme.palette.background.default,
+          overflow: "hidden",
         }}
       >
-        <Avatar
+        {/* Left: Profile Summary */}
+        <Box
           sx={{
-            width: 96,
-            height: 96,
-            fontSize: 40,
-            bgcolor: 'primary.main',
-            border: `4px solid ${theme.palette.primary.light}`,
+            flex: 1,
+            p: { xs: 2, sm: 3 },
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
+            minHeight: "100%",
+            backgroundColor:
+              theme.palette.mode === "light"
+                ? "#f9f9f9"
+                : theme.palette.background.paper,
+            position: "relative",
           }}
         >
-          {profile.fullName.charAt(0)}
-        </Avatar>
-        <Typography variant="h5" fontWeight={700}>
-          {profile.fullName}
-        </Typography>
-        <Chip
-          label={profile.status}
-          color={getStatusColor(profile.status)}
-          size="medium"
-          sx={{ fontWeight: 600, px: 2, fontSize: 16 }}
-        />
-        <Stack direction="row" spacing={2} alignItems="center" divider={<Box sx={{ width: 1, height: 24, bgcolor: 'divider' }} />}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Person fontSize="small" color="primary" />
-            <Typography variant="body1" fontWeight={500}>
-              {roles.find((r) => r.id === role)?.name ?? ""}
+          <Stack spacing={2} alignItems="center" width="100%">
+            <Avatar
+              sx={{
+                width: 96,
+                height: 96,
+                fontSize: 40,
+                bgcolor: "primary.main",
+                border: `4px solid ${theme.palette.primary.light}`,
+              }}
+            >
+              {profile.fullName.charAt(0)}
+            </Avatar>
+
+            <Typography variant="h5" fontWeight={700}>
+              {profile.fullName}
             </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <CalendarToday fontSize="small" color="primary" />
-            <Typography variant="body1" fontWeight={500}>
-              {formatUTCDateToLocal(profile.created_on)}
-            </Typography>
-          </Box>
-        </Stack>
-        {company && (
+
+            <Chip
+              label={profile.status}
+              color={getStatusColor(profile.status)}
+              size="medium"
+              sx={{ fontWeight: 600, px: 2, fontSize: 16 }}
+            />
+
+            <Stack
+              spacing={2}
+              alignItems="center"
+              divider={
+                <Box sx={{ width: 1, height: 24, bgcolor: "divider" }} />
+              }
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Diversity3Icon fontSize="small" color="primary" />
+                <Typography variant="body1" fontWeight={500}>
+                  {roles.find((r) => r.id === role)?.name ?? ""}
+                </Typography>
+              </Box>
+            </Stack>
+
+            {company && (
+              <Tooltip title="Click to see the company details" arrow>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    mt: 1,
+                    cursor: "pointer",
+                    color: "primary.main",
+                    "&:hover": { textDecoration: "underline" },
+                  }}
+                  onClick={() => {
+                    setShowCompanyDetails(true);
+                    setTimeout(() => {
+                      const el = document.getElementById("company-details");
+                      if (el) el.scrollIntoView({ behavior: "smooth" });
+                    }, 100); // slight delay to ensure render
+                  }}
+                >
+                  <Business fontSize="small" />
+                  <Typography variant="body1" fontWeight={600}>
+                    {company.name}
+                  </Typography>
+                </Box>
+              </Tooltip>
+            )}
+          </Stack>
+
+          {/* Logout Button at the Bottom */}
           <Box
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              mt: 1,
-              cursor: 'pointer',
-              color: 'primary.main',
-              '&:hover': { textDecoration: 'underline' },
-            }}
-            onClick={() => {
-              const el = document.getElementById('company-details');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
+              mt: 4,
+              width: "100%",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
             }}
           >
-            <Business fontSize="small" />
-            <Typography variant="body1" fontWeight={600}>
-              {company.name}
-            </Typography>
+            {/* Account Created Date on the left */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <CalendarToday fontSize="small" color="primary" />
+              <Typography variant="body2" fontWeight={500}>
+                Account Created: {formatUTCDateToLocal(profile.created_on)}
+              </Typography>
+            </Box>
+            <Button
+              variant="outlined"
+              color="error"
+              // startIcon={<LogoutIcon />}
+              onClick={handleLogout}
+              sx={{ fontWeight: 600 }}
+            >
+              Logout
+            </Button>
           </Box>
-        )}
-      </Box>
+        </Box>
 
-      {/* Vertical Divider */}
-      <Box sx={{ width: '1px', backgroundColor: 'divider', display: { xs: 'none', md: 'block' } }} />
+        {/* Vertical Divider */}
+        <Box
+          sx={{
+            width: "1px",
+            backgroundColor: "divider",
+            display: { xs: "none", md: "block" },
+          }}
+        />
 
-      {/* Right: Editable Fields */}
-      <Box sx={{ flex: 2, p: { xs: 2, sm: 3 } }}>
-        <Stack spacing={2}>
-          {/* Username */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar sx={{ bgcolor: 'background.paper', color: 'primary.main', width: 32, height: 32 }}>
+        {/* Right: Editable Fields */}
+        <Box sx={{ flex: 2, p: { xs: 2, sm: 3 } }}>
+          <Stack spacing={2}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 2,
+                width: "100%",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Avatar
+                  sx={{
+                    bgcolor: "background.paper",
+                    color: "primary.main",
+                    width: 32,
+                    height: 32,
+                  }}
+                >
+                  <Person />
+                </Avatar>
+                <Typography variant="body1">
+                  <strong>Username:</strong> @{profile.username}
+                </Typography>
+              </Box>
+              <Typography variant="body1" sx={{ whiteSpace: "nowrap" }}>
+                <strong>User ID:</strong> {profile.id}
+              </Typography>
+            </Box>
+            <Divider />
+
+            {/* Editable Fields */}
+            {renderEditableField(
+              "fullName",
+              "Full Name",
+              profile.fullName,
               <Person />
-            </Avatar>
-            <Typography variant="body1">
-              <strong>Username:</strong> @{profile.username}
-            </Typography>
-          </Box>
-          <Divider />
-
-          {/* Editable Fields */}
-          {renderEditableField("fullName", "Full Name", profile.fullName, <Person />)}
-          {renderEditableField("email", "Email", profile.email_id, <Email />)}
-          {renderEditableField("phoneNumber", "Phone", profile.phoneNumber, <Phone />)}
-          {renderEditableField(
-            "gender",
-            "Gender",
-            profile.gender,
-            profile.gender === "Male"
-              ? <Male />
-              : profile.gender === "Female"
-                ? <Female />
-                : <Transgender />
-          )}
-        </Stack>
+            )}
+            {renderEditableField("email", "Email", profile.email_id, <Email />)}
+            {renderEditableField(
+              "phoneNumber",
+              "Phone",
+              profile.phoneNumber,
+              <Phone />
+            )}
+            {renderEditableField(
+              "gender",
+              "Gender",
+              profile.gender,
+              profile.gender === "Male" ? (
+                <Male />
+              ) : profile.gender === "Female" ? (
+                <Female />
+              ) : (
+                <Transgender />
+              )
+            )}
+            {canManageOperator &&
+              renderEditableField(
+                "role",
+                "Role",
+                roles.find((r) => r.id === role)?.name ?? "",
+                <Diversity3Icon />
+              )}
+          </Stack>
+        </Box>
       </Box>
+
+      {/* Company Details Below */}
+      {company && showCompanyDetails && (
+        <Box id="company-details" sx={{ mt: 4 }}>
+          <CompanyDetailsCard company={company} companyId={company.id} />
+        </Box>
+      )}
     </Box>
-
-    {/* Company Details Below */}
-    {company && (
-      <Box id="company-details" sx={{ mt: 4 }}>
-        <CompanyDetailsCard company={company} companyId={company.id} />
-      </Box>
-    )}
-  </Box>
-);
-
+  );
 };
 
 export default ProfilePage;

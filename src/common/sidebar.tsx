@@ -166,7 +166,6 @@ console.log("Company Name:", companyName);
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 32 }}>
-                  <PersonIcon />
                 </ListItemIcon>
                 <ListItemText
                   primary="User"

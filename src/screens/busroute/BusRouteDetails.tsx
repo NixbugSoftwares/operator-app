@@ -170,8 +170,7 @@ const BusRouteDetailsPage = ({
       }
 
       const startDate = new Date(timeString);
-      const delta = parseInt(deltaSeconds, 10); // Delta is already in seconds
-
+      const delta = parseInt(deltaSeconds, 10); 
       // Add delta seconds to starting time
       const resultDate = new Date(startDate.getTime() + delta * 1000);
 
