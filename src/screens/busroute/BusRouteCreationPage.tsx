@@ -40,6 +40,7 @@ interface BusRouteCreationProps {
   mapRef: React.RefObject<any>;
   onStartingTimeChange: (time: string) => void;
   refreshList: (value: any) => void;
+  onClose?: () => void;
 }
 
 interface BusRouteFormInputs {
@@ -56,11 +57,12 @@ const BusRouteCreation = ({
   mapRef,
   onStartingTimeChange,
   refreshList,
+  onClose,
 }: BusRouteCreationProps) => {
   const dispatch = useAppDispatch();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [localHour, setLocalHour] = useState<number>(12);
-  const [localMinute, setLocalMinute] = useState<number>(30);
+  const [localHour, setLocalHour] = useState<number>(6);
+  const [localMinute, setLocalMinute] = useState<number>(0);
   const [amPm, setAmPm] = useState<string>("AM");
   const [isAddingLandmark, setIsAddingLandmark] = useState(false);
   const [startingDayOffset] = useState(0);
@@ -73,49 +75,54 @@ const BusRouteCreation = ({
 
   // Convert local time to UTC time string
   const convertLocalToUTC = (
-  hour: number,
-  minute: number,
-  period: string,
-  dayOffset: number = 0
-) => {
-  let istHour = hour;
-  if (period === "PM" && hour !== 12) {
-    istHour += 12;
-  } else if (period === "AM" && hour === 12) {
-    istHour = 0;
-  }
+    hour: number,
+    minute: number,
+    period: string,
+    dayOffset: number = 0
+  ) => {
+    let istHour = hour;
+    if (period === "PM" && hour !== 12) {
+      istHour += 12;
+    } else if (period === "AM" && hour === 12) {
+      istHour = 0;
+    }
 
-  // Create IST date
-  const istDate = new Date(Date.UTC(1970, 0, 1 + dayOffset, istHour, minute, 0));
-  // Subtract 5 hours 30 minutes to get UTC
-  istDate.setUTCHours(istDate.getUTCHours() - 5, istDate.getUTCMinutes() - 30);
+    // Create IST date
+    const istDate = new Date(
+      Date.UTC(1970, 0, 1 + dayOffset, istHour, minute, 0)
+    );
+    // Subtract 5 hours 30 minutes to get UTC
+    istDate.setUTCHours(
+      istDate.getUTCHours() - 5,
+      istDate.getUTCMinutes() - 30
+    );
 
-  return {
-    displayTime: istDate.toISOString().slice(11, 19),
-    fullTime: istDate.toISOString(),
-    dayOffset,
-    timestamp: istDate.getTime(),
+    return {
+      displayTime: istDate.toISOString().slice(11, 19),
+      fullTime: istDate.toISOString(),
+      dayOffset,
+      timestamp: istDate.getTime(),
+    };
   };
-};
 
   const calculateTimeDeltas = (
     startingTime: string,
     landmarks: SelectedLandmark[],
     timeType: "arrival" | "departure"
   ) => {
-    const startTimeStr = startingTime.endsWith("Z")
-      ? startingTime.slice(0, -1)
-      : startingTime;
-    const [startH, startM, startS] = startTimeStr.split(":").map(Number);
-    const startDate = new Date(Date.UTC(1970, 0, 1, startH, startM, startS));
+    // Parse starting time as UTC (with day offset 0)
+    const startDate = new Date(`1970-01-01T${startingTime.replace("Z", "")}Z`);
 
     return landmarks.map((landmark) => {
       const timeObj =
         timeType === "arrival" ? landmark.arrivalTime : landmark.departureTime;
+      // Parse landmark time as UTC (with its day offset)
       const landmarkDate = new Date(timeObj.fullTime);
-      const deltaSeconds =
-        (landmarkDate.getTime() - startDate.getTime()) / 1000;
-      return Math.max(0, Math.floor(deltaSeconds));
+      // Delta in seconds
+      const deltaSeconds = Math.floor(
+        (landmarkDate.getTime() - startDate.getTime()) / 1000
+      );
+      return Math.max(0, deltaSeconds);
     });
   };
 
@@ -128,7 +135,7 @@ const BusRouteCreation = ({
     );
     const fullTime = displayTime + "Z";
     setValue("starting_time", fullTime);
-    onStartingTimeChange(fullTime); 
+    onStartingTimeChange(fullTime);
   }, [
     localHour,
     localMinute,
@@ -150,8 +157,6 @@ const BusRouteCreation = ({
   const handleRouteCreation: SubmitHandler<BusRouteFormInputs> = async (
     data
   ) => {
-   
-
     setIsSubmitting(true);
 
     try {
@@ -167,8 +172,6 @@ const BusRouteCreation = ({
       const sortedLandmarks = [...landmarks].sort(
         (a, b) => (a.distance_from_start || 0) - (b.distance_from_start || 0)
       );
-
-      // Calculate deltas using the new function
       const arrivalDeltas = calculateTimeDeltas(
         data.starting_time,
         sortedLandmarks,
@@ -205,13 +208,20 @@ const BusRouteCreation = ({
 
         return dispatch(routeLandmarkCreationApi(landmarkFormData)).unwrap();
       });
-console.log("Landmark promises:", landmarkPromises);
+      console.log("Landmark promises:", landmarkPromises);
 
       await Promise.all(landmarkPromises);
       showSuccessToast("Route and landmarks created successfully");
       refreshList("refresh");
       onSuccess();
       if (onClearRoute) onClearRoute();
+      if (
+        mapRef.current?.toggleAddLandmarkMode &&
+        mapRef.current.isAddingLandmark
+      ) {
+        mapRef.current.toggleAddLandmarkMode();
+      }
+      if (onClose) onClose();
     } catch (error) {
       console.error("Error in route creation process:", error);
       showErrorToast(
@@ -223,28 +233,32 @@ console.log("Landmark promises:", landmarkPromises);
       setIsSubmitting(false);
     }
   };
-function formatTimeForDisplayIST(isoString: string, showDayLabel = true) {
-  const date = new Date(isoString);
-  date.setTime(date.getTime() + (5 * 60 + 30) * 60 * 1000);
-  let hours = date.getUTCHours();
-  const minutes = date.getUTCMinutes();
-  const period = hours >= 12 ? "PM" : "AM";
-  const displayHours = hours % 12 || 12;
+  function formatTimeForDisplayIST(isoString: string, showDayLabel = true) {
+    const date = new Date(isoString);
+    date.setTime(date.getTime() + (5 * 60 + 30) * 60 * 1000);
+    let hours = date.getUTCHours();
+    const minutes = date.getUTCMinutes();
+    const period = hours >= 12 ? "PM" : "AM";
+    const displayHours = hours % 12 || 12;
 
-  const dayOffset = Math.floor((date.getTime() - Date.UTC(1970, 0, 1)) / (86400 * 1000));
-  const userDay = dayOffset + 1;
+    const dayOffset = Math.floor(
+      (date.getTime() - Date.UTC(1970, 0, 1)) / (86400 * 1000)
+    );
+    const userDay = dayOffset + 1;
 
-  let suffix = "th";
-  if (userDay % 10 === 1 && userDay % 100 !== 11) suffix = "st";
-  else if (userDay % 10 === 2 && userDay % 100 !== 12) suffix = "nd";
-  else if (userDay % 10 === 3 && userDay % 100 !== 13) suffix = "rd";
+    let suffix = "th";
+    if (userDay % 10 === 1 && userDay % 100 !== 11) suffix = "st";
+    else if (userDay % 10 === 2 && userDay % 100 !== 12) suffix = "nd";
+    else if (userDay % 10 === 3 && userDay % 100 !== 13) suffix = "rd";
 
-  const timeStr = `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
-  if (showDayLabel) {
-    return `${timeStr} (${userDay}${suffix} day)`;
+    const timeStr = `${displayHours}:${minutes
+      .toString()
+      .padStart(2, "0")} ${period}`;
+    if (showDayLabel) {
+      return `${timeStr} (${userDay}${suffix} day)`;
+    }
+    return timeStr;
   }
-  return timeStr;
-}
 
   return (
     <Box
@@ -372,31 +386,40 @@ function formatTimeForDisplayIST(isoString: string, showDayLabel = true) {
 
         {landmarks.length === 0 ? (
           <Box
-  sx={{
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    textAlign: "center",
-    p: 4,
-    backgroundColor: "action.hover",
-    borderRadius: 1,
-    my: 2,
-    border: "1px dashed",
-    borderColor: "divider",
-  }}
->
-  <Typography variant="body1" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-    No landmarks selected
-  </Typography>
-  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-    Please select landmarks from the map to create your route
-  </Typography>
-  <Typography variant="caption" color="info" fontSize="0.75rem" fontWeight="bold">
-    Only verified landmarks will be displayed
-  </Typography>
-</Box>
+            sx={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              textAlign: "center",
+              p: 4,
+              backgroundColor: "action.hover",
+              borderRadius: 1,
+              my: 2,
+              border: "1px dashed",
+              borderColor: "divider",
+            }}
+          >
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ mb: 1, fontWeight: 500 }}
+            >
+              No landmarks selected
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Please select landmarks from the map to create your route
+            </Typography>
+            <Typography
+              variant="caption"
+              color="info"
+              fontSize="0.75rem"
+              fontWeight="bold"
+            >
+              Only verified landmarks will be displayed
+            </Typography>
+          </Box>
         ) : (
           <List
             sx={{ width: "100%", maxHeight: 400, overflow: "auto", flex: 1 }}
@@ -484,12 +507,12 @@ function formatTimeForDisplayIST(isoString: string, showDayLabel = true) {
                               }}
                             />
                             <span>
-  Arrive:{" "}
-  {formatTimeForDisplayIST(
-    landmark.arrivalTime.fullTime,
-    index !== 0 // false for first, true for others
-  )}
-</span>
+                              Arrive:{" "}
+                              {formatTimeForDisplayIST(
+                                landmark.arrivalTime.fullTime,
+                                index !== 0 // false for first, true for others
+                              )}
+                            </span>
                           </Box>
                           <Box sx={{ display: "flex", alignItems: "center" }}>
                             <ArrowUpwardIcon
@@ -499,13 +522,13 @@ function formatTimeForDisplayIST(isoString: string, showDayLabel = true) {
                                 color: "success.main",
                               }}
                             />
-                           <span>
-  Depart:{" "}
-  {formatTimeForDisplayIST(
-    landmark.departureTime.fullTime,
-    index !== 0 // false for first, true for others
-  )}
-</span>
+                            <span>
+                              Depart:{" "}
+                              {formatTimeForDisplayIST(
+                                landmark.departureTime.fullTime,
+                                index !== 0 // false for first, true for others
+                              )}
+                            </span>
                           </Box>
                         </Box>
                       </Box>

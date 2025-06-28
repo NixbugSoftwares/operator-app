@@ -318,6 +318,9 @@ const BusRouteListing = () => {
               mapRef={mapRef}
               onStartingTimeChange={handleStartingTimeChange}
               refreshList={refreshList}
+              onClose={() => {
+                setShowCreationForm(false);
+              }}
             />
           </>
         ) : (
