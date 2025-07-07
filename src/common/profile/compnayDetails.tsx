@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useSelector } from "react-redux";
+import { useTheme } from "@mui/material/styles";
 import {
   Typography,
   Box,
@@ -20,56 +22,57 @@ import {
   Close as CloseIcon,
   LocationOn as LocationOnIcon,
   Person,
+  Verified as VerifiedIcon,
+  NewReleases as NewReleasesIcon,
+  Block as BlockIcon,
+  Business as BusinessIcon,
 } from "@mui/icons-material";
-import VerifiedIcon from "@mui/icons-material/Verified";
-import NewReleasesIcon from "@mui/icons-material/NewReleases";
-import BlockIcon from "@mui/icons-material/Block";
-import BusinessIcon from "@mui/icons-material/Business";
+
 import { useAppDispatch } from "../../store/Hooks";
 import { companyUpdateApi } from "../../slices/appSlice";
+import { companyListApi } from "../../slices/authSlice";
 import { showErrorToast, showSuccessToast } from "../toastMessageHelper";
 import MapModal from "./MapModal";
-import { useSelector } from "react-redux";
 import { RootState } from "../../store/Store";
-import { useTheme } from "@mui/material/styles";
+
+interface CompanyData {
+  id: number;
+  name: string;
+  address: string;
+  location: string;
+  ownerName: string;
+  phoneNumber: string;
+  email: string;
+  companyType: "private" | "government";
+  status: "Validating" | "Verified" | "Suspended";
+}
 
 interface CompanyCardProps {
-  company: {
-    id: number;
-    name: string;
-    ownerName: string;
-    location: string;
-    phoneNumber: string;
-    address: string;
-    email: string;
-    status: string;
-    companyType: string;
-  };
   companyId: number;
 }
+
 const STATUS_MAP = {
   VALIDATING: 1,
   VERIFIED: 2,
   SUSPENDED: 3,
 };
-const CompanyDetailsPage: React.FC<CompanyCardProps> = ({
-  company,
-  companyId,
-}) => {
+
+const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
   const theme = useTheme();
+  const dispatch = useAppDispatch();
+  const [company, setCompany] = useState<CompanyData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [mapModalOpen, setMapModalOpen] = useState(false);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [tempValue, setTempValue] = useState<string>("");
-  const dispatch = useAppDispatch();
   const [_loading, setLoading] = useState(false);
+  const [statusValue, setStatusValue] = useState(1);
+
   const canManageCompany = useSelector((state: RootState) =>
     state.app.permissions.includes("manage_company")
   );
-  const [statusValue, setStatusValue] = useState(
-    STATUS_MAP[company.status?.toUpperCase() as keyof typeof STATUS_MAP] || 1
-  );
-  console.log("Company Details:", company);
 
+  // Helper Functions
   const extractCoordinates = (location: string) => {
     if (!location) return null;
     const regex = /POINT\(([\d.]+) ([\d.]+)\)/;
@@ -84,12 +87,63 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({
     return null;
   };
 
-  const coordinates = extractCoordinates(company.location);
   const formatPhoneNumber = (phone: string | undefined): string => {
     if (!phone) return "";
     const digits = phone.replace(/\D/g, "");
     return digits.length > 10 ? digits.slice(-10) : digits;
   };
+
+  const validateEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const validatePhoneNumber = (phone: string) => {
+    return /^\d{10}$/.test(phone);
+  };
+
+  // Data Fetching
+  const fetchCompanyData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const [companyRes] = await Promise.all([
+        dispatch(
+          companyListApi({ id: companyId, limit: 1, offset: 0 })
+        ).unwrap(),
+      ]);
+
+      const company = companyRes.data?.[0];
+      if (company) {
+        const companyData: CompanyData = {
+          id: company.id,
+          name: company.name ?? "-",
+          address: company.address ?? "-",
+          location: company.location ?? "-",
+          ownerName: company.contact_person,
+          phoneNumber: company.phone_number ?? "-",
+          email: company.email_id ?? "-",
+          companyType: company.type === 1 ? "private" : "government",
+          status:
+            company.status === 1
+              ? "Validating"
+              : company.status === 2
+              ? "Verified"
+              : "Suspended",
+        };
+        setCompany(companyData);
+        setStatusValue(company.status);
+      }
+    } catch (error: any) {
+      showErrorToast(error.message || "Failed to load company profile");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [dispatch, companyId]);
+
+  useEffect(() => {
+    fetchCompanyData();
+  }, [fetchCompanyData]);
+
+  // Edit Handlers
   const handleEditStart = (field: string, currentValue: string) => {
     setEditingField(field);
     setTempValue(currentValue);
@@ -98,13 +152,6 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({
   const handleEditCancel = () => {
     setEditingField(null);
     setTempValue("");
-  };
-  const validateEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
-
-  const validatePhoneNumber = (phone: string) => {
-    return /^\d{10}$/.test(phone);
   };
 
   const handleEditSave = async (field: string) => {
@@ -117,6 +164,7 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({
         showErrorToast("Please enter a valid 10-digit phone number.");
         return;
       }
+
       setLoading(true);
       const formData = new FormData();
       formData.append("id", companyId.toString());
@@ -141,11 +189,31 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({
           formData.append("status", tempValue);
           break;
       }
+
       await dispatch(companyUpdateApi({ companyId, formData })).unwrap();
       showSuccessToast(`${field} updated successfully!`);
       setEditingField(null);
-    } catch (error) {
-      showErrorToast(`Error updating ${field}: ${error}`);
+      fetchCompanyData();
+    } catch (error: any) {
+      showErrorToast(`Error updating ${field}: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStatusEditSave = async () => {
+    try {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append("id", companyId.toString());
+      formData.append("status", statusValue.toString());
+
+      await dispatch(companyUpdateApi({ companyId, formData })).unwrap();
+      showSuccessToast("Status updated successfully!");
+      setEditingField(null);
+      fetchCompanyData();
+    } catch (error: any) {
+      showErrorToast(`Error updating status: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -161,28 +229,15 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({
       .then(() => {
         showSuccessToast("Location updated successfully!");
         setMapModalOpen(false);
+        fetchCompanyData();
       })
-      .catch((error) => {
-        showErrorToast(`Error updating location: ${error}`);
+      .catch((error: any) => {
+        showErrorToast(`Error updating location: ${error.message}`);
       });
   };
-  const handleStatusEditSave = async () => {
-    try {
-      setLoading(true);
-      const formData = new FormData();
-      formData.append("id", companyId.toString());
-      formData.append("status", statusValue.toString());
-      await dispatch(companyUpdateApi({ companyId, formData })).unwrap();
-      showSuccessToast("Status updated successfully!");
-      setEditingField(null);
-    } catch (error) {
-      showErrorToast(`Error updating status: ${error}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const getStatusChip = () => {
+    if (!company) return null;
+
     switch (company.status) {
       case "Validating":
         return (
@@ -216,8 +271,24 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({
         );
     }
   };
+  if (isLoading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
+        <Typography>Loading...</Typography>
+      </Box>
+    );
+  }
 
+  if (!company) {
+    return (
+      <Box sx={{ textAlign: "center", mt: 5 }}>
+        <Typography>No company data available.</Typography>
+      </Box>
+    );
+  }
   const getCompanyTypeChip = () => {
+    if (!company) return null;
+
     const type = company.companyType?.toLowerCase();
     switch (type) {
       case "government":
@@ -291,26 +362,32 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({
               {label}:
             </Typography>
             {field === "phoneNumber" ? (
-  <TextField
-    variant="outlined"
-    size="small"
-    type="number"
-    value={tempValue}
-    onChange={(e) => setTempValue(e.target.value.replace(/\D/g, ""))}
-    sx={{ flex: 1 }}
-    inputProps={{ inputMode: "numeric", pattern: "[0-9]*", maxLength: 10 }}
-  />
-) : (
-  <TextField
-    variant="outlined"
-    size="small"
-    value={tempValue}
-    onChange={(e) => setTempValue(e.target.value)}
-    multiline={multiline}
-    rows={multiline ? 3 : 1}
-    sx={{ flex: 1 }}
-  />
-)}
+              <TextField
+                variant="outlined"
+                size="small"
+                type="number"
+                value={tempValue}
+                onChange={(e) =>
+                  setTempValue(e.target.value.replace(/\D/g, ""))
+                }
+                sx={{ flex: 1 }}
+                inputProps={{
+                  inputMode: "numeric",
+                  pattern: "[0-9]*",
+                  maxLength: 10,
+                }}
+              />
+            ) : (
+              <TextField
+                variant="outlined"
+                size="small"
+                value={tempValue}
+                onChange={(e) => setTempValue(e.target.value)}
+                multiline={multiline}
+                rows={multiline ? 3 : 1}
+                sx={{ flex: 1 }}
+              />
+            )}
             <IconButton
               onClick={() => handleEditSave(field)}
               color="primary"
@@ -388,6 +465,12 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({
     );
   };
 
+  if (!company) {
+    return <Box>Loading...</Box>;
+  }
+
+  const coordinates = extractCoordinates(company.location);
+
   return (
     <Box sx={{ p: 3, maxWidth: "100%" }}>
       <Paper
@@ -461,21 +544,19 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({
             {renderEditableField(
               "name",
               "Company Name",
-              company.name || "",
-              <BusinessIcon />,
-              false
+              company.name,
+              <BusinessIcon />
             )}
             {renderEditableField(
               "ownerName",
               "Owner Name",
-              company.ownerName || "",
-              <Person />,
-              false
+              company.ownerName,
+              <Person />
             )}
             {renderEditableField(
               "address",
               "Address",
-              company.address || "",
+              company.address,
               <LocationOnIcon />,
               true
             )}
@@ -483,17 +564,16 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({
               "phoneNumber",
               "Phone Number",
               formatPhoneNumber(company.phoneNumber),
-              <PhoneIcon />,
-              false
+              <PhoneIcon />
             )}
             {renderEditableField(
               "email",
               "Email",
-              company.email || "",
-              <EmailIcon />,
-              false
+              company.email,
+              <EmailIcon />
             )}
-            {/* Location (not editable inline, but show view/edit) */}
+
+            {/* Location Field */}
             <Box
               sx={{
                 p: 1,
@@ -565,7 +645,7 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({
               )}
             </Box>
 
-            {/* Status */}
+            {/* Status Field */}
             <Box
               sx={{
                 p: 1,
@@ -643,7 +723,7 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({
                   fontWeight={500}
                   sx={{ wordBreak: "break-word", flex: 1 }}
                 >
-                  {company.status || "Not specified"}
+                  {company.status}
                 </Typography>
               )}
               {canManageCompany && editingField !== "status" && (
@@ -652,8 +732,8 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({
                     setEditingField("status");
                     setStatusValue(
                       STATUS_MAP[
-                        company.status?.toUpperCase() as keyof typeof STATUS_MAP
-                      ] || 1
+                        company.status.toUpperCase() as keyof typeof STATUS_MAP
+                      ]
                     );
                   }}
                   color="primary"

@@ -83,7 +83,6 @@ const DutyCreationForm: React.FC<IOperatorCreationFormProps> = ({
           limit: rowsPerPage,
           offset,
           fullName: searchText,
-          
         })
       )
         .unwrap()
@@ -98,7 +97,6 @@ const DutyCreationForm: React.FC<IOperatorCreationFormProps> = ({
             name: item.full_name ?? item.username,
           }));
 
-
           setDropdownData((prev) => ({
             ...prev,
             operatorList:
@@ -112,7 +110,7 @@ const DutyCreationForm: React.FC<IOperatorCreationFormProps> = ({
           }));
         })
         .catch((error) => {
-          showErrorToast(error.message || "Failed to fetch operator list");
+          showErrorToast(error || "Failed to fetch operator list");
         })
         .finally(() => setLoading(false));
     },
@@ -152,7 +150,7 @@ const DutyCreationForm: React.FC<IOperatorCreationFormProps> = ({
           }));
         })
         .catch((error) => {
-          showErrorToast(error.message || "Failed to fetch Service list");
+          showErrorToast(error || "Failed to fetch Service list");
         })
         .finally(() => setLoading(false));
     },
@@ -164,34 +162,33 @@ const DutyCreationForm: React.FC<IOperatorCreationFormProps> = ({
     fetchServiceList(0);
   }, [fetchOperatorList, fetchServiceList]);
 
- const handleDutyCreation: SubmitHandler<Duty> = async (data) => {
-  try {
-    setLoading(true);
+  const handleDutyCreation: SubmitHandler<Duty> = async (data) => {
+    try {
+      setLoading(true);
 
-    const formData = new FormData();
-    formData.append("operator_id", data.operator_id.toString());
-    formData.append("service_id", data.service_id.toString());
+      const formData = new FormData();
+      formData.append("operator_id", data.operator_id.toString());
+      formData.append("service_id", data.service_id.toString());
 
-    if (data.type) {
-      formData.append("type", data.type.toString());
+      if (data.type) {
+        formData.append("type", data.type.toString());
+      }
+
+      const response = await dispatch(dutyCreationApi(formData)).unwrap();
+
+      if (response?.id) {
+        showSuccessToast("Duty created successfully!");
+        refreshList("refresh");
+        onClose();
+      } else {
+        showErrorToast("Duty creation failed. Please try again.");
+      }
+    } catch (error: any) {
+      showErrorToast(error || "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    const response = await dispatch(dutyCreationApi(formData)).unwrap();
-
-    if (response?.id) {
-      showSuccessToast("Duty created successfully!");
-      refreshList("refresh");
-      onClose();
-    } else {
-      showErrorToast("Duty creation failed. Please try again.");
-    }
-  } catch (error) {
-    showErrorToast("Something went wrong. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   const handleScroll = (
     event: React.UIEvent<HTMLElement>,
@@ -217,140 +214,157 @@ const DutyCreationForm: React.FC<IOperatorCreationFormProps> = ({
   };
 
   return (
-    <Container component="main" maxWidth="md"> 
-  <CssBaseline />
-  <Box
-    sx={{
-      mt: 4,
-      mb: 4,
-      px: 2,
-      py: 3,
-      borderRadius: 2,
-      backgroundColor: "#f9f9f9",
-      boxShadow: 3,
-    }}
-  >
-    <Typography component="h1" variant="h5" align="center" gutterBottom>
-      Duty Creation
-    </Typography>
+    <Container component="main" maxWidth="md">
+      <CssBaseline />
+      <Box
+        sx={{
+          mt: 4,
+          mb: 4,
+          px: 2,
+          py: 3,
+          borderRadius: 2,
+          backgroundColor: "#f9f9f9",
+          boxShadow: 3,
+        }}
+      >
+        <Typography component="h1" variant="h5" align="center" gutterBottom>
+          Duty Creation
+        </Typography>
 
-    <Box component="form" noValidate onSubmit={handleSubmit(handleDutyCreation)}>
-      <Grid container spacing={2}>
-        <Grid item xs={12} sm={6}>
-          <Controller
-            name="operator_id"
-            control={control}
-            rules={{ required: "Operator is required" }}
-            render={({ field }) => (
-              <Autocomplete
-                options={dropdownData.operatorList}
-                getOptionLabel={(option) => option.name}
-                value={dropdownData.operatorList.find((item) => item.id === field.value) || null}
-                onChange={(_, newValue) => field.onChange(newValue?.id)}
-                onInputChange={(_, newInputValue) => {
-                  setSearchParams((prev) => ({ ...prev, route: newInputValue }));
-                  setPage((prev) => ({ ...prev, route: 0 }));
-                  fetchOperatorList(0, newInputValue);
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Select Operator"
-                    error={!!errors.operator_id}
-                    helperText={errors.operator_id?.message}
-                    required
-                    fullWidth
-                  />
-                )}
-                ListboxProps={{
-                  onScroll: (event) => handleScroll(event, "operator"),
-                  style: { maxHeight: 200, overflow: "auto" },
-                }}
-              />
-            )}
-          />
-        </Grid>
-
-        {/* Service */}
-        <Grid item xs={12} sm={6}>
-          <Controller
-            name="service_id"
-            control={control}
-            rules={{ required: "Service is required" }}
-            render={({ field }) => (
-              <Autocomplete
-                options={dropdownData.serviceList}
-                getOptionLabel={(option) => option.name}
-                value={dropdownData.serviceList.find((item) => item.id === field.value) || null}
-                onChange={(_, newValue) => field.onChange(newValue?.id)}
-                onInputChange={(_, newInputValue) => {
-                  setSearchParams((prev) => ({ ...prev, bus: newInputValue }));
-                  fetchServiceList(0, newInputValue);
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Select Service"
-                    error={!!errors.service_id}
-                    helperText={errors.service_id?.message}
-                    required
-                    fullWidth
-                  />
-                )}
-                ListboxProps={{
-                  onScroll: (event) => handleScroll(event, "service"),
-                  style: { maxHeight: 200, overflow: "auto" },
-                }}
-              />
-            )}
-          />
-        </Grid>
-
-        {/* Type */}
-        <Grid item xs={12} sm={6}>
-          <Controller
-            name="type"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                label="Type"
-                select
-                {...field}
-                error={!!errors.type}
-                helperText={errors.type?.message}
-                fullWidth
-                size="small"
-              >
-                {typeOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
-        </Grid>
-      </Grid>
-
-      <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          sx={{ minWidth: 150, bgcolor: "darkblue" }}
-          disabled={loading}
+        <Box
+          component="form"
+          noValidate
+          onSubmit={handleSubmit(handleDutyCreation)}
         >
-          {loading ? (
-            <CircularProgress size={24} sx={{ color: "white" }} />
-          ) : (
-            "Create Duty"
-          )}
-        </Button>
-      </Box>
-    </Box>
-  </Box>
-</Container>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <Controller
+                name="operator_id"
+                control={control}
+                rules={{ required: "Operator is required" }}
+                render={({ field }) => (
+                  <Autocomplete
+                    options={dropdownData.operatorList}
+                    getOptionLabel={(option) => option.name}
+                    value={
+                      dropdownData.operatorList.find(
+                        (item) => item.id === field.value
+                      ) || null
+                    }
+                    onChange={(_, newValue) => field.onChange(newValue?.id)}
+                    onInputChange={(_, newInputValue) => {
+                      setSearchParams((prev) => ({
+                        ...prev,
+                        route: newInputValue,
+                      }));
+                      setPage((prev) => ({ ...prev, route: 0 }));
+                      fetchOperatorList(0, newInputValue);
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Select Operator"
+                        error={!!errors.operator_id}
+                        helperText={errors.operator_id?.message}
+                        required
+                        fullWidth
+                      />
+                    )}
+                    ListboxProps={{
+                      onScroll: (event) => handleScroll(event, "operator"),
+                      style: { maxHeight: 200, overflow: "auto" },
+                    }}
+                  />
+                )}
+              />
+            </Grid>
 
+            {/* Service */}
+            <Grid item xs={12} sm={6}>
+              <Controller
+                name="service_id"
+                control={control}
+                rules={{ required: "Service is required" }}
+                render={({ field }) => (
+                  <Autocomplete
+                    options={dropdownData.serviceList}
+                    getOptionLabel={(option) => option.name}
+                    value={
+                      dropdownData.serviceList.find(
+                        (item) => item.id === field.value
+                      ) || null
+                    }
+                    onChange={(_, newValue) => field.onChange(newValue?.id)}
+                    onInputChange={(_, newInputValue) => {
+                      setSearchParams((prev) => ({
+                        ...prev,
+                        bus: newInputValue,
+                      }));
+                      fetchServiceList(0, newInputValue);
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Select Service"
+                        error={!!errors.service_id}
+                        helperText={errors.service_id?.message}
+                        required
+                        fullWidth
+                      />
+                    )}
+                    ListboxProps={{
+                      onScroll: (event) => handleScroll(event, "service"),
+                      style: { maxHeight: 200, overflow: "auto" },
+                    }}
+                  />
+                )}
+              />
+            </Grid>
+
+            {/* Type */}
+            <Grid item xs={12} sm={6}>
+              <Controller
+                name="type"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    label="Type"
+                    select
+                    {...field}
+                    error={!!errors.type}
+                    helperText={errors.type?.message}
+                    fullWidth
+                    size="small"
+                  >
+                    {typeOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+            </Grid>
+          </Grid>
+
+          <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              sx={{ minWidth: 150, bgcolor: "darkblue" }}
+              disabled={loading}
+            >
+              {loading ? (
+                <CircularProgress size={24} sx={{ color: "white" }} />
+              ) : (
+                "Create Duty"
+              )}
+            </Button>
+          </Box>
+        </Box>
+      </Box>
+    </Container>
   );
 };
 

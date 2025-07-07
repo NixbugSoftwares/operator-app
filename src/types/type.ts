@@ -1,5 +1,5 @@
  export interface User {
-  userId: string;
+  operator_id: string;
   username: string;
 }
 

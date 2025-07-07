@@ -1052,7 +1052,7 @@ const MapComponent = React.forwardRef(
       ...selectedLandmark!,
       distance_from_start: e.target.value === "" ? "" : parseFloat(e.target.value),
     });
-    setDistanceError(""); // Clear error on change
+    setDistanceError(""); 
   }}
   error={!!distanceError}
   helperText={distanceError}

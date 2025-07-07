@@ -34,9 +34,9 @@ export const LoginApi = createAsyncThunk(
         false,
         "multipart/form-data"
       );
-      return response; // Ensure response contains `access_token`
+      return response;
     } catch (error: any) {
-      return rejectWithValue(error?.response?.data?.message || "Login failed");
+      return rejectWithValue(error.detail);
     }
   }
 );

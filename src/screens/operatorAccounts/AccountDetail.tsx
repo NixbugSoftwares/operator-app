@@ -76,7 +76,8 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const dispatch = useAppDispatch();
   const isLoggedInUser = account.id === userId;
-  const [updateFormOpen, setUpdateFormOpen] = useState(false);  const getGenderValue = (genderText: string): number | undefined => {
+  const [updateFormOpen, setUpdateFormOpen] = useState(false);
+  const getGenderValue = (genderText: string): number | undefined => {
     const option = genderOptions.find((opt) => opt.label === genderText);
     return option?.value;
   };
@@ -97,7 +98,7 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
       refreshList("refresh");
       showSuccessToast("Account deleted successfully!");
     } catch (error: any) {
-      showErrorToast(error);
+      showErrorToast(error || "Account deletion failed. Please try again.");
     }
   };
 
@@ -227,7 +228,10 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
             >
               <span
                 style={{
-                  cursor: !canManageOperator && !isLoggedInUser ? "not-allowed" : "default",
+                  cursor:
+                    !canManageOperator && !isLoggedInUser
+                      ? "not-allowed"
+                      : "default",
                 }}
               >
                 <Button
@@ -252,38 +256,38 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
             </Tooltip>
 
             {!isLoggedInUser && (
-            <Tooltip
-              title={
-                !canManageOperator
-                  ? "You don't have permission, contact the admin"
-                  : ""
-              }
-              arrow
-              placement="top-start"
-            >
-              <span
-                style={{
-                  cursor: !canManageOperator ? "not-allowed" : "default",
-                }}
+              <Tooltip
+                title={
+                  !canManageOperator
+                    ? "You don't have permission, contact the admin"
+                    : ""
+                }
+                arrow
+                placement="top-start"
               >
-                <Button
-                  variant="contained"
-                  color="error"
-                  size="small"
-                  onClick={() => setDeleteConfirmOpen(true)}
-                  startIcon={<DeleteIcon />}
-                  disabled={!canManageOperator}
-                  sx={{
-                    "&.Mui-disabled": {
-                      backgroundColor: "#e57373 !important",
-                      color: "#ffffff99",
-                    },
+                <span
+                  style={{
+                    cursor: !canManageOperator ? "not-allowed" : "default",
                   }}
                 >
-                  Delete
-                </Button>
-              </span>
-            </Tooltip>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    size="small"
+                    onClick={() => setDeleteConfirmOpen(true)}
+                    startIcon={<DeleteIcon />}
+                    disabled={!canManageOperator}
+                    sx={{
+                      "&.Mui-disabled": {
+                        backgroundColor: "#e57373 !important",
+                        color: "#ffffff99",
+                      },
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </span>
+              </Tooltip>
             )}
           </Box>
         </CardActions>
@@ -296,9 +300,10 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
         <AccountUpdateForm
           accountId={account.id}
           accountData={{
-            username: account.username,
             fullName: account.fullName,
-            phoneNumber: account.phoneNumber.replace(/\D/g, "").replace(/^91/, ""),
+            phoneNumber: account.phoneNumber
+              .replace(/\D/g, "")
+              .replace(/^91/, ""),
             email: account.email_id,
             gender: getGenderValue(account.gender),
             status: getStatusValue(account.status),

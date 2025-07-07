@@ -16,21 +16,24 @@ import {
 } from "@mui/material";
 
 import { Delete as DeleteIcon } from "@mui/icons-material";
-import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded';
+import AssignmentTurnedInRoundedIcon from "@mui/icons-material/AssignmentTurnedInRounded";
 import { useAppDispatch } from "../../store/Hooks";
 import { dutyDeleteApi } from "../../slices/appSlice";
 import localStorageHelper from "../../utils/localStorageHelper";
 import DutyUpdateForm from "./UpdationForm";
-import { showSuccessToast } from "../../common/toastMessageHelper";
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "../../common/toastMessageHelper";
 
 interface DutyCardProps {
   duty: {
-    id:number;
-    operatorName:string;
-    serviceName:string;
-    status:string;
-    type:string
-    service_id:number
+    id: number;
+    operatorName: string;
+    serviceName: string;
+    status: string;
+    type: string;
+    service_id: number;
   };
   refreshList: (value: any) => void;
   onUpdate: () => void;
@@ -39,18 +42,39 @@ interface DutyCardProps {
   canManageDuty: boolean;
   onCloseDetailCard: () => void;
 }
-const statusMap: Record<string, { label: string; color: string; bg: string }> = {
-  Assigned:    { label: "Assigned",    color: "#1976D2", bg: "rgba(33, 150, 243, 0.12)" }, // Blue
-  Started:     { label: "Started",     color: "#388E3C", bg: "rgba(76, 175, 80, 0.12)" },  // Green
-  Terminated:  { label: "Terminated",  color: "#D32F2F", bg: "rgba(244, 67, 54, 0.12)" },  // Red
-  Finished:    { label: "Finished",    color: "#616161", bg: "rgba(158, 158, 158, 0.12)" } // Grey
-};
+const statusMap: Record<string, { label: string; color: string; bg: string }> =
+  {
+    Assigned: {
+      label: "Assigned",
+      color: "#1976D2",
+      bg: "rgba(33, 150, 243, 0.12)",
+    }, // Blue
+    Started: {
+      label: "Started",
+      color: "#388E3C",
+      bg: "rgba(76, 175, 80, 0.12)",
+    }, // Green
+    Terminated: {
+      label: "Terminated",
+      color: "#D32F2F",
+      bg: "rgba(244, 67, 54, 0.12)",
+    }, // Red
+    Finished: {
+      label: "Finished",
+      color: "#616161",
+      bg: "rgba(158, 158, 158, 0.12)",
+    }, // Grey
+  };
 
 const typeMap: Record<string, { label: string; color: string; bg: string }> = {
-  Driver:     { label: "Driver",     color: "#388E3C", bg: "rgba(76, 175, 80, 0.12)" },      // Green
-  Conductor:  { label: "Conductor",  color: "#1976D2", bg: "rgba(33, 150, 243, 0.12)" },     // Blue
-  Kili:       { label: "Kili",       color: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" },      // Orange
-  Other:      { label: "Other",      color: "#616161", bg: "rgba(189, 189, 189, 0.12)" }     // Grey
+  Driver: { label: "Driver", color: "#388E3C", bg: "rgba(76, 175, 80, 0.12)" }, // Green
+  Conductor: {
+    label: "Conductor",
+    color: "#1976D2",
+    bg: "rgba(33, 150, 243, 0.12)",
+  }, // Blue
+  Kili: { label: "Kili", color: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" }, // Orange
+  Other: { label: "Other", color: "#616161", bg: "rgba(189, 189, 189, 0.12)" }, // Grey
 };
 const DutyDetailsCard: React.FC<DutyCardProps> = ({
   duty,
@@ -65,8 +89,8 @@ const DutyDetailsCard: React.FC<DutyCardProps> = ({
   const dispatch = useAppDispatch();
   console.log("duty()()()()()()(()()", duty);
 
-const canDeleteDuty =
-  canManageDuty && (duty.status === "Assigned" || duty.status === "Finished");
+  const canDeleteDuty =
+    canManageDuty && (duty.status === "Assigned" || duty.status === "Finished");
 
   const handleBusDelete = async () => {
     if (!duty.id) {
@@ -85,8 +109,9 @@ const canDeleteDuty =
       showSuccessToast("Duty deleted successfully");
       onCloseDetailCard();
       refreshList("refresh");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Delete error:", error);
+      showErrorToast(error || "Duty deletion failed. Please try again.");
     }
   };
 
@@ -134,40 +159,45 @@ const canDeleteDuty =
             <Typography variant="body2" color="textSecondary">
               <b>Service:</b> {duty.serviceName}
             </Typography>
-          <Typography variant="body1" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-  <b>Status:</b>
-  <Chip
-    label={statusMap[duty.status]?.label || "Unknown"}
-    sx={{
-      bgcolor: statusMap[duty.status]?.bg,
-      color: statusMap[duty.status]?.color,
-      fontWeight: "bold",
-      borderRadius: "12px",
-      px: 1.5,
-      fontSize: "0.75rem",
-      width: 120,
-    }}
-    size="small"
-  />
-</Typography>
-<Typography variant="body1" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-  <b>Type:</b>
-  <Chip
-    label={typeMap[duty.type]?.label || "Unknown"}
-    sx={{
-      bgcolor: typeMap[duty.type]?.bg,
-      color: typeMap[duty.type]?.color,
-      fontWeight: "bold",
-      borderRadius: "12px",
-      px: 1.5,
-      fontSize: "0.75rem",
-      width: 120,
-    }}
-    size="small"
-  />
-</Typography>
+            <Typography
+              variant="body1"
+              sx={{ display: "flex", alignItems: "center", gap: 1 }}
+            >
+              <b>Status:</b>
+              <Chip
+                label={statusMap[duty.status]?.label || "Unknown"}
+                sx={{
+                  bgcolor: statusMap[duty.status]?.bg,
+                  color: statusMap[duty.status]?.color,
+                  fontWeight: "bold",
+                  borderRadius: "12px",
+                  px: 1.5,
+                  fontSize: "0.75rem",
+                  width: 120,
+                }}
+                size="small"
+              />
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{ display: "flex", alignItems: "center", gap: 1 }}
+            >
+              <b>Type:</b>
+              <Chip
+                label={typeMap[duty.type]?.label || "Unknown"}
+                sx={{
+                  bgcolor: typeMap[duty.type]?.bg,
+                  color: typeMap[duty.type]?.color,
+                  fontWeight: "bold",
+                  borderRadius: "12px",
+                  px: 1.5,
+                  fontSize: "0.75rem",
+                  width: 120,
+                }}
+                size="small"
+              />
+            </Typography>
           </Box>
-          
         </Card>
 
         {/* Action Buttons */}
@@ -224,36 +254,37 @@ const canDeleteDuty =
 
             {/* Delete Button with Tooltip */}
             <Tooltip
-  title={
-    !canDeleteDuty
-      ? duty.status === "Started" || duty.status === "Terminated"
-        ? "Duty cannot be deleted after it has started or terminated"
-        : "You don't have permission, contact the admin"
-      : ""
-  }
-  arrow
-  placement="top-start"
->
-  <span style={{ cursor: !canDeleteDuty ? "not-allowed" : "pointer" }}>
-    <Button
-      variant="contained"
-      color="error"
-      size="small"
-      onClick={() => setDeleteConfirmOpen(true)}
-      startIcon={<DeleteIcon />}
-      disabled={!canDeleteDuty}
-      sx={{
-        "&.Mui-disabled": {
-          backgroundColor: "#e57373 !important",
-          color: "#ffffff99",
-        },
-      }}
-    >
-      Delete
-    </Button>
-  </span>
-</Tooltip>
-
+              title={
+                !canDeleteDuty
+                  ? duty.status === "Started" || duty.status === "Terminated"
+                    ? "Duty cannot be deleted after it has started or terminated"
+                    : "You don't have permission, contact the admin"
+                  : ""
+              }
+              arrow
+              placement="top-start"
+            >
+              <span
+                style={{ cursor: !canDeleteDuty ? "not-allowed" : "pointer" }}
+              >
+                <Button
+                  variant="contained"
+                  color="error"
+                  size="small"
+                  onClick={() => setDeleteConfirmOpen(true)}
+                  startIcon={<DeleteIcon />}
+                  disabled={!canDeleteDuty}
+                  sx={{
+                    "&.Mui-disabled": {
+                      backgroundColor: "#e57373 !important",
+                      color: "#ffffff99",
+                    },
+                  }}
+                >
+                  Delete
+                </Button>
+              </span>
+            </Tooltip>
           </Box>
         </CardActions>
       </Card>

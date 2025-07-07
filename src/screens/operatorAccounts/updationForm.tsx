@@ -66,7 +66,7 @@ const statusOptions: IOption[] = [
 ];
 
 const loggedInUser = localStorageHelper.getItem("@user");
-const userId = loggedInUser?.operator_id;
+console.log("loggedInUser:", loggedInUser);
 
 const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
   accountId,
@@ -79,7 +79,11 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState<{ id: number; name: string }[]>([]);
-  const isLoggedInUser = accountId === userId;
+  const userId = Number(loggedInUser?.operator_id);
+  const isLoggedInUser = Number(accountId) === userId;
+  console.log("accountId:", accountId, typeof accountId);
+  console.log("userId:", userId, typeof userId);
+  console.log("isLoggedInUser:", isLoggedInUser);
   const [roleMappingError, setRoleMappingError] = useState(false);
   const {
     register,
@@ -104,7 +108,7 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
       })
 
       .catch((err: any) => {
-        showErrorToast(err);
+        showErrorToast(err || "Error fetching roles");
       });
 
     // Fetch role mapping for this account
@@ -126,7 +130,7 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
         }
       })
       .catch((error: any) => {
-        showErrorToast(error);
+        showErrorToast(error || "Error fetching role mapping");
         reset(accountData);
         setRoleMappingError(true); // Show error if API call fails
       });
@@ -179,8 +183,10 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
               })
             ).unwrap();
           }
-        } catch {
-          showErrorToast("Account updated, but role assignment failed!");
+        } catch (error: any) {
+          showErrorToast(
+            error || "Account updated, but role assignment failed!"
+          );
         }
       }
 
@@ -188,8 +194,8 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
       onCloseDetailCard();
       refreshList("refresh");
       onClose();
-    } catch {
-      showErrorToast("Something went wrong. Please try again.");
+    } catch (error: any) {
+      showErrorToast(error || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }

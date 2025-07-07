@@ -137,7 +137,7 @@ const LoginPage: React.FC = () => {
       if (response?.access_token) {
         const user = {
           username: data?.username,
-          userId: response?.operator_id,
+          operator_id: response?.operator_id,
           company_id: data?.company_id,
         };
         const access_token = response?.access_token;
@@ -205,7 +205,7 @@ const LoginPage: React.FC = () => {
       }
     } catch (error: any) {
       console.error("Login Error:", error);
-      showErrorToast(error.message || "Login failed");
+      showErrorToast(error?.detail || error || "Login failed");
     }
   };
   const handleScroll = (event: React.UIEvent<HTMLElement>, type: "company") => {

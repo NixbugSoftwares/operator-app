@@ -26,16 +26,15 @@ import {
   showSuccessToast,
 } from "../../common/toastMessageHelper";
 
-
 // Account creation form interface
 interface IAccountFormInputs {
   username: string;
   password: string;
-  fullName: string;  
-  phoneNumber?: string;  
-  email?: string;  
-  gender?: number;  
-  role: number;  
+  fullName: string;
+  phoneNumber?: string;
+  email?: string;
+  gender?: number;
+  role: number;
 }
 
 interface IAccountCreationFormProps {
@@ -74,74 +73,73 @@ const AccountForm: React.FC<IAccountCreationFormProps> = ({
 
   //   Fetchroles
   useEffect(() => {
-  dispatch(operatorRoleListApi({}))
-    .unwrap()
-    .then((res: { data: any[] }) => {
-      setRoles(res.data.map((role) => ({ id: role.id, name: role.name })));
-    })
+    dispatch(operatorRoleListApi({}))
+      .unwrap()
+      .then((res: { data: any[] }) => {
+        setRoles(res.data.map((role) => ({ id: role.id, name: role.name })));
+      })
 
-    .catch((err: any) => {
-      showErrorToast(err);
-    });
-}, [dispatch]);
+      .catch((err: any) => {
+        showErrorToast(err);
+      });
+  }, [dispatch]);
 
   const handleTogglePassword = () => {
     setShowPassword((prev) => !prev);
   };
 
   const handleAccountCreation: SubmitHandler<IAccountFormInputs> = async (
-  data
-) => {
-  try {
-    setLoading(true);
+    data
+  ) => {
+    try {
+      setLoading(true);
 
-    console.log("Data being sent:", data); 
+      console.log("Data being sent:", data);
 
-    const formData = new FormData();
-    formData.append("username", data.username);
-    formData.append("password", data.password);
-    formData.append("gender", data.gender?.toString() || "");
+      const formData = new FormData();
+      formData.append("username", data.username);
+      formData.append("password", data.password);
+      formData.append("gender", data.gender?.toString() || "");
 
-    if (data.fullName) {
-      formData.append("full_name", data.fullName);
-    }
-    if (data.phoneNumber) {
-      formData.append("phone_number", `+91${data.phoneNumber}`);
-    }
-    if (data.email) {
-      formData.append("email_id", data.email);
-    }
-
-    console.log("FormData being sent:", formData); 
-    //  Create account
-    const accountResponse = await dispatch(
-      operatorCreationApi(formData)
-    ).unwrap();
-    if (accountResponse?.id) {
-      const roleResponse = await dispatch(
-        operatorRoleAssignApi({
-          operator_id: accountResponse.id,
-          role_id: data.role,
-        })
-      ).unwrap();
-
-      if (roleResponse?.id && roleResponse?.role_id) {
-        showSuccessToast("Account and role assigned successfully!");
-        refreshList("refresh");
-        onClose();
-      } else {
-        throw new Error("Account created, but role assignment failed!");
+      if (data.fullName) {
+        formData.append("full_name", data.fullName);
       }
-    } else {
-      throw new Error("Account creation failed!");
+      if (data.phoneNumber) {
+        formData.append("phone_number", `+91${data.phoneNumber}`);
+      }
+      if (data.email) {
+        formData.append("email_id", data.email);
+      }
+
+      console.log("FormData being sent:", formData);
+      //  Create account
+      const accountResponse = await dispatch(
+        operatorCreationApi(formData)
+      ).unwrap();
+      if (accountResponse?.id) {
+        const roleResponse = await dispatch(
+          operatorRoleAssignApi({
+            operator_id: accountResponse.id,
+            role_id: data.role,
+          })
+        ).unwrap();
+
+        if (roleResponse?.id && roleResponse?.role_id) {
+          showSuccessToast("Account and role assigned successfully!");
+          refreshList("refresh");
+          onClose();
+        } else {
+          throw new Error("Account created, but role assignment failed!");
+        }
+      } else {
+        throw new Error("Account creation failed!");
+      }
+    } catch (error: any) {
+      showErrorToast(error || "Account creation failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
- } catch (error: any) {
-  showErrorToast(error?.message || "An error occurred");
-}
-finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <Container component="main" maxWidth="xs">

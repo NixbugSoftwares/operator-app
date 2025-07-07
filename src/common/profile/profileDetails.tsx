@@ -757,7 +757,7 @@ const ProfilePage: React.FC = () => {
       {/* Company Details Below */}
       {company && showCompanyDetails && (
         <Box id="company-details" sx={{ mt: 4 }}>
-          <CompanyDetailsCard company={company} companyId={company.id} />
+          <CompanyDetailsCard companyId={company.id} />
         </Box>
       )}
     </Box>

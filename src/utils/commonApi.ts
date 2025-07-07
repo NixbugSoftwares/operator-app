@@ -171,7 +171,7 @@ const apiCall = async (
     return await handleResponse(response);
   } catch (err: any) {
     console.log('apiCallCatchError======>', err);
-    return handleErrorResponse(err);
+    throw handleErrorResponse(err); 
   }
 };
 
