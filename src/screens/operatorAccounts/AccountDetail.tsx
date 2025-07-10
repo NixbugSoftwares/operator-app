@@ -63,7 +63,7 @@ const statusOptions = [
   { label: "Suspended", value: 2 },
 ];
 const loggedInUser = localStorageHelper.getItem("@user");
-const userId = loggedInUser?.userId;
+const userId = loggedInUser?.operator_id;
 
 const AccountDetailsCard: React.FC<AccountCardProps> = ({
   account,
@@ -292,11 +292,7 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
           </Box>
         </CardActions>
       </Card>
-      <FormModal
-        open={updateFormOpen}
-        onClose={() => setUpdateFormOpen(false)}
-        // title="Update Account"
-      >
+      <FormModal open={updateFormOpen} onClose={() => setUpdateFormOpen(false)}>
         <AccountUpdateForm
           accountId={account.id}
           accountData={{

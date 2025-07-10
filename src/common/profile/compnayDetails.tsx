@@ -213,7 +213,7 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
       setEditingField(null);
       fetchCompanyData();
     } catch (error: any) {
-      showErrorToast(`Error updating status: ${error.message}`);
+      showErrorToast(`Error updating status: ${error}`);
     } finally {
       setLoading(false);
     }
@@ -232,7 +232,7 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
         fetchCompanyData();
       })
       .catch((error: any) => {
-        showErrorToast(`Error updating location: ${error.message}`);
+        showErrorToast(`Error updating location: ${error}`);
       });
   };
   const getStatusChip = () => {

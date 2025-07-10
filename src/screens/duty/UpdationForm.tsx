@@ -72,7 +72,7 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
   dutyData,
 }) => {
   console.log("DutyUpdateForm props:", { dutyId, dutyData });
-  
+
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
   const [currentStatus, setCurrentStatus] = useState<number>(2);
@@ -109,7 +109,7 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
       service_id: dutyData.service_id,
     },
   });
-console.log("Initial form values:", {
+  console.log("Initial form values:", {
     id: dutyData.id,
     status: getInitialStatusValue(dutyData.status),
     type: getInitialTypeValue(dutyData.type),
@@ -177,7 +177,7 @@ console.log("Initial form values:", {
           }
         })
         .catch((error) => {
-          showErrorToast(error.message || "Failed to fetch Service list");
+          showErrorToast(error || "Failed to fetch Service list");
         })
         .finally(() => setLoading(false));
     },
@@ -222,9 +222,7 @@ console.log("Initial form values:", {
       onClose();
     } catch (error: any) {
       console.error("Error updating duty:", error);
-      showErrorToast(
-        error.message || "Failed to update duty. Please try again."
-      );
+      showErrorToast(error || "Failed to update duty. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -314,36 +312,42 @@ console.log("Initial form values:", {
           />
 
           <Controller
-  name="service_id"
-  control={control}
-  render={({ field }) => (
-    <Autocomplete
-      options={dropdownData.serviceList}
-      getOptionLabel={(option) => option.name}
-      value={dropdownData.serviceList.find((item) => item.id === field.value) || null}
-      onChange={(_, newValue) => field.onChange(newValue?.id || null)}
-      onInputChange={(_, newInputValue) => fetchServiceList(0, newInputValue)}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label="Select Service"
-          error={!!errors.service_id}
-          helperText={errors.service_id?.message}
-          fullWidth
-          margin="normal"
-        />
-      )}
-      ListboxProps={{
-        onScroll: (event) => handleScroll(event, "service"),
-        style: { maxHeight: 200, overflow: "auto" },
-      }}
-      loading={loading}
-      isOptionEqualToValue={(option, value) => option.id === value.id}
-      clearOnBlur={false}
-      clearOnEscape
-    />
-  )}
-/>
+            name="service_id"
+            control={control}
+            render={({ field }) => (
+              <Autocomplete
+                options={dropdownData.serviceList}
+                getOptionLabel={(option) => option.name}
+                value={
+                  dropdownData.serviceList.find(
+                    (item) => item.id === field.value
+                  ) || null
+                }
+                onChange={(_, newValue) => field.onChange(newValue?.id || null)}
+                onInputChange={(_, newInputValue) =>
+                  fetchServiceList(0, newInputValue)
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Select Service"
+                    error={!!errors.service_id}
+                    helperText={errors.service_id?.message}
+                    fullWidth
+                    margin="normal"
+                  />
+                )}
+                ListboxProps={{
+                  onScroll: (event) => handleScroll(event, "service"),
+                  style: { maxHeight: 200, overflow: "auto" },
+                }}
+                loading={loading}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                clearOnBlur={false}
+                clearOnEscape
+              />
+            )}
+          />
 
           <Controller
             name="type"

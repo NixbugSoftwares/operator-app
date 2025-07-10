@@ -24,6 +24,7 @@ import { RootState } from "../../store/Store";
 import PaginationControls from "../../common/paginationControl";
 import FareSkeletonPage from "./fareSkeletonPage";
 import { Fare } from "../../types/type";
+import { showErrorToast } from "../../common/toastMessageHelper";
 
 const fareOptions = [
   { label: "Comman Fare", value: 1 },
@@ -79,6 +80,7 @@ const FareListingPage = () => {
         })
         .catch((error) => {
           console.error("Error fetching fares:", error);
+          showErrorToast(error|| "Failed to fetch fares. Please try again.");
           setIsLoading(false);
         });
     },

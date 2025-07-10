@@ -74,7 +74,7 @@ const RoleListingTable = () => {
         })
         .catch((error) => {
           showErrorToast(
-            error.message || "Failed to fetch role list. Please try again."
+            error || "Failed to fetch role list. Please try again."
           );
         })
         .finally(() => setIsLoading(false));
@@ -177,28 +177,28 @@ const RoleListingTable = () => {
           }
           placement="top-end"
         >
-            <Button
-              sx={{
-                ml: "auto",
-                mr: 2,
-                mb: 2,
-                display: "block",
-                backgroundColor: !canManageRole
-                  ? "#6c87b7 !important"
-                  : "#00008B",
-                color: "white",
-                "&.Mui-disabled": {
-                  backgroundColor: "#6c87b7 !important",
-                  color: "#ffffff99",
-                },
-              }}
-              variant="contained"
-              disabled={!canManageRole}
-              onClick={() => setOpenCreateModal(true)}
-              style={{ cursor: !canManageRole ? "not-allowed" : "default" }}
-            >
-              Add New Role
-            </Button>
+          <Button
+            sx={{
+              ml: "auto",
+              mr: 2,
+              mb: 2,
+              display: "block",
+              backgroundColor: !canManageRole
+                ? "#6c87b7 !important"
+                : "#00008B",
+              color: "white",
+              "&.Mui-disabled": {
+                backgroundColor: "#6c87b7 !important",
+                color: "#ffffff99",
+              },
+            }}
+            variant="contained"
+            disabled={!canManageRole}
+            onClick={() => setOpenCreateModal(true)}
+            style={{ cursor: !canManageRole ? "not-allowed" : "default" }}
+          >
+            Add New Role
+          </Button>
         </Tooltip>
 
         <TableContainer

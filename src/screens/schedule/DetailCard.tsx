@@ -25,7 +25,10 @@ import {
   fareListingApi,
 } from "../../slices/appSlice";
 import ScheduleUpdateForm from "./updationForm";
-import { showSuccessToast } from "../../common/toastMessageHelper";
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "../../common/toastMessageHelper";
 
 interface ServiceCardProps {
   schedule: {
@@ -37,7 +40,7 @@ interface ServiceCardProps {
     bus_id: number;
     route_id: number;
     fare_id: number;
-    frequency: number[] ;
+    frequency: number[];
   };
   refreshList: (value: any) => void;
   onUpdate: () => void;
@@ -47,16 +50,38 @@ interface ServiceCardProps {
   onCloseDetailCard: () => void;
 }
 
-const ticketModeMap: Record<string, { label: string; color: string; bg: string }> = {
-  Hybrid:       { label: "Hybrid",       color: "#009688", bg: "rgba(0, 150, 136, 0.15)" },      // Teal
-  Digital:      { label: "Digital",      color: "#2196F3", bg: "rgba(33, 150, 243, 0.15)" },     // Blue
-  Conventional: { label: "Conventional", color: "#FF5722", bg: "rgba(255, 87, 34, 0.15)" },      // Deep Orange
+const ticketModeMap: Record<
+  string,
+  { label: string; color: string; bg: string }
+> = {
+  Hybrid: { label: "Hybrid", color: "#009688", bg: "rgba(0, 150, 136, 0.15)" }, // Teal
+  Digital: {
+    label: "Digital",
+    color: "#2196F3",
+    bg: "rgba(33, 150, 243, 0.15)",
+  }, // Blue
+  Conventional: {
+    label: "Conventional",
+    color: "#FF5722",
+    bg: "rgba(255, 87, 34, 0.15)",
+  }, // Deep Orange
 };
 
-const triggerModeMap: Record<string, { label: string; color: string; bg: string }> = {
-  Automatic: { label: "Automatic", color: "#1976D2", bg: "rgba(33, 150, 243, 0.12)" }, // Blue
-  Manual:    { label: "Manual",    color: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" },  // Orange
-  Disabled:  { label: "Disabled",  color: "#D32F2F", bg: "rgba(244, 67, 54, 0.12)" },  // Red
+const triggerModeMap: Record<
+  string,
+  { label: string; color: string; bg: string }
+> = {
+  Automatic: {
+    label: "Automatic",
+    color: "#1976D2",
+    bg: "rgba(33, 150, 243, 0.12)",
+  }, // Blue
+  Manual: { label: "Manual", color: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" }, // Orange
+  Disabled: {
+    label: "Disabled",
+    color: "#D32F2F",
+    bg: "rgba(244, 67, 54, 0.12)",
+  }, // Red
 };
 
 const dayMap = [
@@ -145,8 +170,9 @@ const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
       showSuccessToast("Schedule deleted successfully");
       onCloseDetailCard();
       refreshList("refresh");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Delete error:", error);
+      showErrorToast(error || "Failed to delete schedule. Please try again.");
     }
   };
 
@@ -203,53 +229,56 @@ const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
               <b>Fare :</b> {fareName}
             </Typography>
             <Typography
-  variant="body1"
-  sx={{ display: "flex", alignItems: "center", gap: 1 }}
->
-  <b>Ticket Mode:</b>
-  <Chip
-    label={ticketModeMap[String(schedule.ticket_mode)]?.label || "Unknown"}
-    sx={{
-      bgcolor: ticketModeMap[String(schedule.ticket_mode)]?.bg,
-      color: ticketModeMap[String(schedule.ticket_mode)]?.color,
-      fontWeight: 600,
-      borderRadius: "12px",
-      px: 1.5,
-      fontSize: "0.75rem",
-      width: 150,
-    }}
-    size="small"
-  />
-</Typography>
+              variant="body1"
+              sx={{ display: "flex", alignItems: "center", gap: 1 }}
+            >
+              <b>Ticket Mode:</b>
+              <Chip
+                label={
+                  ticketModeMap[String(schedule.ticket_mode)]?.label ||
+                  "Unknown"
+                }
+                sx={{
+                  bgcolor: ticketModeMap[String(schedule.ticket_mode)]?.bg,
+                  color: ticketModeMap[String(schedule.ticket_mode)]?.color,
+                  fontWeight: 600,
+                  borderRadius: "12px",
+                  px: 1.5,
+                  fontSize: "0.75rem",
+                  width: 150,
+                }}
+                size="small"
+              />
+            </Typography>
 
-<Typography
-  variant="body1"
-  sx={{ display: "flex", alignItems: "center", gap: 1 }}
->
-  <b>Trigger Mode:</b>
-  <Chip
-    label={triggerModeMap[String(schedule.trigger_mode)]?.label || "Unknown"}
-    sx={{
-      bgcolor: triggerModeMap[String(schedule.trigger_mode)]?.bg,
-      color: triggerModeMap[String(schedule.trigger_mode)]?.color,
-      fontWeight: 600,
-      borderRadius: "12px",
-      px: 1.5,
-      fontSize: "0.75rem",
-      width: 150,
-    }}
-    size="small"
-  />
-</Typography>
+            <Typography
+              variant="body1"
+              sx={{ display: "flex", alignItems: "center", gap: 1 }}
+            >
+              <b>Trigger Mode:</b>
+              <Chip
+                label={
+                  triggerModeMap[String(schedule.trigger_mode)]?.label ||
+                  "Unknown"
+                }
+                sx={{
+                  bgcolor: triggerModeMap[String(schedule.trigger_mode)]?.bg,
+                  color: triggerModeMap[String(schedule.trigger_mode)]?.color,
+                  fontWeight: 600,
+                  borderRadius: "12px",
+                  px: 1.5,
+                  fontSize: "0.75rem",
+                  width: 150,
+                }}
+                size="small"
+              />
+            </Typography>
             <Typography variant="body1">
-  <b>Active Days:</b>{" "}
-  {schedule.frequency && Array.isArray(schedule.frequency)
-    ? schedule.frequency
-        .map((num) => dayMap[num] || num)
-        .join(", ")
-    : "Not set"}
-</Typography>
-
+              <b>Active Days:</b>{" "}
+              {schedule.frequency && Array.isArray(schedule.frequency)
+                ? schedule.frequency.map((num) => dayMap[num] || num).join(", ")
+                : "Not set"}
+            </Typography>
           </Box>
         </Card>
 
@@ -370,7 +399,7 @@ const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
       <Dialog
         open={updateFormOpen}
         onClose={() => setUpdateFormOpen(false)}
-        maxWidth="xs"
+        maxWidth="sm"
         fullWidth
       >
         <DialogContent>
@@ -392,6 +421,11 @@ const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
             onCloseDetailCard={onCloseDetailCard}
           />
         </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUpdateFormOpen(false)} color="error">
+            Close
+          </Button>
+        </DialogActions>
       </Dialog>
     </>
   );

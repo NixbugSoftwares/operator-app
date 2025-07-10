@@ -36,48 +36,49 @@ const getAuthToken = async () => {
 
 //****************************************************** prepare Headers **************************************** */
 const prepareHeaders = async (tokenNeeded: boolean) => {
-
   let headers: any = { "Content-Type": "application/json" };
+  
   if (tokenNeeded) {
-
     let AuthToken = await localStorageHelper.getItem("@token");
     const tokenExpiry = await localStorageHelper.getItem("@token_expires");
 
-    // console.log('Authtoken======>', AuthToken);
-    // console.log('AuthtokenExpiry======>', tokenExpiry); 
-
     if (!AuthToken) {
-      console.log('Token not found');
+      commonHelper.logout();
       throw new Error('Token not found');
     }
+
     if (!tokenExpiry) {
+      commonHelper.logout();
       throw new Error('Token expiry not found');
     }
 
-    // Ensure tokenExpiry is a number
     const tokenExpiryNumber = Number(tokenExpiry);
     if (isNaN(tokenExpiryNumber)) {
+      commonHelper.logout();
       throw new Error('Invalid token expiry timestamp');
     }
+
     const now = Date.now();
-    const oneHourBeforeExpiry = tokenExpiryNumber - 3600 * 1000; // 1 hour before expiry
-    // const oneHourBeforeExpiry = tokenExpiryNumber - 60 * 1000;// 1 min before expiry
-    if (now>= tokenExpiryNumber) {
-      console.log('Token expired, please login again.');
-    }else if (now >= oneHourBeforeExpiry) {
-      // Token valid but near expiry, refresh it now
-      console.log('Token about to expire, refreshing...');
-       await getAuthToken();
-    } else {
-      // console.log('Token still valid, no refresh needed.');
+    
+    // If token is expired, logout immediately
+    if (now >= tokenExpiryNumber) {
+      commonHelper.logout();
+      throw new Error('Token expired');
     }
 
-    AuthToken= await localStorageHelper.getItem("@token");
+    // If token is about to expire, try to refresh
+    const oneHourBeforeExpiry = tokenExpiryNumber - 3600 * 1000;
+    if (now >= oneHourBeforeExpiry) {
+      try {
+        await getAuthToken();
+        AuthToken = await localStorageHelper.getItem("@token");
+      } catch (error) {
+        commonHelper.logout();
+        throw error;
+      }
+    }
 
-    // console.log('Authtoken from getAuthtoken=======>', AuthToken);
     headers["Authorization"] = `Bearer ${AuthToken}`;
-
-
   }
 
   return headers;
@@ -105,6 +106,9 @@ const handleErrorResponse = (errorResponse: any) => {
   const {status, data} = errorResponse.response as {status: number; data: any};
   const errorMessage = data?.detail || data?.message || 'Api Failed';
   console.log('dataaaaaa===>', status, data?.detail);
+  if (status === 401) {
+    commonHelper.logout();
+  } 
 
   if (status == 400 && Array.isArray(data?.detail)) {
     const validationErrors = (data as any).message
@@ -112,13 +116,6 @@ const handleErrorResponse = (errorResponse: any) => {
       .join(' | ');
     console.log('validation====>', validationErrors);
     showErrorToast(validationErrors);
-  } else if (status === 401) {
-    // showErrorToast(errorMessage);
-    setTimeout(() => {
-      if (errorMessage !== 'Invalid username or password') {
-        commonHelper.logout();
-      }
-    }, 500);
   } else {
     console.log('errormessagge====>', errorMessage);
     // showErrorToast(errorMessage);

@@ -31,14 +31,13 @@ import {
   SubmitHandler,
 } from "react-hook-form";
 import { useAppDispatch } from "../../store/Hooks";
-import { fareCreationApi } from "../../slices/appSlice";
 import {
   showErrorToast,
   showInfoToast,
   showSuccessToast,
 } from "../../common/toastMessageHelper";
 import { Fare } from "../../types/type";
-import { fareDeleteApi, fareupdationApi } from "../../slices/appSlice";
+import { fareDeleteApi, fareupdationApi, fareCreationApi } from "../../slices/appSlice";
 interface TicketType {
   id: number;
   name: string;
@@ -108,7 +107,6 @@ const FareSkeletonPage = ({
     if (fareToEdit) {
       setFareFunction(fareToEdit.function);
     } else {
-      // Default function template for new fares
       setFareFunction(`function getFare(ticket_type, distance, extra) {
   const base_fare_distance = 2.5;
   const base_fare = 10;
@@ -236,7 +234,7 @@ const FareSkeletonPage = ({
       showSuccessToast("Fare created successfully");
     } catch (error: any) {
       console.error("Error creating fare:", error);
-      showErrorToast(error.message);
+      showErrorToast(error);
     } finally {
       setLoading(false);
     }
@@ -250,14 +248,9 @@ const FareSkeletonPage = ({
       formData.append("name", data.name);
       formData.append("function", fareFunction);
       formData.append("attributes", JSON.stringify(data.attributes));
-
-
-      console.log("======= Sending FormData =======");
       for (const [key, value] of formData.entries()) {
         console.log(`${key}:`, value);
       }
-      console.log("================================");
-
       const response = await dispatch(
         fareupdationApi({ fareId: fareToEdit!.id, formData })
       ).unwrap();
@@ -268,7 +261,7 @@ const FareSkeletonPage = ({
       console.log("API Response:", response);
     } catch (error: any) {
       console.error("Error updating fare:", error);
-      showInfoToast(error.message);
+      showInfoToast(error||"Failed to update fare. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -293,7 +286,7 @@ const FareSkeletonPage = ({
       showSuccessToast("Fare deleted successfully");
     } catch (error: any) {
       console.error("Error deleting fare:", error);
-      showErrorToast(error.message);
+      showErrorToast(error || "Failed to delete fare. Please try again.");
     } finally {
       setLoading(false);
     }

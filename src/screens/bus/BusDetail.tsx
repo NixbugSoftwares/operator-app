@@ -152,29 +152,29 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
             </Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", mb: 1, gap: 1 }}>
-  {bus.status === 1 ? (
-    <>
-      <VerifiedIcon sx={{ color: "green", fontSize: 30 }} />
-      <Typography sx={{ color: "green", fontWeight: "bold" }}>
-        Active
-      </Typography>
-    </>
-  ) : bus.status === 2 ? (
-    <>
-      <NewReleasesIcon sx={{ color: "#FFA500", fontSize: 30 }} />
-      <Typography sx={{ color: "#FFA500", fontWeight: "bold" }}>
-        Maintenance
-      </Typography>
-    </>
-  ) : (
-    <>
-      <BlockIcon sx={{ color: "#d93550", fontSize: 30 }} />
-      <Typography sx={{ color: "#d93550", fontWeight: "bold" }}>
-        Suspended
-      </Typography>
-    </>
-  )}
-</Box>
+            {bus.status === 1 ? (
+              <>
+                <VerifiedIcon sx={{ color: "green", fontSize: 30 }} />
+                <Typography sx={{ color: "green", fontWeight: "bold" }}>
+                  Active
+                </Typography>
+              </>
+            ) : bus.status === 2 ? (
+              <>
+                <NewReleasesIcon sx={{ color: "#FFA500", fontSize: 30 }} />
+                <Typography sx={{ color: "#FFA500", fontWeight: "bold" }}>
+                  Maintenance
+                </Typography>
+              </>
+            ) : (
+              <>
+                <BlockIcon sx={{ color: "#d93550", fontSize: 30 }} />
+                <Typography sx={{ color: "#d93550", fontWeight: "bold" }}>
+                  Suspended
+                </Typography>
+              </>
+            )}
+          </Box>
         </Card>
 
         {/* Action Buttons */}
@@ -295,7 +295,7 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
       <Dialog
         open={updateFormOpen}
         onClose={() => setUpdateFormOpen(false)}
-        maxWidth="xs"
+        maxWidth="sm"
         fullWidth
       >
         <DialogContent>
@@ -318,6 +318,11 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
             onCloseDetailCard={onCloseDetailCard}
           />
         </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUpdateFormOpen(false)} color="error">
+            Close
+          </Button>
+        </DialogActions>
       </Dialog>
     </>
   );

@@ -76,6 +76,8 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
   onCloseDetailCard,
   canManageOperator,
 }) => {
+  console.log("accountData:", accountData);
+  
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState<{ id: number; name: string }[]>([]);

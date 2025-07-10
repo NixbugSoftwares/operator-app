@@ -85,11 +85,13 @@ const ProfilePage: React.FC = () => {
   );
   const [role, setRole] = useState<number | undefined>(undefined);
   const user = localStorageHelper.getItem("@user");
-  const userId = user?.userId;
+  const userId = user?.operator_id;
   const companyId = user?.company_id;
   const canManageOperator = useSelector((state: RootState) =>
     state.app.permissions.includes("manage_operator")
   );
+  console.log("userId", userId);
+  
   const [showCompanyDetails, setShowCompanyDetails] = useState(false);
   const getGender = (value: number): string => {
     switch (value) {

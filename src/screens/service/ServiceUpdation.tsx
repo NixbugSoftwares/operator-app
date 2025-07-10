@@ -80,14 +80,10 @@ const ServiceUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
 
   console.log("serviceData+++++++++++===>", serviceData);
   const isValidTransition = (current: number, next: number): boolean => {
-    // Same status is always allowed (no change)
     if (current === next) return true;
-
-    // Check if the next status is in allowed transitions for current status
     return allowedTransitions[current]?.includes(next) ?? false;
   };
 
-  // Handle bus update
   const handleServiceUpdate: SubmitHandler<ServiceFormValues> = async (
     data
   ) => {
@@ -117,9 +113,9 @@ const ServiceUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
       onCloseDetailCard();
       refreshList("refresh");
       onClose();
-    } catch (error) {
+    } catch (error:any) {
       console.error("Error updating service:", error);
-      showErrorToast("Failed to update service. Please try again.");
+      showErrorToast(error||"Failed to update service. Please try again.");
     } finally {
       setLoading(false);
     }

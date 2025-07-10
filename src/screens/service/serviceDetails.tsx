@@ -18,7 +18,7 @@ import {
 
 import { Delete as DeleteIcon } from "@mui/icons-material";
 import AssignmentIndRoundedIcon from "@mui/icons-material/AssignmentIndRounded";
-import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
+import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
 import { useAppDispatch } from "../../store/Hooks";
 import {
   serviceDeleteApi,
@@ -28,7 +28,10 @@ import {
 } from "../../slices/appSlice";
 import localStorageHelper from "../../utils/localStorageHelper";
 import ServiceUpdateForm from "./ServiceUpdation";
-import { showSuccessToast } from "../../common/toastMessageHelper";
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "../../common/toastMessageHelper";
 import { useNavigate } from "react-router-dom";
 interface ServiceCardProps {
   service: {
@@ -101,7 +104,7 @@ const createdModeMap: Record<
     label: "Automatic",
     color: "#3F51B5",
     bg: "rgba(63, 81, 181, 0.15)",
-  }, // Indigo
+  },
 };
 
 const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
@@ -129,9 +132,9 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
       console.log("Route Name Response:", response.data[0].name);
 
       return response.data[0].name;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching route name:", error);
-      return "Route not found";
+      showErrorToast(error || "Error fetching route name");
     }
   };
   const fetchBusName = async () => {
@@ -142,9 +145,9 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
       console.log("Bus Name Response:", response.data[0].name);
 
       return response.data[0].name;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching bus name:", error);
-      return "Bus not found";
+      showErrorToast(error || "Error fetching bus name");
     }
   };
 
@@ -156,9 +159,9 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
       console.log("Fare Name Response:", response.data[0].name);
 
       return response.data[0].name;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching fare name:", error);
-      return "Fare not found";
+      showErrorToast(error || "Error fetching fare name");
     }
   };
   useEffect(() => {
@@ -190,8 +193,9 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
       showSuccessToast("service deleted successfully");
       onCloseDetailCard();
       refreshList("refresh");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Delete error:", error);
+      showErrorToast(error || "service deletion failed. Please try again.");
     }
   };
   console.log(service.status);
@@ -501,6 +505,11 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
             onCloseDetailCard={onCloseDetailCard}
           />
         </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUpdateFormOpen(false)} color="error">
+            Close
+          </Button>
+        </DialogActions>
       </Dialog>
     </>
   );

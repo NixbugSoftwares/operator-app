@@ -331,6 +331,11 @@ const DutyDetailsCard: React.FC<DutyCardProps> = ({
             onCloseDetailCard={onCloseDetailCard}
           />
         </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUpdateFormOpen(false)} color="error">
+            Close
+          </Button>
+        </DialogActions>
       </Dialog>
     </>
   );

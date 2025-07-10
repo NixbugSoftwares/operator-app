@@ -110,13 +110,11 @@ const BusRouteCreation = ({
     landmarks: SelectedLandmark[],
     timeType: "arrival" | "departure"
   ) => {
-    // Parse starting time as UTC (with day offset 0)
     const startDate = new Date(`1970-01-01T${startingTime.replace("Z", "")}Z`);
 
     return landmarks.map((landmark) => {
       const timeObj =
         timeType === "arrival" ? landmark.arrivalTime : landmark.departureTime;
-      // Parse landmark time as UTC (with its day offset)
       const landmarkDate = new Date(timeObj.fullTime);
       // Delta in seconds
       const deltaSeconds = Math.floor(
@@ -222,13 +220,9 @@ const BusRouteCreation = ({
         mapRef.current.toggleAddLandmarkMode();
       }
       if (onClose) onClose();
-    } catch (error) {
+    } catch (error:any) {
       console.error("Error in route creation process:", error);
-      showErrorToast(
-        error instanceof Error
-          ? error.message
-          : "Failed to create route and landmarks"
-      );
+      showErrorToast(error|| "Failed to create route and landmarks");
     } finally {
       setIsSubmitting(false);
     }

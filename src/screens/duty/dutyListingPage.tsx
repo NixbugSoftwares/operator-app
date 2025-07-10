@@ -152,7 +152,7 @@ const DutyListingTable = () => {
         setHasNextPage(items.length === rowsPerPage);
       } catch (error: any) {
         console.error("Fetch Error:", error);
-        showErrorToast(error.message || "Failed to fetch Duty list");
+        showErrorToast(error || "Failed to fetch Duty list");
       } finally {
         setIsLoading(false);
       }

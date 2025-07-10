@@ -113,7 +113,7 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
           }));
         })
         .catch((error) => {
-          showErrorToast(error.message || "Failed to fetch Bus list");
+          showErrorToast(error || "Failed to fetch Bus list");
         })
         .finally(() => setLoading(false));
     },
@@ -147,7 +147,7 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
           }));
         })
         .catch((error) => {
-          showErrorToast(error.message || "Failed to fetch Fare list");
+          showErrorToast(error || "Failed to fetch Fare list");
         })
         .finally(() => setLoading(false));
     },
@@ -185,7 +185,7 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
           }));
         })
         .catch((error) => {
-          showErrorToast(error.message || "Failed to fetch Route list");
+          showErrorToast(error|| "Failed to fetch Route list");
         })
         .finally(() => setLoading(false));
     },
@@ -228,8 +228,8 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
       } else {
         showErrorToast("Service creation failed. Please try again.");
       }
-    } catch (error) {
-      showErrorToast("Something went wrong. Please try again.");
+    } catch (error:any) {
+      showErrorToast(error||"Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }

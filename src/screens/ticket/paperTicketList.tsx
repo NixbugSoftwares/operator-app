@@ -88,8 +88,9 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
                 ? dropRes.data[0].name 
                 : droppingName;
             }
-          } catch (err) {
+          } catch (err:any) {
             console.error("Error fetching landmark names:", err);
+            showErrorToast(err || "Failed to fetch landmark names");
           }
 
           return {
@@ -113,7 +114,7 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
         setHasNextPage(items.length === rowsPerPage);
       } catch (error: any) {
         console.error("Fetch Error:", error);
-        showErrorToast(error.message || "Failed to fetch paper ticket list");
+        showErrorToast(error|| "Failed to fetch paper ticket list");
         setPaperTicketList([]);
       } finally {
         setIsLoading(false);

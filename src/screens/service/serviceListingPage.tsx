@@ -144,7 +144,7 @@ const ServiceListingTable = () => {
         })
         .catch((error) => {
           console.error("Fetch Error:", error);
-          showErrorToast(error.message || "Failed to fetch Service list");
+          showErrorToast(error || "Failed to fetch Service list");
         })
         .finally(() => setIsLoading(false));
     },

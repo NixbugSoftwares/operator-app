@@ -39,7 +39,7 @@ const BusCreationForm: React.FC<IOperatorCreationFormProps> = ({
     resolver: yupResolver(busCreationSchema),
   });
 
-  const handleAccountCreation: SubmitHandler<Bus> = async (data) => {
+  const handleBusCreation: SubmitHandler<Bus> = async (data) => {
     try {
       setLoading(true);
       const formatDateToUTC = (dateString: string | null): string | null => {
@@ -87,8 +87,8 @@ const BusCreationForm: React.FC<IOperatorCreationFormProps> = ({
       } else {
         showErrorToast("Bus creation failed. Please try again.");
       }
-    } catch (error) {
-      showErrorToast("Something went wrong. Please try again.");
+    } catch (error:any) {
+      showErrorToast(error||"Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -112,7 +112,7 @@ const BusCreationForm: React.FC<IOperatorCreationFormProps> = ({
           component="form"
           noValidate
           sx={{ mt: 1 }}
-          onSubmit={handleSubmit(handleAccountCreation)}
+          onSubmit={handleSubmit(handleBusCreation)}
         >
           <TextField
             margin="normal"
