@@ -276,13 +276,17 @@ return (
                     }}
                   >
                     <TableCell sx={{ fontWeight: 500, textAlign: "center", height: 60 }}>{fare.id}</TableCell>
-                    <TableCell sx={{ fontWeight: 500, textAlign: "center" }}>
-                      {fare.name || (
-                        <Tooltip title="Name not available">
-                          <ErrorIcon color="disabled" />
-                        </Tooltip>
-                      )}
-                    </TableCell>
+                     {/* Name */}
+                        <TableCell>
+                         
+                          <Tooltip title={fare.name} placement="bottom">
+                            <Typography noWrap>
+                              {fare.name.length > 20
+                                ? `${fare.name.substring(0, 20)}...`
+                                : fare.name}
+                            </Typography>
+                          </Tooltip>
+                        </TableCell>
                     <TableCell>
                       {fare.attributes.ticket_types?.length > 0 ? (
                         <Box display="flex" gap={1}>

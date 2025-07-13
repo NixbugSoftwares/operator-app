@@ -37,7 +37,11 @@ import {
   showSuccessToast,
 } from "../../common/toastMessageHelper";
 import { Fare } from "../../types/type";
-import { fareDeleteApi, fareupdationApi, fareCreationApi } from "../../slices/appSlice";
+import {
+  fareDeleteApi,
+  fareupdationApi,
+  fareCreationApi,
+} from "../../slices/appSlice";
 interface TicketType {
   id: number;
   name: string;
@@ -261,7 +265,7 @@ const FareSkeletonPage = ({
       console.log("API Response:", response);
     } catch (error: any) {
       console.error("Error updating fare:", error);
-      showInfoToast(error||"Failed to update fare. Please try again.");
+      showInfoToast(error || "Failed to update fare. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -327,7 +331,17 @@ const FareSkeletonPage = ({
           <Controller
             name="name"
             control={control}
-            rules={{ required: "Fare name is required" }}
+            rules={{
+              required: "Fare name is required",
+              minLength: {
+                value: 4,
+                message: "Fare name must be at least 4 characters",
+              },
+              maxLength: {
+                value: 32,
+                message: "Fare name cannot exceed 32 characters",
+              },
+            }}
             render={({ field }) => (
               <TextField
                 {...field}
@@ -336,6 +350,10 @@ const FareSkeletonPage = ({
                 sx={{ mb: 3 }}
                 error={!!errors.name}
                 helperText={errors.name?.message}
+                inputProps={{
+                  maxLength: 32,
+                }}
+                placeholder="e.g., Kerala ordinary"
               />
             )}
           />
@@ -620,7 +638,7 @@ const FareSkeletonPage = ({
                       },
                     }}
                   >
-                  Update
+                    Update
                   </Button>
                 </span>
               </Tooltip>

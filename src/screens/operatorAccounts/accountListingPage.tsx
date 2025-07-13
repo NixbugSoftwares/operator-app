@@ -175,15 +175,12 @@ const AccountListingTable = () => {
       >
         <Tooltip
           title={
-            <span>
-              {!canManageOperator
-                ? "You don't have permission, contact the admin"
-                : "Click to open the account creation form"}
-            </span>
+            !canManageOperator
+              ? "You don't have permission, contact the admin"
+              : "Click to open the account creation form"
           }
           placement="top-end"
         >
-          <span>
             <Button
               sx={{
                 ml: "auto",
@@ -206,7 +203,6 @@ const AccountListingTable = () => {
             >
               Add New operator
             </Button>
-          </span>
         </Tooltip>
         <TableContainer
           sx={{
@@ -389,48 +385,58 @@ const AccountListingTable = () => {
                     }}
                   >
                     <TableCell sx={{ textAlign: "center" }}>{row.id}</TableCell>
+
                     <TableCell>
-                      <Typography noWrap>
-                        {row.fullName ? (
-                          row.fullName
-                        ) : (
-                          <Tooltip
-                            title="Full Name not added yet"
-                            placement="bottom"
-                          >
-                            <ErrorIcon sx={{ color: "#737d72 " }} />
-                          </Tooltip>
-                        )}
-                      </Typography>
+                      {row.fullName ? (
+                        <Tooltip title={row.fullName} placement="bottom">
+                          <Typography noWrap>
+                            {row.fullName.length > 15
+                              ? `${row.fullName.substring(0, 15)}...`
+                              : row.fullName}
+                          </Typography>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip
+                          title="Full Name not added yet"
+                          placement="bottom"
+                        >
+                          <ErrorIcon sx={{ color: "#737d72" }} />
+                        </Tooltip>
+                      )}
                     </TableCell>
+
                     <TableCell>
-                      <Typography noWrap>
-                        {row.phoneNumber ? (
-                          row.phoneNumber.replace("tel:", "")
-                        ) : (
-                          <Tooltip
-                            title="Phone Number not added yet"
-                            placement="bottom"
-                          >
-                            <ErrorIcon sx={{ color: "#737d72" }} />
-                          </Tooltip>
-                        )}
-                      </Typography>
+                      {row.phoneNumber ? (
+                        <Typography noWrap>
+                          {row.phoneNumber.replace(/\D/g, "").slice(-10)}
+                        </Typography>
+                      ) : (
+                        <Tooltip
+                          title="Phone Number not added yet"
+                          placement="bottom"
+                        >
+                          <ErrorIcon sx={{ color: "#737d72" }} />
+                        </Tooltip>
+                      )}
                     </TableCell>
+
+                    {/* Email (Truncated to 20 chars + ...) */}
                     <TableCell>
-                      <Typography noWrap>
-                        {row.email_id ? (
-                          row.email_id
-                        ) : (
-                          <Tooltip
-                            title="Email not added yet"
-                            placement="bottom"
-                          >
-                            <ErrorIcon sx={{ color: "#737d72 " }} />
-                          </Tooltip>
-                        )}
-                      </Typography>
+                      {row.email_id ? (
+                        <Tooltip title={row.email_id} placement="bottom">
+                          <Typography noWrap>
+                            {row.email_id.length > 20
+                              ? `${row.email_id.substring(0, 20)}...`
+                              : row.email_id}
+                          </Typography>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip title="Email not added yet" placement="bottom">
+                          <ErrorIcon sx={{ color: "#737d72" }} />
+                        </Tooltip>
+                      )}
                     </TableCell>
+
                     <TableCell sx={{ textAlign: "center" }}>
                       {row.gender}
                     </TableCell>

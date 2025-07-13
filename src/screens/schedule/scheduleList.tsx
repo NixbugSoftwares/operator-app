@@ -362,9 +362,17 @@ const ScheduleListingTable = () => {
                   >
                     <TableCell sx={{ textAlign: "center" }}>{row.id}</TableCell>
                     <TableCell>
-                      <Typography noWrap>{row.name}</Typography>
+                      <Typography noWrap>
+                        <Tooltip title={row.name} placement="bottom">
+                          <Typography noWrap>
+                            {row.name.length > 15
+                              ? `${row.name.substring(0, 15)}...`
+                              : row.name}
+                          </Typography>
+                        </Tooltip>
+                      </Typography>
                     </TableCell>
-                    <TableCell sx={{ textAlign: "center" }}>
+                    <TableCell >
                       <Typography noWrap>{row.permit_no}</Typography>
                     </TableCell>
                     <TableCell>

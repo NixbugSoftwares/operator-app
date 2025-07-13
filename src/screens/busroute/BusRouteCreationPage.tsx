@@ -303,13 +303,12 @@ const BusRouteCreation = ({
           Starting Time (IST)
         </Typography>
         <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-          {/* Starting Day Offset - fixed to Day 0 */}
           <FormControl fullWidth size="small">
             <InputLabel>Starting Day Offset</InputLabel>
             <Select
-              value={0} // hardcoded to Day 0
+              value={0}
               label="Starting Day Offset"
-              disabled // disables dropdown interaction
+              disabled 
             >
               <MenuItem value={0}>Day 1</MenuItem>
             </Select>

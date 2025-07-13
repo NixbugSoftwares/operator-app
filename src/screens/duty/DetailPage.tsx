@@ -34,6 +34,7 @@ interface DutyCardProps {
     status: string;
     type: string;
     service_id: number;
+    created_on: string;
   };
   refreshList: (value: any) => void;
   onUpdate: () => void;
@@ -42,6 +43,12 @@ interface DutyCardProps {
   canManageDuty: boolean;
   onCloseDetailCard: () => void;
 }
+const formatUTCDateToLocal = (dateString: string | null): string => {
+  if (!dateString || dateString.trim() === "") return "Not added yet";
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? "Not added yet" : date.toLocaleDateString();
+};
+
 const statusMap: Record<string, { label: string; color: string; bg: string }> =
   {
     Assigned: {
@@ -196,6 +203,9 @@ const DutyDetailsCard: React.FC<DutyCardProps> = ({
                 }}
                 size="small"
               />
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              <b>Created On:</b> {formatUTCDateToLocal(duty.created_on)}
             </Typography>
           </Box>
         </Card>

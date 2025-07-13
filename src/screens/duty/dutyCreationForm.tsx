@@ -126,6 +126,7 @@ const DutyCreationForm: React.FC<IOperatorCreationFormProps> = ({
           limit: rowsPerPage,
           offset,
           name: searchText,
+          status_list: [1, 2],
         })
       )
         .unwrap()

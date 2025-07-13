@@ -87,13 +87,13 @@ const BusRouteDetailsPage = ({
     null
   );
   const [updatedRouteName, setUpdatedRouteName] = useState(routeName);
-  const [localHour, setLocalHour] = useState<number>(12);
+  const [localHour, setLocalHour] = useState<number>(6);
   const [localMinute, setLocalMinute] = useState<number>(0);
   const [amPm, setAmPm] = useState<string>("AM");
-  const [arrivalHour, setArrivalHour] = useState<number>(12);
+  const [arrivalHour, setArrivalHour] = useState<number>(6);
   const [arrivalMinute, setArrivalMinute] = useState<number>(0);
   const [arrivalAmPm, setArrivalAmPm] = useState<string>("AM");
-  const [departureHour, setDepartureHour] = useState<number>(12);
+  const [departureHour, setDepartureHour] = useState<number>(6);
   const [departureMinute, setDepartureMinute] = useState<number>(0);
   const [departureAmPm, setDepartureAmPm] = useState<string>("AM");
   const [startingDayOffset, _setStartingDayOffset] = useState<number>(0);
@@ -101,36 +101,60 @@ const BusRouteDetailsPage = ({
   const [departureDayOffset, setDepartureDayOffset] = useState<number>(0);
   const lastLandmark = routeLandmarks[routeLandmarks.length - 1];
 
-  const fetchRouteLandmarks = async () => {
+   const fetchRouteLandmarks = async () => {
     setIsLoading(true);
     try {
-      const response = await dispatch(
-        busRouteLandmarkListApi(routeId)
-      ).unwrap();
+      const response = await dispatch(busRouteLandmarkListApi(routeId)).unwrap();
 
       const processedLandmarks = processLandmarks(response);
       const sortedLandmarks = processedLandmarks.sort(
         (a, b) => (a.distance_from_start || 0) - (b.distance_from_start || 0)
       );
-      sortedLandmarks.forEach((lm, idx) => {
-        console.log(`Landmark #${idx + 1}:`, {
-          id: lm.id,
-          name: lm.name,
-          sequence_id: lm.sequence_id,
-          arrival_delta: lm.arrival_delta,
-          departure_delta: lm.departure_delta,
-          distance_from_start: lm.distance_from_start,
-          arrivalTime: lm.arrivalTime,
-          departureTime: lm.departureTime,
-        });
-      });
+
       setRouteLandmarks(sortedLandmarks);
       updateParentMapLandmarks(sortedLandmarks);
-    } catch (error) {
-      showErrorToast("Failed to fetch route landmarks");
+      const landmarkIds = sortedLandmarks.map((lm) => Number(lm.landmark_id)).filter(Boolean);
+      const landmarkRes = await dispatch(
+        landmarkListApi({ ids: landmarkIds }) 
+      ).unwrap();
+
+      setLandmarks(landmarkRes.data);
+    } catch (error: any) {
+      showErrorToast(error || "Failed to fetch route landmarks");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Assign sequence ids (optional enhancement)
+  const processLandmarks = (landmarks: RouteLandmark[]): RouteLandmark[] => {
+    return landmarks
+      .sort((a, b) => (a.sequence_id || 0) - (b.sequence_id || 0))
+      .map((landmark, index) => ({
+        ...landmark,
+        sequence_id: index + 1,
+      }));
+  };
+
+  useEffect(() => {
+    fetchRouteLandmarks();
+  }, [routeId]);
+
+  useEffect(() => {
+    return () => {
+      onLandmarksUpdate([]);
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      onLandmarksUpdate([]);
+    };
+  }, []);
+
+const getLandmarkName = (landmarkId: string | number) => {
+    const landmark = landmarks.find((l) => l.id === Number(landmarkId));
+    return landmark ? landmark.name : "Unknown Landmark";
   };
 
   const formatDuration = (seconds: number) => {
@@ -335,49 +359,15 @@ const BusRouteDetailsPage = ({
       showSuccessToast("New landmarks added successfully");
       setNewLandmarks([]);
       fetchRouteLandmarks();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding landmarks:", error);
       showErrorToast(
-        error instanceof Error ? error.message : "Failed to add new landmarks"
+        error|| "Failed to add new landmarks"
       );
     }
   };
 
-  const fetchLandmark = () => {
-    dispatch(landmarkListApi())
-      .unwrap()
-      .then((res: any[]) => {
-        setLandmarks(res);
-      })
-      .catch((err: any) => {
-        console.error("Error fetching landmarks", err);
-      });
-  };
 
-  const processLandmarks = (landmarks: RouteLandmark[]): RouteLandmark[] => {
-    return landmarks
-      .sort((a, b) => (a.sequence_id || 0) - (b.sequence_id || 0))
-      .map((landmark, index) => ({
-        ...landmark,
-        sequence_id: index + 1,
-      }));
-  };
-
-  useEffect(() => {
-    fetchRouteLandmarks();
-    fetchLandmark();
-  }, [routeId]);
-
-  useEffect(() => {
-    return () => {
-      onLandmarksUpdate([]);
-    };
-  }, []);
-
-  const getLandmarkName = (landmarkId: string) => {
-    const landmark = landmarks.find((l) => l.id === Number(landmarkId));
-    return landmark ? landmark.name : "Unknown Landmark";
-  };
 
   const handleLandmarkEditClick = (landmark: RouteLandmark) => {
     const startDate = new Date(routeStartingTime);
@@ -499,8 +489,8 @@ const BusRouteDetailsPage = ({
       showSuccessToast("Route details updated successfully");
       setEditMode(false);
       onBack();
-    } catch (error) {
-      showErrorToast("Failed to update route details");
+    } catch (error:any) {
+      showErrorToast(error||"Failed to update route details");
     }
   };
 
@@ -570,10 +560,10 @@ const BusRouteDetailsPage = ({
       showSuccessToast("Landmark updated successfully");
       fetchRouteLandmarks();
       setEditingLandmark(null);
-    } catch (error) {
+    } catch (error:any) {
       console.error("Update error:", error);
       showErrorToast(
-        error instanceof Error ? error.message : "Failed to update landmark"
+        error || "Failed to update landmark"
       );
     }
   };
@@ -595,9 +585,9 @@ const BusRouteDetailsPage = ({
 
     showSuccessToast("Landmark removed from route successfully");
     fetchRouteLandmarks();
-  } catch (error) {
+  } catch (error:any) {
     showErrorToast(
-      error instanceof Error ? error.message : "Failed to remove landmark from route"
+      error|| "Failed to remove landmark from route"
     );
   } finally {
     setDeleteConfirmOpen(false);
@@ -1323,7 +1313,7 @@ const BusRouteDetailsPage = ({
         </DialogActions>
       </Dialog>
 
-      {/* sectionfor add ne landmark move to dummy data page */}
+     
     </Box>
   );
 };

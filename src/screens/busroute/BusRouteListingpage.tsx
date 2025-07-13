@@ -16,6 +16,7 @@ import {
   DialogContentText,
   DialogActions,
   Tooltip,
+  Typography,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useDispatch, useSelector } from "react-redux";
@@ -104,7 +105,7 @@ const BusRouteListing = () => {
         })
         .catch((error) => {
           console.error("Fetch Error:", error);
-          showErrorToast(error.message || "Failed to fetch Bus Route list");
+          showErrorToast(error|| "Failed to fetch Bus Route list");
         })
         .finally(() => setIsLoading(false));
     },
@@ -215,29 +216,27 @@ const BusRouteListing = () => {
     setDeleteConfirmOpen(true);
   };
 
- const handleRouteDelete = async () => {
-  if (!routeToDelete) return;
+  const handleRouteDelete = async () => {
+    if (!routeToDelete) return;
 
-  try {
-    const formData = new FormData();
-    formData.append("id", routeToDelete.id.toString());
-    const result = await dispatch(routeDeleteApi(formData)).unwrap();
-    
-    if (result && result.error) {
-      throw new Error(result.error);
+    try {
+      const formData = new FormData();
+      formData.append("id", routeToDelete.id.toString());
+      const result = await dispatch(routeDeleteApi(formData)).unwrap();
+
+      if (result && result.error) {
+        throw new Error(result.error);
+      }
+
+      showSuccessToast("Route deleted successfully");
+      fetchRoute(page, debouncedSearch);
+    } catch (error:any) {
+      showErrorToast(error  || "Failed to delete route");
+    } finally {
+      setDeleteConfirmOpen(false);
+      setRouteToDelete(null);
     }
-
-    showSuccessToast("Route deleted successfully");
-    fetchRoute(page, debouncedSearch);
-  } catch (error) {
-    showErrorToast(
-      (error instanceof Error ? error.message : "Failed to delete route")
-    );
-  } finally {
-    setDeleteConfirmOpen(false);
-    setRouteToDelete(null);
-  }
-};
+  };
 
   const handleAddLandmarkEdit = (landmark: SelectedLandmark) => {
     setNewRouteLandmarks((prev) => [...prev, landmark]);
@@ -271,7 +270,6 @@ const BusRouteListing = () => {
         }}
       >
         {selectedRoute ? (
-          // In BusRouteListing component
           <BusRouteDetailsPage
             routeId={selectedRoute.id}
             routeName={selectedRoute.name}
@@ -371,17 +369,17 @@ const BusRouteListing = () => {
 
             <TableContainer
               sx={{
-        flex: 1,
-        maxHeight: "calc(100vh - 180px)", 
-        overflowY: "auto",
-        borderRadius: 2,
-        border: "1px solid #e0e0e0",
-      }}
+                flex: 1,
+                maxHeight: "calc(100vh - 180px)",
+                overflowY: "auto",
+                borderRadius: 2,
+                border: "1px solid #e0e0e0",
+              }}
             >
               <Table stickyHeader>
                 <TableHead>
                   <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                    <TableCell sx={{ width: "20%" }}>
+                    <TableCell sx={{ width: "26%" }}>
                       <Box
                         display="flex"
                         flexDirection="column"
@@ -389,6 +387,7 @@ const BusRouteListing = () => {
                       >
                         <b>ID</b>
                         <TextField
+                        type="number"
                           variant="outlined"
                           size="small"
                           placeholder="Search"
@@ -450,7 +449,13 @@ const BusRouteListing = () => {
                             })
                           }
                         >
-                          {row.name}
+                          <Tooltip title={row.name} placement="bottom">
+                            <Typography noWrap>
+                              {row.name.length > 25
+                                ? `${row.name.substring(0, 25)}...`
+                                : row.name}
+                            </Typography>
+                          </Tooltip>
                         </TableCell>
                         <TableCell sx={{ textAlign: "center", boxShadow: 1 }}>
                           <Tooltip
@@ -520,24 +525,24 @@ const BusRouteListing = () => {
               </Table>
             </TableContainer>
             <Box
-      sx={{
-        position: "absolute",
-        left: 0,
-        bottom: 0,
-        width: "100%",
-        bgcolor: "#fff",
-        borderTop: "1px solid #e0e0e0",
-        zIndex: 2,
-        p: 1,
-      }}
-    >
-      <PaginationControls
-        page={page}
-        onPageChange={(newPage) => handleChangePage(null, newPage)}
-        isLoading={isLoading}
-        hasNextPage={hasNextPage}
-      />
-    </Box>
+              sx={{
+                position: "absolute",
+                left: 0,
+                bottom: 0,
+                width: "100%",
+                bgcolor: "#fff",
+                borderTop: "1px solid #e0e0e0",
+                zIndex: 2,
+                p: 1,
+              }}
+            >
+              <PaginationControls
+                page={page}
+                onPageChange={(newPage) => handleChangePage(null, newPage)}
+                isLoading={isLoading}
+                hasNextPage={hasNextPage}
+              />
+            </Box>
           </>
         )}
       </Box>

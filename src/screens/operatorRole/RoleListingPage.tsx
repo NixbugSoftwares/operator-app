@@ -10,9 +10,11 @@ import {
   TableRow,
   TextField,
   Tooltip,
+  Typography,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
+import ErrorIcon from "@mui/icons-material/Error";
 import { useDispatch, useSelector } from "react-redux";
 import { operatorRoleListApi } from "../../slices/appSlice";
 import type { AppDispatch, RootState } from "../../store/Store";
@@ -117,7 +119,7 @@ const RoleListingTable = () => {
 
   const tableHeaders = [
     { key: "id", label: "ID" },
-    { key: "Rolename", label: "Role Name" },
+    { key: "Rolename", label: " Name" },
   ];
 
   const permissionKeys = [
@@ -226,6 +228,7 @@ const RoleListingTable = () => {
                       onChange={(e) =>
                         handleSearchChange(e, key as keyof typeof search)
                       }
+                      type={key === "id" ? "number" : "text"}
                       fullWidth
                       sx={{
                         "& .MuiInputBase-root": {
@@ -261,7 +264,24 @@ const RoleListingTable = () => {
                       }}
                     >
                       <TableCell>{row.id}</TableCell>
-                      <TableCell>{row.name}</TableCell>
+                      <TableCell>
+                        {row.name ? (
+                          <Tooltip title={row.name} placement="bottom">
+                            <Typography noWrap>
+                              {row.name.length > 15
+                                ? `${row.name.substring(0, 15)}...`
+                                : row.name}
+                            </Typography>
+                          </Tooltip>
+                        ) : (
+                          <Tooltip
+                            title="Name not added yet"
+                            placement="bottom"
+                          >
+                            <ErrorIcon sx={{ color: "#737d72" }} />
+                          </Tooltip>
+                        )}
+                      </TableCell>
                       {permissionFields.map((key) => (
                         <TableCell key={key} align="center">
                           {row.roleDetails[key as keyof RoleDetails] ? (

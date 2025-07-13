@@ -156,6 +156,7 @@ export interface Duty{
   serviceName:string
   status:string
   type:string
+  created_on:string
 }
 
 

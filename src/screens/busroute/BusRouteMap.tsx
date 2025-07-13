@@ -134,8 +134,52 @@ const MapComponent = React.forwardRef(
       if (!mapInstance.current) {
         mapInstance.current = initializeMap();
       }
-      fetchLandmark();
     }, []);
+    useEffect(() => {
+  if (!mapInstance.current) return;
+
+  const map = mapInstance.current;
+
+  const handleMoveEnd = () => {
+    const centerRaw = map.getView().getCenter();
+    if (!centerRaw) return;
+    const center = toLonLat(centerRaw);
+    const [lon, lat] = center;
+    const locationaskey = `POINT(${lon} ${lat})`;
+    fetchLandmark(locationaskey);
+  };
+
+  map.on("moveend", handleMoveEnd);
+
+  // Initial fetch
+  handleMoveEnd();
+
+  return () => {
+    map.un("moveend", handleMoveEnd);
+  };
+}, []);
+const fetchLandmark = (locationaskey: string) => {
+  dispatch(landmarkListApi({location:locationaskey, status:2 }))
+    .unwrap()
+    .then((res) => {
+      const formattedLandmarks = res.data.map((landmark: any) => ({
+        id: landmark.id,
+        name: landmark.name,
+        boundary: extractRawPoints(landmark.boundary),
+        importance:
+          landmark.importance === 1
+            ? "Low"
+            : landmark.importance === 2
+            ? "Medium"
+            : "High",
+        status: landmark.status === 1 ? "Validating" : "Verified",
+      }));
+      setLandmarks(formattedLandmarks);
+    })
+    .catch((err: any) => {
+      showErrorToast(err);
+    });
+};
 
     const handleViewModeLandmarks = () => {
       selectedLandmarksSource.current.clear();
@@ -293,28 +337,8 @@ const MapComponent = React.forwardRef(
       const matches = polygonString.match(/\(\((.*?)\)\)/);
       return matches ? matches[1] : "";
     };
-    const fetchLandmark = () => {
-      dispatch(landmarkListApi())
-        .unwrap()
-        .then((res: any[]) => {
-          const formattedLandmarks = res.map((landmark: any) => ({
-            id: landmark.id,
-            name: landmark.name,
-            boundary: extractRawPoints(landmark.boundary),
-            importance:
-              landmark.importance === 1
-                ? "Low"
-                : landmark.importance === 2
-                ? "Medium"
-                : "High",
-            status: landmark.status === 1 ? "Validating" : "Verified",
-          }));
-          setLandmarks(formattedLandmarks);
-        })
-        .catch((err: any) => {
-          showErrorToast(err);
-        });
-    };
+
+
 
     useEffect(() => {
       if (!mapInstance.current) return;
@@ -363,13 +387,13 @@ const MapComponent = React.forwardRef(
 
       if (features.length > 0) {
         allBoundariesSource.current.addFeatures(features);
-        const extent = allBoundariesSource.current.getExtent();
-        if (extent[0] !== Infinity) {
-          mapInstance.current.getView().fit(extent, {
-            padding: [50, 50, 50, 50],
-            duration: 1000,
-          });
-        }
+        // const extent = allBoundariesSource.current.getExtent();
+        // if (extent[0] !== Infinity) {
+        //   mapInstance.current.getView().fit(extent, {
+        //     padding: [50, 50, 50, 50],
+        //     duration: 1000,
+        //   });
+        // }
       }
     }, [showAllBoundaries, landmarks]);
 
@@ -551,15 +575,15 @@ const MapComponent = React.forwardRef(
         routePathSource.current.addFeature(numberFeature);
       });
 
-      if (mapInstance.current) {
-        const extent = selectedLandmarksSource.current.getExtent();
-        if (extent[0] !== Infinity) {
-          mapInstance.current.getView().fit(extent, {
-            padding: [50, 50, 50, 50],
-            duration: 1000,
-          });
-        }
-      }
+      // if (mapInstance.current) {
+      //   const extent = selectedLandmarksSource.current.getExtent();
+      //   if (extent[0] !== Infinity) {
+      //     mapInstance.current.getView().fit(extent, {
+      //       padding: [50, 50, 50, 50],
+      //       duration: 1000,
+      //     });
+      //   }
+      // }
     }, [propLandmarks, landmarks, selectedLandmarks, mode]);
 
     const toggleAddLandmarkMode = () => {

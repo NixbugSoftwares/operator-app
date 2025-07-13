@@ -66,6 +66,9 @@ interface LandmarkListParams {
   offset?: number;
   id?: number;
   name?: string;
+  location?:string;
+  status?: number;
+  ids?: number[];
 }
 interface RouteListParams {
   limit?: number;
@@ -270,9 +273,9 @@ export const operatorUpdationApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      console.error("Backend Error Response:", error.response?.data); // Log the full error response
+      console.error("Backend Error Response:", error); 
       return rejectWithValue(
-        error.detail || error.message || error || "Operator account update failed"
+        error.detail || error.msg || error || "Operator account update failed"
       );
     }
   }
@@ -589,32 +592,35 @@ export const companyBusDeleteApi = createAsyncThunk(
 //************************************************* Bus route APIs *******************************************************
 //landmarkListingApi with verified status
 export const landmarkListApi = createAsyncThunk(
-  "/landmark",
-  async (_, { rejectWithValue }) => {
+  "/executive/landmark",
+  async (params: LandmarkListParams, { rejectWithValue }) => {
+    const { limit, offset, id, ids, name, location, status } = params;
+    const queryParams = {
+      limit,
+      offset,
+      ...(id && { id }),
+      ...(ids && { ids }),
+      ...(name && { name }),
+      ...(location && { location }),
+      ...(status && { status }),
+    };
     try {
       const response = await commonApi.apiCall(
         "get",
         "/landmark",
-        { status: 2 }, 
+        queryParams,
         true,
         "application/json"
       );
+      console.log("landmarkListApi called with:", params);
 
-      console.log("Filtered Landmark API Response:", response);
-
-      if (Array.isArray(response)) {
-        return response;
-      }
-
-      if (!response || !response.data) {
-        throw new Error("Invalid response format");
-      }
-
-      return response.data;
+      return { data: response || response.data };
     } catch (error: any) {
-      console.log("Error fetching filtered landmarks:", error);
       return rejectWithValue(
-        error.detail || error.message || error || "Failed to fetch landmarks"
+        error.detail ||
+          error.message ||
+          error ||
+          "Failed to fetch landmark list"
       );
     }
   }
