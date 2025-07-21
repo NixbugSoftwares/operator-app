@@ -38,7 +38,7 @@ const getTicketModeBackendValue = (displayValue: string): string => {
 
 const getTriggerModeBackendValue = (displayValue: string): string => {
   const createdModMap: Record<string, string> = {
-    Auto: "1",
+    Automatic: "1",
     Manual: "2",
     Disabled: "3",
   };

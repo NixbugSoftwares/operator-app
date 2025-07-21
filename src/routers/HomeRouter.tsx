@@ -15,6 +15,7 @@ const Service=lazy(() => import("../screens/service/service"));
 const Schedule = lazy(() => import("../screens/schedule/schedule"));
 const Duty = lazy(() => import("../screens/duty/duty"));
 const PaperTicket = lazy(() => import("../screens/ticket/ticket"));
+const Statement = lazy(() => import("../screens/statement/statement"));
 const Profile = lazy(() => import("../common/profile/profile"));
 const LoadingIndicator = memo(() => (
   <div
@@ -42,6 +43,7 @@ const HomeRouter: React.FC = () => {
         <Route path="/schedule" element={<Schedule />} />
         <Route path="/duty" element={<Duty />} />
         <Route path="/ticket" element={<PaperTicket />} />
+        <Route path="/statement" element={<Statement />} />
         <Route path="/profile" element={<Profile />} />
         
 

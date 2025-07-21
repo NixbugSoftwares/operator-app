@@ -23,7 +23,7 @@ import { useAppDispatch } from "../../store/Hooks";
 import { companyBusDeleteApi } from "../../slices/appSlice";
 import localStorageHelper from "../../utils/localStorageHelper";
 import BusUpdateForm from "./BusUpdation";
-import { showSuccessToast } from "../../common/toastMessageHelper";
+import { showErrorToast, showSuccessToast } from "../../common/toastMessageHelper";
 
 interface BusCardProps {
   bus: {
@@ -83,8 +83,9 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
       showSuccessToast("Bus deleted successfully");
       onCloseDetailCard();
       refreshList("refresh");
-    } catch (error) {
+    } catch (error:any) {
       console.error("Delete error:", error);
+      showErrorToast(error || "Bus deletion failed. Please try again.");
     }
   };
 

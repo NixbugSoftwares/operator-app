@@ -26,6 +26,7 @@ import CalculateIcon from "@mui/icons-material/Calculate";
 import PersonIcon from '@mui/icons-material/Person';
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import { useTheme, useMediaQuery } from "@mui/material";
 import LogoutConfirmationModal from "./logoutModal";
 import localStorageHelper from "../utils/localStorageHelper";
@@ -53,6 +54,7 @@ console.log("Company Name:", companyName);
         { label: "schedule", path: "/schedule", icon: <ScheduleIcon /> },
         {label:"Duty",path:"/duty",icon:<AssignmentTurnedInRoundedIcon/>},
         // {label:"Ticket",path:"/ticket",icon:<ConfirmationNumberIcon/>},
+        {label:"Statement",path:"/statement",icon:<ReceiptLongIcon/>},
       ],
     },
   ];
