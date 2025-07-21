@@ -131,7 +131,7 @@ export const logoutApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "delete",
-        "/token",
+        "/operator/company/account/token",
         data,
         true,
         "application/json"
@@ -150,7 +150,7 @@ export const loginUserAssignedRoleApi = createAsyncThunk<any[], number | undefin
     try {
       const response = await commonApi.apiCall(
         "get",
-        "/role",
+        "/operator/company/role",
         {},
         true,
         "application/json"
@@ -215,7 +215,7 @@ export const operatorListApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "get",
-        "/account",
+        "/operator/company/account",
         queryParams,
         true,
         "application/json"
@@ -242,7 +242,7 @@ export const operatorCreationApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "post",
-        "/account",
+        "/operator/company/account",
         data,
         true,
         "application/x-www-form-urlencoded"
@@ -266,7 +266,7 @@ export const operatorUpdationApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "patch",
-        `/account`,
+        "/operator/company/account",
         formData,
         true,
         "application/x-www-form-urlencoded"
@@ -288,7 +288,7 @@ export const accountDeleteApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "delete",
-        "/account",
+        "/operator/company/account",
         data,
         true,
         "application/x-www-form-urlencoded"
@@ -311,8 +311,6 @@ export const operatorRoleListApi = createAsyncThunk(
   async (params: RoleListParams, { rejectWithValue }) => {
     const { limit, offset, id, name } =
       params;
-    console.log("operatorListApi called with:", params);
-
     const queryParams = {
       limit,
       offset,
@@ -322,7 +320,7 @@ export const operatorRoleListApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "get",
-        "/role",
+        "operator/company/role",
         queryParams,
         true,
         "application/json"
@@ -419,7 +417,7 @@ export const fetchRoleMappingApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "get",
-        "/account/role",
+        "/operator/company/account/role",
         { operator_id },
         true,
         "application/json"

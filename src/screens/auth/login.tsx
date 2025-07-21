@@ -110,7 +110,7 @@ const LoginPage: React.FC = () => {
           }));
         })
         .catch((error) => {
-          showErrorToast(error.message || "Failed to fetch Company list");
+          showErrorToast(error || "Failed to fetch Company list");
         })
         .finally(() => setLoading(false));
     },
@@ -142,14 +142,13 @@ const LoginPage: React.FC = () => {
         };
         const access_token = response?.access_token;
         const expiresAt = Date.now() + response?.expires_in * 1000;
-        
-        const selectedCompany = dropdownData.companyList.find(
-        (company) => company.id === data.company_id
-      );
-      if (selectedCompany) {
-        localStorageHelper.storeItem("@companyName", selectedCompany.name);
-      }
 
+        const selectedCompany = dropdownData.companyList.find(
+          (company) => company.id === data.company_id
+        );
+        if (selectedCompany) {
+          localStorageHelper.storeItem("@companyName", selectedCompany.name);
+        }
 
         localStorageHelper.storeItem("@token", access_token);
         localStorageHelper.storeItem("@token_expires", expiresAt);
@@ -178,34 +177,26 @@ const LoginPage: React.FC = () => {
           loginUserAssignedRoleApi(assignedRole.roleId)
         ).unwrap();
 
-        console.log("roleDetails", roleListingResponse[0]);
-
-        if (roleListingResponse.length > 0) {
-          dispatch(setRoleDetails(roleListingResponse[0]));
-
+        if (roleListingResponse && roleListingResponse.length > 0) {
           const roleDetails = roleListingResponse[0];
           dispatch(setRoleDetails(roleDetails));
 
           const permissions = Object.entries(roleDetails)
-            .filter(
-              ([key, value]) => key.startsWith("manage_") && value === true
-            )
+            .filter(([_, value]) => value === true)
             .map(([key]) => key);
 
-          localStorage.setItem("@permissions", JSON.stringify(permissions));
-          dispatch(setPermissions(permissions));
-
-          if (permissions) {
+          if (permissions && permissions.length > 0) {
             localStorage.setItem("@permissions", JSON.stringify(permissions));
             dispatch(setPermissions(permissions));
+          } else {
+            showErrorToast("No permissions found for this role");
           }
         } else {
           showErrorToast("Role details not found");
         }
       }
     } catch (error: any) {
-      console.error("Login Error:", error);
-      showErrorToast(error?.detail || error || "Login failed");
+      showErrorToast(error);
     }
   };
   const handleScroll = (event: React.UIEvent<HTMLElement>, type: "company") => {

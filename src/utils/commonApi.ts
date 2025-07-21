@@ -6,7 +6,7 @@ import commonHelper from "./commonHelper";
 
 
 
-export const base_URL = "http://192.168.0.134:8080/operator"; //base URL
+export const base_URL = "https://entebus-api.nixbug.com"; //base URL
 
 //******************************************************Token **************************************** */
 const getAuthToken = async () => {

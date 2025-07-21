@@ -29,7 +29,7 @@ export const LoginApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "post",
-        "/token",
+        "/operator/company/account/token",
         data,
         false,
         "multipart/form-data"
@@ -59,7 +59,7 @@ export const companyListApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "get",
-        "/company",
+        "/public/company",
         queryParams,
         false,
         "application/json"
@@ -71,8 +71,7 @@ export const companyListApi = createAsyncThunk(
     } catch (error: any) {
       console.error("API Error:", error);
       return rejectWithValue(
-        error?.response?.data?.message ||
-          error?.message ||
+        error.detail ||
           "Failed to fetch company list"
       );
     }
