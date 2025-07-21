@@ -44,10 +44,10 @@ interface IAccountCreationFormProps {
 
 // Gender options mapping
 const genderOptions = [
-  { label: "Female", value: 1 },
-  { label: "Male", value: 2 },
-  { label: "Transgender", value: 3 },
-  { label: "Other", value: 4 },
+  { label: "Other", value: 1 },
+  { label: "Female ", value: 2 },
+  { label: "Male", value: 3 },
+  { label: "Transgender", value: 4 },
 ];
 
 const AccountForm: React.FC<IAccountCreationFormProps> = ({
@@ -67,7 +67,7 @@ const AccountForm: React.FC<IAccountCreationFormProps> = ({
   } = useForm<IAccountFormInputs>({
     resolver: yupResolver(accountFormSchema),
     defaultValues: {
-      gender: 4,
+      gender: 1,
     },
   });
 

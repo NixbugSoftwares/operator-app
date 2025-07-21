@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm, SubmitHandler  } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { busCreationSchema } from "../auth/validations/authValidation";
 import {
@@ -17,7 +17,18 @@ import {
   showErrorToast,
   showSuccessToast,
 } from "../../common/toastMessageHelper";
-import { Bus } from "../../types/type";
+
+interface IAccountFormInputs {
+  company_id: number;
+  registrationNumber: string;
+  name: string;
+  capacity: number;
+  manufactured_on: string;
+  insurance_upto?: string | null;
+  pollution_upto?: string | null;
+  fitness_upto?: string | null;
+  road_tax_upto?: string | null;
+}
 
 interface IOperatorCreationFormProps {
   onClose: () => void;
@@ -30,16 +41,20 @@ const BusCreationForm: React.FC<IOperatorCreationFormProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
-
+  
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<Bus>({
+  } = useForm<IAccountFormInputs>({
     resolver: yupResolver(busCreationSchema),
+    defaultValues: {
+    },
   });
 
-  const handleBusCreation: SubmitHandler<Bus> = async (data) => {
+  const handleAccountCreation: SubmitHandler<IAccountFormInputs> = async (
+    data
+  ) => {
     try {
       setLoading(true);
       const formatDateToUTC = (dateString: string | null): string | null => {
@@ -47,10 +62,10 @@ const BusCreationForm: React.FC<IOperatorCreationFormProps> = ({
         const date = new Date(dateString);
         return date.toISOString();
       };
-      console.log("formData>>>>>>>>>>", data);
+
       const formData = new FormData();
-      formData.append("name", data.name);
       formData.append("registration_number", data.registrationNumber);
+      formData.append("name", data.name);
       formData.append("capacity", data.capacity.toString());
       formData.append(
         "manufactured_on",
@@ -73,13 +88,11 @@ const BusCreationForm: React.FC<IOperatorCreationFormProps> = ({
         );
       if (data.road_tax_upto)
         formData.append(
-          "road_tax_upto",
+          "road_tax_upto ",
           formatDateToUTC(data.road_tax_upto) || ""
         );
 
       const response = await dispatch(companyBusCreateApi(formData)).unwrap();
-      console.log("response64563463434", response);
-
       if (response?.id) {
         showSuccessToast("Bus created successfully!");
         refreshList("refresh");
@@ -112,8 +125,9 @@ const BusCreationForm: React.FC<IOperatorCreationFormProps> = ({
           component="form"
           noValidate
           sx={{ mt: 1 }}
-          onSubmit={handleSubmit(handleBusCreation)}
+          onSubmit={handleSubmit(handleAccountCreation)}
         >
+          
           <TextField
             margin="normal"
             required

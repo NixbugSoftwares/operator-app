@@ -47,21 +47,10 @@ const getStatusBackendValue = (displayValue: string): string => {
   return statusMap[displayValue] || "";
 };
 
-const getCreatedModeBackendValue = (displayValue: string): string => {
-  const createdModMap: Record<string, string> = {
-    Manual: "1",
-    Automatic: "2",
-  };
-  return createdModMap[displayValue] || "";
-};
-
-// Define search filter types
 type SearchFilter = {
   id: string;
-  name: string;
   ticket_mode: string;
   status: string;
-  created_mode: string;
 };
 
 const ServiceListingTable = () => {
@@ -70,10 +59,8 @@ const ServiceListingTable = () => {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [search, setSearch] = useState<SearchFilter>({
     id: "",
-    name: "",
     ticket_mode: "",
     status: "",
-    created_mode: "",
   });
   const [debouncedSearch, setDebouncedSearch] = useState<SearchFilter>(search);
   const debounceRef = useRef<number | null>(null);
@@ -81,17 +68,16 @@ const ServiceListingTable = () => {
   const [page, setPage] = useState(0);
   const [hasNextPage, setHasNextPage] = useState(false);
   const rowsPerPage = 10;
-  const canManageService = useSelector((state: RootState) =>
-    state.app.permissions.includes("manage_service")
+  const canCreateService = useSelector((state: RootState) =>
+    state.app.permissions.includes("create_service")
   );
   const [openCreateModal, setOpenCreateModal] = useState(false);
 
   const fetchServiceList = useCallback(
-    (pageNumber: number, searchParams: Partial<SearchFilter> = {}) => {
+    async (pageNumber: number, searchParams: Partial<SearchFilter> = {}) => {
       setIsLoading(true);
       const offset = pageNumber * rowsPerPage;
 
-      // Convert display values to backend values
       const backendSearchParams = {
         ...searchParams,
         ticket_mode: searchParams.ticket_mode
@@ -100,55 +86,63 @@ const ServiceListingTable = () => {
         status: searchParams.status
           ? +getStatusBackendValue(searchParams.status)
           : undefined,
-        created_mode: searchParams.created_mode
-          ? +getCreatedModeBackendValue(searchParams.created_mode)
-          : undefined,
       };
 
-      dispatch(
-        serviceListingApi({
-          limit: rowsPerPage,
-          offset,
-          ...backendSearchParams,
-        })
-      )
-        .unwrap()
-        .then((res) => {
-          const items = res.data || [];
-          const formattedServices = items.map((service: any) => ({
-            id: service.id,
-            name: service.name,
-            route_id: service.route_id,
-            fare_id: service.fare_id,
-            bus_id: service.bus_id,
-            ticket_mode:
-              service.ticket_mode === 1
-                ? "Hybrid"
-                : service.ticket_mode === 2
-                ? "Digital"
-                : "Conventional",
-            status:
-              service.status === 1
-                ? "Created"
-                : service.status === 2
-                ? "Started"
-                : service.status === 3
-                ? "Terminated"
-                : "Ended",
-            created_mode: service.created_mode === 1 ? "Manual" : "Automatic",
-            starting_date: service.starting_date,
-            remarks: service.remark,
-          }));
-          setServiceList(formattedServices);
-          setHasNextPage(items.length === rowsPerPage);
-        })
-        .catch((error) => {
-          console.error("Fetch Error:", error);
-          showErrorToast(error || "Failed to fetch Service list");
-        })
-        .finally(() => setIsLoading(false));
+      try {
+        const res = await dispatch(
+          serviceListingApi({
+            limit: rowsPerPage,
+            offset,
+            ...backendSearchParams,
+          })
+        ).unwrap();
+
+        const items = res?.data || [];
+        console.log("API Response:", items);
+        
+        const formattedServices = items.map((service: any) => ({
+          id: service.id,
+          name: service.name ?? "",
+          routeName: service.route?.name ?? "",
+          fareName: service.fare?.name ?? "",
+          ticket_mode:
+            service.ticket_mode === 1
+              ? "Hybrid"
+              : service.ticket_mode === 2
+              ? "Digital"
+              : service.ticket_mode === 3
+              ? "Conventional"
+              : "",
+          status:
+            service.status === 1
+              ? "Created"
+              : service.status === 2
+              ? "Started"
+              : service.status === 3
+              ? "Terminated"
+              : service.status === 4
+              ? "Ended"
+              : service.status === 5
+              ? "Audited"
+              : "",
+          starting_at: service.starting_at ?? "",
+          ending_at: service.ending_at ?? "",
+          remarks: service.remark ?? "",
+        }));
+        console.log("Formatted Services:", formattedServices);
+        
+
+        setServiceList(formattedServices);
+        setHasNextPage(items.length === rowsPerPage);
+      } catch (error: any) {
+        console.error("Fetch Error:", error);
+        showErrorToast(error || "Failed to fetch Service list");
+        setServiceList([]);
+      } finally {
+        setIsLoading(false);
+      }
     },
-    [dispatch]
+    [dispatch, rowsPerPage]
   );
 
   const handleRowClick = (service: Service) => {
@@ -197,11 +191,12 @@ const ServiceListingTable = () => {
     fetchServiceList(page, debouncedSearch);
   }, [page, debouncedSearch, fetchServiceList]);
 
-  const refreshList = (value: string) => {
+  const refreshList = useCallback((value: string) => {
     if (value === "refresh") {
       fetchServiceList(page, debouncedSearch);
     }
-  };
+  }, [fetchServiceList, page, debouncedSearch]);
+
   return (
     <Box
       sx={{
@@ -214,9 +209,7 @@ const ServiceListingTable = () => {
     >
       <Box
         sx={{
-          flex: selectedService
-            ? { xs: "0 0 100%", md: "0 0 65%" }
-            : "0 0 100%",
+          flex: selectedService ? { xs: "0 0 100%", md: "0 0 65%" } : "0 0 100%",
           maxWidth: selectedService ? { xs: "100%", md: "65%" } : "100%",
           transition: "all 0.3s ease",
           height: "100%",
@@ -225,34 +218,28 @@ const ServiceListingTable = () => {
           overflow: "hidden",
         }}
       >
-        <Tooltip
-          title={
-            !canManageService
-              ? "You don't have permission, contact the admin"
-              : "Click to open the Service creation form"
-          }
-          placement="top-end"
-        >
+        {canCreateService && (
           <Button
             sx={{
               ml: "auto",
               mr: 2,
               mb: 2,
-              backgroundColor: !canManageService
-                ? "#6c87b7 !important"
-                : "#00008B",
+              backgroundColor: "#00008B",
               color: "white",
               display: "flex",
               justifyContent: "flex-end",
+              '&:disabled': {
+                backgroundColor: "#6c87b7",
+                cursor: "not-allowed",
+              }
             }}
             variant="contained"
             onClick={() => setOpenCreateModal(true)}
-            disabled={!canManageService}
-            style={{ cursor: !canManageService ? "not-allowed" : "pointer" }}
+            disabled={!canCreateService}
           >
             Add New Service
           </Button>
-        </Tooltip>
+        )}
 
         <TableContainer
           sx={{
@@ -271,7 +258,6 @@ const ServiceListingTable = () => {
                   { label: "Name", width: 200, key: "name" },
                   { label: "Status", width: 160, key: "status" },
                   { label: "Ticket Mode", width: 160, key: "ticket_mode" },
-                  { label: "Created Mode", width: 160, key: "created_mode" },
                 ].map((col) => (
                   <TableCell
                     key={col.key}
@@ -290,7 +276,6 @@ const ServiceListingTable = () => {
                 ))}
               </TableRow>
 
-              {/* Search Filters Row */}
               <TableRow>
                 {[
                   { key: "id", isNumber: true },
@@ -304,12 +289,6 @@ const ServiceListingTable = () => {
                     key: "ticket_mode",
                     isSelect: true,
                     options: ["Hybrid", "Digital", "Conventional"],
-                  },
-                  
-                  {
-                    key: "created_mode",
-                    isSelect: true,
-                    options: ["Manual", "Automatic"],
                   },
                 ].map(({ key, isNumber, isSelect, options }) => (
                   <TableCell key={key}>
@@ -346,12 +325,9 @@ const ServiceListingTable = () => {
                           "& .MuiInputBase-root": {
                             height: 40,
                             padding: "4px",
-                            textAlign: "center",
-                            fontSize: selectedService ? "0.8rem" : "1rem",
                           },
                           "& .MuiInputBase-input": {
                             textAlign: "center",
-                            fontSize: selectedService ? "0.8rem" : "1rem",
                           },
                         }}
                       />
@@ -362,7 +338,13 @@ const ServiceListingTable = () => {
             </TableHead>
 
             <TableBody>
-              {serviceList.length > 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={4} align="center">
+                    Loading...
+                  </TableCell>
+                </TableRow>
+              ) : serviceList.length > 0 ? (
                 serviceList.map((row) => (
                   <TableRow
                     key={row.id}
@@ -377,15 +359,13 @@ const ServiceListingTable = () => {
                   >
                     <TableCell sx={{ textAlign: "center" }}>{row.id}</TableCell>
                     <TableCell>
-                      <Typography noWrap>
-                        <Tooltip title={row.name} placement="bottom">
-                          <Typography noWrap>
-                            {row.name.length > 15
-                              ? `${row.name.substring(0, 15)}...`
-                              : row.name}
-                          </Typography>
-                        </Tooltip>
-                      </Typography>
+                      <Tooltip title={row.name} placement="bottom">
+                        <Typography noWrap>
+                          {row.name.length > 15
+                            ? `${row.name.substring(0, 15)}...`
+                            : row.name}
+                        </Typography>
+                      </Tooltip>
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -393,7 +373,6 @@ const ServiceListingTable = () => {
                         size="small"
                         sx={{
                           width: 100,
-                          textAlign: "center",
                           backgroundColor:
                             row.status === "Created"
                               ? "rgba(33, 150, 243, 0.12)"
@@ -422,41 +401,18 @@ const ServiceListingTable = () => {
                         size="small"
                         sx={{
                           width: 100,
-                          textAlign: "center",
                           backgroundColor:
                             row.ticket_mode === "Hybrid"
-                              ? "rgba(0, 150, 136, 0.15)" 
+                              ? "rgba(0, 150, 136, 0.15)"
                               : row.ticket_mode === "Digital"
-                              ? "rgba(33, 150, 243, 0.15)" 
-                              : "rgba(255, 87, 34, 0.15)", 
+                              ? "rgba(33, 150, 243, 0.15)"
+                              : "rgba(255, 87, 34, 0.15)",
                           color:
                             row.ticket_mode === "Hybrid"
-                              ? "#009688" 
+                              ? "#009688"
                               : row.ticket_mode === "Digital"
-                              ? "#2196F3" 
-                              : "#FF5722", 
-                          fontWeight: 600,
-                          fontSize: "0.75rem",
-                          borderRadius: "8px",
-                        }}
-                      />
-                    </TableCell>
-                    
-                    <TableCell>
-                      <Chip
-                        label={row.created_mode}
-                        size="small"
-                        sx={{
-                          width: 100,
-                          textAlign: "center",
-                          backgroundColor:
-                            row.created_mode === "Manual"
-                              ? "rgba(255, 152, 0, 0.15)" 
-                              : "rgba(63, 81, 181, 0.15)", 
-                          color:
-                            row.created_mode === "Manual"
-                              ? "#FF9800" 
-                              : "#3F51B5", 
+                              ? "#2196F3"
+                              : "#FF5722",
                           fontWeight: 600,
                           fontSize: "0.75rem",
                           borderRadius: "8px",
@@ -467,7 +423,7 @@ const ServiceListingTable = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} align="center">
+                  <TableCell colSpan={4} align="center">
                     No Service found.
                   </TableCell>
                 </TableRow>
@@ -500,12 +456,11 @@ const ServiceListingTable = () => {
         >
           <ServiceDetailsCard
             service={selectedService}
+            onBack={() => setSelectedService(null)}
+            refreshList={refreshList}
+            onCloseDetailCard={() => setSelectedService(null)}
             onUpdate={() => {}}
             onDelete={() => {}}
-            onBack={() => setSelectedService(null)}
-            refreshList={(value: any) => refreshList(value)}
-            canManageService={canManageService}
-            onCloseDetailCard={() => setSelectedService(null)}
           />
         </Box>
       )}

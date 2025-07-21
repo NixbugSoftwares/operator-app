@@ -159,7 +159,7 @@ const MapComponent = React.forwardRef(
   };
 }, []);
 const fetchLandmark = (locationaskey: string) => {
-  dispatch(landmarkListApi({location:locationaskey, status:2 }))
+  dispatch(landmarkListApi({location:locationaskey }))
     .unwrap()
     .then((res) => {
       const formattedLandmarks = res.data.map((landmark: any) => ({
@@ -574,16 +574,6 @@ const fetchLandmark = (locationaskey: string) => {
         );
         routePathSource.current.addFeature(numberFeature);
       });
-
-      // if (mapInstance.current) {
-      //   const extent = selectedLandmarksSource.current.getExtent();
-      //   if (extent[0] !== Infinity) {
-      //     mapInstance.current.getView().fit(extent, {
-      //       padding: [50, 50, 50, 50],
-      //       duration: 1000,
-      //     });
-      //   }
-      // }
     }, [propLandmarks, landmarks, selectedLandmarks, mode]);
 
     const toggleAddLandmarkMode = () => {

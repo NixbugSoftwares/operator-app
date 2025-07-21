@@ -41,15 +41,7 @@ const getStatusBackendValue = (displayValue: string): string => {
   return statusMap[displayValue] || "";
 };
 
-const getTypeModeBackendValue = (displayValue: string): string => {
-  const TypeModMap: Record<string, string> = {
-    Driver: "1",
-    Conductor: "2",
-    Kili: "3",
-    Other: "4",
-  };
-  return TypeModMap[displayValue] || "";
-};
+
 
 const DutyListingTable = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -66,11 +58,10 @@ const DutyListingTable = () => {
   const [page, setPage] = useState(0);
   const [hasNextPage, setHasNextPage] = useState(false);
   const rowsPerPage = 10;
-  const canManageDuty = useSelector((state: RootState) =>
-    state.app.permissions.includes("manage_duty")
+  const canCreateDuty = useSelector((state: RootState) =>
+    state.app.permissions.includes("create_duty")
   );
   const [openCreateModal, setOpenCreateModal] = useState(false);
-
   const fetchDutyList = useCallback(
     async (pageNumber: number, searchParams = {}) => {
       setIsLoading(true);
@@ -78,7 +69,11 @@ const DutyListingTable = () => {
 
       try {
         const dutyResponse = await dispatch(
-          dutyListingApi({ limit: rowsPerPage, offset, ...searchParams })
+          dutyListingApi({
+            limit: rowsPerPage,
+            offset,
+            ...searchParams,
+          })
         ).unwrap();
 
         const items = dutyResponse.data || [];
@@ -121,17 +116,10 @@ const DutyListingTable = () => {
                     : duty.status === 2
                     ? "Started"
                     : duty.status === 3
-                    ? "Terminated"
-                    : "Finished",
-                type:
-                  duty.type === 1
-                    ? "Driver"
-                    : duty.type === 2
-                    ? "Conductor"
-                    : duty.type === 3
-                    ? "Kili"
-                    : "Other",
-                created_on: duty.created_on,
+                    ? "Terminated" 
+                    : duty.status === 4
+                    ? "Ended":"",
+                    created_on: duty.created_on,               
               };
             } catch (error) {
               console.error(
@@ -205,11 +193,9 @@ const DutyListingTable = () => {
 
   useEffect(() => {
     const statusBackendValue = getStatusBackendValue(debouncedSearch.status);
-    const typeModeBackendValue = getTypeModeBackendValue(debouncedSearch.type);
     const searchParams: any = {
       ...(debouncedSearch.id && { id: debouncedSearch.id }),
       ...(statusBackendValue && { status: statusBackendValue }),
-      ...(typeModeBackendValue && { type: typeModeBackendValue }),
     };
 
     fetchDutyList(page, searchParams);
@@ -242,7 +228,7 @@ const DutyListingTable = () => {
       >
         <Tooltip
           title={
-            !canManageDuty
+            !canCreateDuty
               ? "You don't have permission, contact the admin"
               : "Click to open the Bus creation form"
           }
@@ -253,7 +239,7 @@ const DutyListingTable = () => {
               ml: "auto",
               mr: 2,
               mb: 2,
-              backgroundColor: !canManageDuty
+              backgroundColor: !canCreateDuty
                 ? "#6c87b7 !important"
                 : "#00008B",
               color: "white",
@@ -262,8 +248,8 @@ const DutyListingTable = () => {
             }}
             variant="contained"
             onClick={() => setOpenCreateModal(true)}
-            disabled={!canManageDuty}
-            style={{ cursor: !canManageDuty ? "not-allowed" : "pointer" }}
+            disabled={!canCreateDuty}
+            style={{ cursor: !canCreateDuty ? "not-allowed" : "pointer" }}
           >
             Add New Duty
           </Button>
@@ -283,7 +269,6 @@ const DutyListingTable = () => {
               <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
                 {[
                   { label: "ID", width: "80px" },
-                  { label: "Type", width: "120px" },
                   { label: "Status", width: "120px" },
                   { label: "Operator", width: "200px" },
                   { label: "Service", width: "200px" },
@@ -322,22 +307,6 @@ const DutyListingTable = () => {
                 </TableCell>
                 <TableCell>
                   <Select
-                    value={search.type}
-                    onChange={(e) => handleSelectChange(e, "type")}
-                    displayEmpty
-                    size="small"
-                    fullWidth
-                    sx={{ height: 40 }}
-                  >
-                    <MenuItem value="">All</MenuItem>
-                    <MenuItem value="Driver">Driver</MenuItem>
-                    <MenuItem value="Conductor">Conductor</MenuItem>
-                    <MenuItem value="Kili">Kili</MenuItem>
-                    <MenuItem value="Other">Other</MenuItem>
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  <Select
                     value={search.status}
                     onChange={(e) => handleSelectChange(e, "status")}
                     displayEmpty
@@ -372,35 +341,6 @@ const DutyListingTable = () => {
                     }}
                   >
                     <TableCell sx={{ textAlign: "center" }}>{row.id}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={row.type}
-                        size="small"
-                        sx={{
-                          width: 100,
-                          textAlign: "center",
-                          backgroundColor:
-                            row.type === "Driver"
-                              ? "rgba(76, 175, 80, 0.12)"
-                              : row.type === "Conductor"
-                              ? "rgba(33, 150, 243, 0.12)"
-                              : row.type === "Kili"
-                              ? "rgba(255, 152, 0, 0.15)"
-                              : "rgba(189, 189, 189, 0.12)",
-                          color:
-                            row.type === "Driver"
-                              ? "#388E3C"
-                              : row.type === "Conductor"
-                              ? "#1976D2"
-                              : row.type === "Kili"
-                              ? "#FF9800"
-                              : "#616161",
-                          fontWeight: 600,
-                          fontSize: "0.75rem",
-                          borderRadius: "8px",
-                        }}
-                      />
-                    </TableCell>
 
                     <TableCell>
                       <Chip
@@ -491,7 +431,6 @@ const DutyListingTable = () => {
             onDelete={() => {}}
             onBack={() => setSelectedDuty(null)}
             refreshList={(value: any) => refreshList(value)}
-            canManageDuty={canManageDuty}
             onCloseDetailCard={() => setSelectedDuty(null)}
           />
         </Box>
@@ -502,6 +441,7 @@ const DutyListingTable = () => {
         open={openCreateModal}
         onClose={() => setOpenCreateModal(false)}
         title="Create Duty"
+        showCancel
       >
         <DutyCreationForm
           refreshList={refreshList}

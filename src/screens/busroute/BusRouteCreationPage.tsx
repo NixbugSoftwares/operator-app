@@ -110,11 +110,13 @@ const BusRouteCreation = ({
     landmarks: SelectedLandmark[],
     timeType: "arrival" | "departure"
   ) => {
+    // Parse starting time as UTC (with day offset 0)
     const startDate = new Date(`1970-01-01T${startingTime.replace("Z", "")}Z`);
 
     return landmarks.map((landmark) => {
       const timeObj =
         timeType === "arrival" ? landmark.arrivalTime : landmark.departureTime;
+      // Parse landmark time as UTC (with its day offset)
       const landmarkDate = new Date(timeObj.fullTime);
       // Delta in seconds
       const deltaSeconds = Math.floor(
@@ -160,7 +162,9 @@ const BusRouteCreation = ({
     try {
       const routeFormData = new FormData();
       routeFormData.append("name", data.name);
-      routeFormData.append("starting_time", data.starting_time);
+      routeFormData.append("start_time", data.starting_time);
+      console.log("starting_time", data.starting_time);
+      console.log("name", data.name);
 
       const routeResponse = await dispatch(
         routeCreationApi(routeFormData)
@@ -189,7 +193,6 @@ const BusRouteCreation = ({
         const landmarkFormData = new FormData();
         landmarkFormData.append("route_id", routeId.toString());
         landmarkFormData.append("landmark_id", landmark.id.toString());
-        landmarkFormData.append("sequence_id", (index + 1).toString());
         landmarkFormData.append(
           "distance_from_start",
           landmark.distance_from_start?.toString() || "0"
@@ -220,9 +223,9 @@ const BusRouteCreation = ({
         mapRef.current.toggleAddLandmarkMode();
       }
       if (onClose) onClose();
-    } catch (error:any) {
+    } catch (error: any) {
       console.error("Error in route creation process:", error);
-      showErrorToast(error|| "Failed to create route and landmarks");
+      showErrorToast(error || "Failed to create route and landmarks");
     } finally {
       setIsSubmitting(false);
     }
@@ -303,12 +306,13 @@ const BusRouteCreation = ({
           Starting Time (IST)
         </Typography>
         <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+          {/* Starting Day Offset - fixed to Day 0 */}
           <FormControl fullWidth size="small">
             <InputLabel>Starting Day Offset</InputLabel>
             <Select
-              value={0}
+              value={0} // hardcoded to Day 0
               label="Starting Day Offset"
-              disabled 
+              disabled // disables dropdown interaction
             >
               <MenuItem value={0}>Day 1</MenuItem>
             </Select>

@@ -46,6 +46,8 @@ import {
   showSuccessToast,
 } from "../../common/toastMessageHelper";
 import { Landmark, RouteLandmark, SelectedLandmark } from "../../types/type";
+import { RootState } from "../../store/Store";
+import { useSelector } from "react-redux";
 
 interface BusRouteDetailsProps {
   routeId: number;
@@ -59,7 +61,6 @@ interface BusRouteDetailsProps {
   newLandmarks: SelectedLandmark[];
   setNewLandmarks: React.Dispatch<React.SetStateAction<SelectedLandmark[]>>;
   refreshList: (value: any) => void;
-  routeManagePermission: boolean;
 }
 
 const BusRouteDetailsPage = ({
@@ -73,8 +74,9 @@ const BusRouteDetailsPage = ({
   newLandmarks,
   setNewLandmarks,
   refreshList,
-  routeManagePermission,
 }: BusRouteDetailsProps) => {
+  console.log("starting_time", routeStartingTime);
+  
   const dispatch = useAppDispatch();
   const [routeLandmarks, setRouteLandmarks] = useState<RouteLandmark[]>([]);
   const [landmarks, setLandmarks] = useState<Landmark[]>([]);
@@ -100,8 +102,13 @@ const BusRouteDetailsPage = ({
   const [arrivalDayOffset, setArrivalDayOffset] = useState<number>(0);
   const [departureDayOffset, setDepartureDayOffset] = useState<number>(0);
   const lastLandmark = routeLandmarks[routeLandmarks.length - 1];
-
-   const fetchRouteLandmarks = async () => {
+const canUpdateRoutes = useSelector((state: RootState) =>
+    state.app.permissions.includes("update_route")
+  );
+  // const canCreateRoutes = useSelector((state: RootState) =>
+  //     state.app.permissions.includes("create_route")
+  //   );
+     const fetchRouteLandmarks = async () => {
     setIsLoading(true);
     try {
       const response = await dispatch(busRouteLandmarkListApi(routeId)).unwrap();
@@ -125,9 +132,7 @@ const BusRouteDetailsPage = ({
       setIsLoading(false);
     }
   };
-
-  // Assign sequence ids (optional enhancement)
-  const processLandmarks = (landmarks: RouteLandmark[]): RouteLandmark[] => {
+const processLandmarks = (landmarks: RouteLandmark[]): RouteLandmark[] => {
     return landmarks
       .sort((a, b) => (a.sequence_id || 0) - (b.sequence_id || 0))
       .map((landmark, index) => ({
@@ -156,7 +161,6 @@ const getLandmarkName = (landmarkId: string | number) => {
     const landmark = landmarks.find((l) => l.id === Number(landmarkId));
     return landmark ? landmark.name : "Unknown Landmark";
   };
-
   const formatDuration = (seconds: number) => {
     if (isNaN(seconds) || seconds < 0) return "N/A";
     const h = Math.floor(seconds / 3600);
@@ -367,7 +371,7 @@ const getLandmarkName = (landmarkId: string | number) => {
     }
   };
 
-
+  
 
   const handleLandmarkEditClick = (landmark: RouteLandmark) => {
     const startDate = new Date(routeStartingTime);
@@ -606,7 +610,7 @@ const getLandmarkName = (landmarkId: string | number) => {
 
         <Tooltip
           title={
-            !routeManagePermission
+            !canUpdateRoutes
               ? "You don't have permission, contact the admin"
               : editMode
               ? "Cancel editing this route"
@@ -616,20 +620,20 @@ const getLandmarkName = (landmarkId: string | number) => {
         >
           <span
             style={{
-              cursor: !routeManagePermission ? "not-allowed" : "pointer",
+              cursor: !canUpdateRoutes ? "not-allowed" : "pointer",
             }}
           >
             <Button
               variant={editMode ? "outlined" : "contained"}
               onClick={handleEditRoute}
-              disabled={!routeManagePermission}
+              disabled={!canUpdateRoutes}
               sx={{
-                backgroundColor: !routeManagePermission
+                backgroundColor: !canUpdateRoutes
                   ? "#6c87b7 !important"
                   : editMode
                   ? "transparent"
                   : "#3f51b5",
-                color: !routeManagePermission
+                color: !canUpdateRoutes
                   ? "#ffffff"
                   : editMode
                   ? "#3f51b5"
@@ -1146,7 +1150,7 @@ const getLandmarkName = (landmarkId: string | number) => {
               <Typography>
                 Landmark: {getLandmarkName(editingLandmark.landmark_id)}
               </Typography>
-              <Typography>ID: {editingLandmark.id}</Typography>
+              <Typography>ID: {editingLandmark.landmark_id}</Typography>
               <Box mb={2}>
                 <Alert severity="info">
                   1. For the starting landmark, arrival and departure time must
@@ -1313,7 +1317,6 @@ const getLandmarkName = (landmarkId: string | number) => {
         </DialogActions>
       </Dialog>
 
-     
     </Box>
   );
 };

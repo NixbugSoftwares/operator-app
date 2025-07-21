@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardActions,
@@ -20,12 +20,7 @@ import { Delete as DeleteIcon } from "@mui/icons-material";
 import AssignmentIndRoundedIcon from "@mui/icons-material/AssignmentIndRounded";
 import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
 import { useAppDispatch } from "../../store/Hooks";
-import {
-  serviceDeleteApi,
-  busRouteListApi,
-  companyBusListApi,
-  fareListingApi,
-} from "../../slices/appSlice";
+import { serviceDeleteApi } from "../../slices/appSlice";
 import localStorageHelper from "../../utils/localStorageHelper";
 import ServiceUpdateForm from "./ServiceUpdation";
 import {
@@ -33,24 +28,15 @@ import {
   showSuccessToast,
 } from "../../common/toastMessageHelper";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { RootState } from "../../store/Store";
+import { Service } from "../../types/type";
 interface ServiceCardProps {
-  service: {
-    id: number;
-    name: string;
-    ticket_mode: string;
-    created_mode: string;
-    status: string;
-    bus_id: number;
-    route_id: number;
-    fare_id: number;
-    starting_date: string;
-    remarks: string;
-  };
+  service: Service;
   refreshList: (value: any) => void;
   onUpdate: () => void;
   onDelete: (id: number) => void;
   onBack: () => void;
-  canManageService: boolean;
   onCloseDetailCard: () => void;
 }
 
@@ -76,6 +62,11 @@ const statusMap: Record<string, { label: string; color: string; bg: string }> =
       color: "#616161",
       bg: "rgba(158, 158, 158, 0.12)",
     }, // Grey
+    Audited: {
+      label: "Audited",
+      color: "#FF9800",
+      bg: "rgba(255, 152, 0, 0.15)",
+    },
   };
 
 const ticketModeMap: Record<
@@ -95,85 +86,42 @@ const ticketModeMap: Record<
   }, // Deep Orange
 };
 
-const createdModeMap: Record<
-  string,
-  { label: string; color: string; bg: string }
-> = {
-  Manual: { label: "Manual", color: "#FF9800", bg: "rgba(255, 152, 0, 0.15)" }, // Orange
-  Automatic: {
-    label: "Automatic",
-    color: "#3F51B5",
-    bg: "rgba(63, 81, 181, 0.15)",
-  },
-};
-
 const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
   service,
   refreshList,
   onDelete,
   onBack,
-  canManageService,
   onCloseDetailCard,
 }) => {
   console.log("service>>>>>>>>>>>>>>>>>>>>>>>>>>>>", service);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [updateFormOpen, setUpdateFormOpen] = useState(false);
   const dispatch = useAppDispatch();
-  const [routeName, setRouteName] = useState("Route not found");
-  const [busName, setBusName] = useState("Bus not found");
-  const [fareName, setFareName] = useState("Fare not found");
   const navigate = useNavigate();
-
-  const fetchRouteName = async () => {
-    try {
-      const id = service.route_id;
-      const response = await dispatch(busRouteListApi({ id })).unwrap();
-      setRouteName(response.data[0].name);
-      console.log("Route Name Response:", response.data[0].name);
-
-      return response.data[0].name;
-    } catch (error: any) {
-      console.error("Error fetching route name:", error);
-      showErrorToast(error || "Error fetching route name");
-    }
-  };
-  const fetchBusName = async () => {
-    try {
-      const id = service.bus_id;
-      const response = await dispatch(companyBusListApi({ id })).unwrap();
-      setBusName(response.data[0].name);
-      console.log("Bus Name Response:", response.data[0].name);
-
-      return response.data[0].name;
-    } catch (error: any) {
-      console.error("Error fetching bus name:", error);
-      showErrorToast(error || "Error fetching bus name");
-    }
-  };
-
-  const fetchFareName = async () => {
-    try {
-      const id = service.fare_id;
-      const response = await dispatch(fareListingApi({ id })).unwrap();
-      setFareName(response.data[0].name);
-      console.log("Fare Name Response:", response.data[0].name);
-
-      return response.data[0].name;
-    } catch (error: any) {
-      console.error("Error fetching fare name:", error);
-      showErrorToast(error || "Error fetching fare name");
-    }
-  };
-  useEffect(() => {
-    fetchRouteName();
-    fetchBusName();
-    fetchFareName();
-  }, [service.route_id, service.bus_id, service.fare_id]);
+  const canUpdateService = useSelector((state: RootState) =>
+    state.app.permissions.includes("update_service")
+  );
+  const canDeleteService = useSelector((state: RootState) =>
+    state.app.permissions.includes("update_service")
+  );
 
   const formatUTCDateToLocal = (dateString: string | null): string => {
     if (!dateString || dateString.trim() === "") return "Not added yet";
+
     const date = new Date(dateString);
-    return isNaN(date.getTime()) ? "Not added yet" : date.toLocaleDateString();
+    if (isNaN(date.getTime())) return "Not added yet";
+
+    const options: Intl.DateTimeFormatOptions = {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Kolkata",
+    };
+
+    return date.toLocaleString("en-IN", options);
   };
 
   const handleServiceDelete = async () => {
@@ -195,11 +143,9 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
       refreshList("refresh");
     } catch (error: any) {
       console.error("Delete error:", error);
-      showErrorToast(error || "service deletion failed. Please try again.");
+      showErrorToast(error || "Service deletion failed. Please try again.");
     }
   };
-  console.log(service.status);
-
   return (
     <>
       <Card
@@ -241,13 +187,13 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
             }}
           >
             <Typography variant="body1">
-              <b>Route :</b> {routeName}
+              <b>Route :</b> {service.routeName}
             </Typography>
             <Typography variant="body1">
-              <b>Bus :</b> {busName}
+              <b>Bus:</b> {service.name.match(/\(([^)]+)\)$/)?.[1] || "N/A"}
             </Typography>
             <Typography variant="body1">
-              <b>Fare :</b> {fareName}
+              <b>Fare :</b> {service.fareName}
             </Typography>
             <Typography
               variant="body1"
@@ -287,29 +233,12 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
                 size="small"
               />
             </Typography>
-            <Typography
-              variant="body1"
-              sx={{ display: "flex", alignItems: "center", gap: 1 }}
-            >
-              <b>Created Mode:</b>
-              <Chip
-                label={createdModeMap[service.created_mode]?.label || "Unknown"}
-                sx={{
-                  bgcolor: createdModeMap[service.created_mode]?.bg,
-                  color: createdModeMap[service.created_mode]?.color,
-                  fontWeight: "bold",
-                  borderRadius: "12px",
-                  px: 1.5,
-                  fontSize: "0.75rem",
-                  width: 150,
-                }}
-                size="small"
-              />
-            </Typography>
 
             <Typography variant="body1">
-              <b>Starting Date:</b>{" "}
-              {formatUTCDateToLocal(service.starting_date)}
+              <b>Starting Date:</b> {formatUTCDateToLocal(service.starting_at)}
+            </Typography>
+            <Typography variant="body1">
+              <b>Ending Date:</b> {formatUTCDateToLocal(service.ending_at)}
             </Typography>
 
             <TextField
@@ -351,10 +280,10 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
               variant="outlined"
               color="secondary"
               sx={{ width: "300px" }}
-              onClick={() => navigate(`/ticket?service_id=${service.id}`)}
+             onClick={() => navigate(`/ticket?service_id=${service.id}`)}
             >
               <ConfirmationNumberIcon sx={{ mr: 1 }} />
-              View All Tickets
+              View All Ticketss
             </Button>
           </Box>
         </Card>
@@ -381,7 +310,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
             {/* Update Button with Tooltip */}
             <Tooltip
               title={
-                !canManageService
+                !canUpdateService
                   ? "You don't have permission, contact the admin"
                   : ""
               }
@@ -390,7 +319,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
             >
               <span
                 style={{
-                  cursor: !canManageService ? "not-allowed" : "default",
+                  cursor: !canUpdateService ? "not-allowed" : "default",
                 }}
               >
                 <Button
@@ -398,7 +327,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
                   color="success"
                   size="small"
                   onClick={() => setUpdateFormOpen(true)}
-                  disabled={!canManageService}
+                  disabled={!canUpdateService}
                   sx={{
                     "&.Mui-disabled": {
                       backgroundColor: "#81c784 !important",
@@ -414,7 +343,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
             {/* Delete Button with Tooltip */}
             <Tooltip
               title={
-                !canManageService
+                !canDeleteService
                   ? "You don't have permission, contact the admin"
                   : service.status === "Started"
                   ? "Cannot delete a service that has Started"
@@ -429,7 +358,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
             >
               <span
                 style={{
-                  cursor: !canManageService ? "not-allowed" : "default",
+                  cursor: !canDeleteService ? "not-allowed" : "default",
                 }}
               >
                 <Button
@@ -439,7 +368,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
                   onClick={() => setDeleteConfirmOpen(true)}
                   startIcon={<DeleteIcon />}
                   disabled={
-                    !canManageService ||
+                    !canDeleteService ||
                     service.status === "Started" ||
                     service.status === "Terminated" ||
                     service.status === "Ended"
@@ -505,9 +434,10 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
             onCloseDetailCard={onCloseDetailCard}
           />
         </DialogContent>
+
         <DialogActions>
           <Button onClick={() => setUpdateFormOpen(false)} color="error">
-            Close
+            Cancel
           </Button>
         </DialogActions>
       </Dialog>

@@ -99,14 +99,14 @@ export const operatorRoleCreationSchema = yup.object().shape({
 });
 //******************************************Bus creation validation schema******************************* */
 export const busCreationSchema = yup.object().shape({
-  registrationNumber: yup
-  .string()
-  .required("Registration number is required")
-  .max(16, "Registration number must be at most 16 characters")
-  .matches(
-    /^[A-Z0-9]+$/,
-    "Only uppercase letters and digits are allowed without spaces"
-  ),
+   registrationNumber: yup
+    .string()
+    .required("Registration number is required")
+    .max(16, "Registration number must be at most 16 characters")
+    .matches(
+      /^[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{1,4}$/,
+      "Format: e.g., KA01AB1234 — 2 letters, 2 digits, 1–2 letters, 1–4 digits"
+    ),
 
   name: yup.string().required().min(4).max(32),
   capacity: yup.number().required().min(1).max(120),

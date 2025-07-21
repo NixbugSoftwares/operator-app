@@ -33,7 +33,6 @@ import {
 import { useAppDispatch } from "../../store/Hooks";
 import {
   showErrorToast,
-  showInfoToast,
   showSuccessToast,
 } from "../../common/toastMessageHelper";
 import { Fare } from "../../types/type";
@@ -42,6 +41,8 @@ import {
   fareupdationApi,
   fareCreationApi,
 } from "../../slices/appSlice";
+import { RootState } from "../../store/Store";
+import { useSelector } from "react-redux";
 interface TicketType {
   id: number;
   name: string;
@@ -66,7 +67,6 @@ interface FareSkeletonPageProps {
   refreshList: (value: any) => void;
   fareToEdit?: Fare | null;
   mode: "create" | "view";
-  canManageFare: boolean;
 }
 
 const defaultTicketTypes = [
@@ -80,7 +80,6 @@ const FareSkeletonPage = ({
   refreshList,
   fareToEdit,
   mode,
-  canManageFare,
 }: FareSkeletonPageProps) => {
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
@@ -95,18 +94,12 @@ const FareSkeletonPage = ({
   const [output, setOutput] = useState("");
   const [_fareToDelete, setFareToDelete] = useState<number | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const scope = fareToEdit?.scope;
-  const isGlobalScope = scope === 1;
-  const isActionDisabled = !canManageFare || isGlobalScope;
-  console.log(
-    "scope:",
-    scope,
-    "isGlobalScope:",
-    isGlobalScope,
-    "isActionDisabled:",
-    isActionDisabled
+  const canUpdateFare = useSelector((state: RootState) =>
+    state.app.permissions.includes("update_fare")
   );
-
+  const canDeleteFare = useSelector((state: RootState) =>
+    state.app.permissions.includes("delete_fare")
+  );
   useEffect(() => {
     if (fareToEdit) {
       setFareFunction(fareToEdit.function);
@@ -227,18 +220,18 @@ const FareSkeletonPage = ({
   const handleFareCreation: SubmitHandler<FareInputs> = async (data) => {
     try {
       setLoading(true);
-      const formData = new FormData();
-      formData.append("name", data.name);
-      formData.append("function", fareFunction);
-      formData.append("attributes", JSON.stringify(data.attributes));
-
-      await dispatch(fareCreationApi(formData)).unwrap();
+      const fareCreate = {
+        name: data.name,
+        function: fareFunction,
+        attributes: data.attributes,
+      };
+      await dispatch(fareCreationApi(fareCreate)).unwrap();
       onCancel();
       refreshList("refresh");
       showSuccessToast("Fare created successfully");
     } catch (error: any) {
       console.error("Error creating fare:", error);
-      showErrorToast(error);
+      showErrorToast(error || "Error creating fare");
     } finally {
       setLoading(false);
     }
@@ -247,25 +240,21 @@ const FareSkeletonPage = ({
   const handleFareUpdate: SubmitHandler<FareInputs> = async (data) => {
     try {
       setLoading(true);
-      const formData = new FormData();
-      formData.append("id", String(fareToEdit?.id));
-      formData.append("name", data.name);
-      formData.append("function", fareFunction);
-      formData.append("attributes", JSON.stringify(data.attributes));
-      for (const [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
-      }
-      const response = await dispatch(
-        fareupdationApi({ fareId: fareToEdit!.id, formData })
+      const fareUpdate = {
+        id: fareToEdit?.id,
+        name: data.name,
+        function: fareFunction,
+        attributes: data.attributes,
+      };
+      await dispatch(
+        fareupdationApi({ fareId: fareToEdit!.id, fareUpdate })
       ).unwrap();
-
       onCancel();
       refreshList("refresh");
       showSuccessToast("Fare updated successfully");
-      console.log("API Response:", response);
     } catch (error: any) {
       console.error("Error updating fare:", error);
-      showInfoToast(error || "Failed to update fare. Please try again.");
+      showErrorToast(error || "Error updating fare");
     } finally {
       setLoading(false);
     }
@@ -281,16 +270,14 @@ const FareSkeletonPage = ({
 
     try {
       setLoading(true);
-      const formData = new FormData();
-      formData.append("id", String(fareToEdit.id));
 
-      await dispatch(fareDeleteApi(formData)).unwrap();
+      await dispatch(fareDeleteApi({ fareId: fareToEdit.id })).unwrap();
       onCancel();
       refreshList("refresh");
       showSuccessToast("Fare deleted successfully");
     } catch (error: any) {
       console.error("Error deleting fare:", error);
-      showErrorToast(error || "Failed to delete fare. Please try again.");
+      showErrorToast(error || "Error deleting fare");
     } finally {
       setLoading(false);
     }
@@ -331,17 +318,7 @@ const FareSkeletonPage = ({
           <Controller
             name="name"
             control={control}
-            rules={{
-              required: "Fare name is required",
-              minLength: {
-                value: 4,
-                message: "Fare name must be at least 4 characters",
-              },
-              maxLength: {
-                value: 32,
-                message: "Fare name cannot exceed 32 characters",
-              },
-            }}
+            rules={{ required: "Fare name is required" }}
             render={({ field }) => (
               <TextField
                 {...field}
@@ -350,10 +327,6 @@ const FareSkeletonPage = ({
                 sx={{ mb: 3 }}
                 error={!!errors.name}
                 helperText={errors.name?.message}
-                inputProps={{
-                  maxLength: 32,
-                }}
-                placeholder="e.g., Kerala ordinary"
               />
             )}
           />
@@ -572,10 +545,8 @@ const FareSkeletonPage = ({
             <>
               <Tooltip
                 title={
-                  !canManageFare
+                  !canDeleteFare
                     ? "You don't have permission, contact the admin"
-                    : isGlobalScope
-                    ? "Global fare cannot be updated or deleted"
                     : ""
                 }
                 arrow
@@ -583,7 +554,7 @@ const FareSkeletonPage = ({
               >
                 <span
                   style={{
-                    cursor: isActionDisabled ? "not-allowed" : "default",
+                    cursor: !canDeleteFare ? "not-allowed" : "default",
                   }}
                 >
                   <Button
@@ -595,7 +566,7 @@ const FareSkeletonPage = ({
                       handleDeleteFare(fareToEdit!.id);
                     }}
                     startIcon={<DeleteIcon />}
-                    disabled={isActionDisabled}
+                    disabled={!canDeleteFare}
                     sx={{
                       "&.Mui-disabled": {
                         backgroundColor: "#e57373 !important",
@@ -607,21 +578,18 @@ const FareSkeletonPage = ({
                   </Button>
                 </span>
               </Tooltip>
-
               <Tooltip
                 title={
-                  !canManageFare
+                  !canUpdateFare
                     ? "You don't have permission, contact the admin"
-                    : isGlobalScope
-                    ? "Global fare cannot be updated or deleted"
-                    : "Click to confirm update"
+                    : ""
                 }
                 arrow
                 placement="top-start"
               >
                 <span
                   style={{
-                    cursor: isActionDisabled ? "not-allowed" : "default",
+                    cursor: !canUpdateFare ? "not-allowed" : "default",
                   }}
                 >
                   <Button
@@ -630,7 +598,7 @@ const FareSkeletonPage = ({
                     size="small"
                     onClick={handleSubmit(handleFareUpdate)}
                     startIcon={<EditIcon />}
-                    disabled={isActionDisabled}
+                    disabled={!canUpdateFare}
                     sx={{
                       "&.Mui-disabled": {
                         backgroundColor: "#81c784 !important",

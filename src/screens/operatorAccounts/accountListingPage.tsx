@@ -29,10 +29,10 @@ import { useSelector } from "react-redux";
 import { RootState } from "../../store/Store";
 const getGenderBackendValue = (displayValue: string): string => {
   const genderMap: Record<string, string> = {
-    Female: "1",
-    Male: "2",
-    Transgender: "3",
-    Other: "4",
+    Other: "1",
+     Female : "2",
+     Male: "3",
+    Transgender: "4",
   };
   return genderMap[displayValue] || "";
 };
@@ -55,8 +55,8 @@ const AccountListingTable = () => {
   const [hasNextPage, setHasNextPage] = useState(false);
   const rowsPerPage = 10;
   const [openCreateModal, setOpenCreateModal] = useState(false);
-  const canManageOperator = useSelector((state: RootState) =>
-    state.app.permissions.includes("manage_operator")
+  const canCreateOperator = useSelector((state: RootState) =>
+    state.app.permissions.includes("create_operator")
   );
   const fetchAccounts = useCallback((pageNumber: number, searchParams = {}) => {
     const offset = pageNumber * rowsPerPage;
@@ -70,12 +70,12 @@ const AccountListingTable = () => {
           username: account.username,
           gender:
             account.gender === 1
-              ? "Female"
+              ? "Other"
               : account.gender === 2
-              ? "Male"
+              ? "Female"
               : account.gender === 3
-              ? "Transgender"
-              : "Other",
+              ? "Male"
+              : "Transgender",
           email_id: account.email_id || account.email,
           phoneNumber: account.phone_number || account.phoneNumber || "",
           status: account.status === 1 ? "Active" : "Suspended",
@@ -175,7 +175,7 @@ const AccountListingTable = () => {
       >
         <Tooltip
           title={
-            !canManageOperator
+            !canCreateOperator
               ? "You don't have permission, contact the admin"
               : "Click to open the account creation form"
           }
@@ -186,7 +186,7 @@ const AccountListingTable = () => {
                 ml: "auto",
                 mr: 2,
                 mb: 2,
-                backgroundColor: !canManageOperator
+                backgroundColor: !canCreateOperator
                   ? "#6c87b7 !important"
                   : "#00008B",
                 color: "white !important",
@@ -198,8 +198,8 @@ const AccountListingTable = () => {
               }}
               variant="contained"
               onClick={() => setOpenCreateModal(true)}
-              disabled={!canManageOperator}
-              style={{ cursor: !canManageOperator ? "not-allowed" : "pointer" }}
+              disabled={!canCreateOperator}
+              style={{ cursor: !canCreateOperator ? "not-allowed" : "pointer" }}
             >
               Add New operator
             </Button>
@@ -478,7 +478,6 @@ const AccountListingTable = () => {
         >
           <AccountDetailsCard
             account={selectedAccount}
-            canManageOperator={canManageOperator}
             onUpdate={() => {}}
             onDelete={() => {}}
             onBack={() => setSelectedAccount(null)}

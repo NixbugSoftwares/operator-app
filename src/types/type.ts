@@ -124,24 +124,27 @@ export interface Fare {
 export interface Service{
   id:number
   name:string
-  company_id:number
   bus_id:number
   route_id:number
   fare_id:number
+  fareName:string
+  routeName:string
   status:string
   ticket_mode:string
   created_mode:string
-  starting_date:string
+  starting_at:string
+  ending_at:string
   remarks:string
 }
+
 
 export interface Schedule{
   id:number
   service_id:number
   name:string
   permit_no:string
-  trigger_mode:number
-  ticket_mode:number
+  triggering_mode:number
+  ticketing_mode:number
   frequency:number[] 
   bus_id:number
   route_id:number

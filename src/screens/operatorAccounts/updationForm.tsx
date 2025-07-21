@@ -45,7 +45,7 @@ interface IAccountUpdateFormProps {
   onClose: () => void;
   refreshList: (value: any) => void;
   onCloseDetailCard(): void;
-  canManageOperator: boolean;
+  canupdateOperator: boolean;
 }
 
 interface IOption {
@@ -54,10 +54,10 @@ interface IOption {
 }
 
 const genderOptions: IOption[] = [
-  { label: "Female", value: 1 },
-  { label: "Male", value: 2 },
-  { label: "Transgender", value: 3 },
-  { label: "Other", value: 4 },
+  { label: "Other", value: 1 },
+  { label: "Female", value: 2 },
+  { label: "Male", value: 3 },
+  { label: "Transgender", value: 4 },
 ];
 
 const statusOptions: IOption[] = [
@@ -74,7 +74,7 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
   onClose,
   refreshList,
   onCloseDetailCard,
-  canManageOperator,
+  canupdateOperator,
 }) => {
   console.log("accountData:", accountData);
   
@@ -152,7 +152,7 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
         formData.append("phone_number", `+91${data.phoneNumber}`);
       if (data.email) formData.append("email_id", data.email);
 
-      if (canManageOperator && data.status) {
+      if (canupdateOperator && data.status) {
         formData.append("status", data.status.toString());
       }
 
@@ -168,7 +168,7 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
       }
 
       // Only handle role assignment if allowed
-      if (canManageOperator && data.role) {
+      if (canupdateOperator && data.role) {
         try {
           if (data.roleAssignmentId) {
             await dispatch(
@@ -280,7 +280,7 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
             size="small"
           />
 
-          {canManageOperator && (
+          {canupdateOperator && (
             <Controller
               name="role"
               control={control}
@@ -331,7 +331,7 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
             )}
           />
 
-          {canManageOperator && !isLoggedInUser && (
+          {canupdateOperator && !isLoggedInUser && (
             <Controller
               name="status"
               control={control}

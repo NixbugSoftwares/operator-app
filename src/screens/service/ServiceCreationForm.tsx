@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import {
   Box,
@@ -10,12 +10,13 @@ import {
   CircularProgress,
   MenuItem,
   Autocomplete,
+  Alert,
 } from "@mui/material";
 import { useAppDispatch } from "../../store/Hooks";
 import {
   serviceCreationApi,
   busRouteListApi,
-  fareListingApi,
+  fareListApi,
   companyBusListApi,
 } from "../../slices/appSlice";
 import {
@@ -33,11 +34,6 @@ const ticketModeOptions = [
   { label: "Hybrid", value: 1 },
   { label: "Digital", value: 2 },
   { label: "Conventional", value: 3 },
-];
-
-const createdModeOptions = [
-  { label: "Manual", value: 1 },
-  { label: "Automatic", value: 2 },
 ];
 
 interface DropdownItem {
@@ -83,12 +79,26 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
     defaultValues: {
       ticket_mode: "1",
       created_mode: "1",
+      starting_at: new Date().toISOString().split("T")[0], 
     },
   });
 
+  // Memoize dropdown lists to prevent unnecessary re-renders
+  const memoizedBusList = useMemo(
+    () => dropdownData.busList,
+    [dropdownData.busList]
+  );
+  const memoizedRouteList = useMemo(
+    () => dropdownData.routeList,
+    [dropdownData.routeList]
+  );
+  const memoizedFareList = useMemo(
+    () => dropdownData.fareList,
+    [dropdownData.fareList]
+  );
+
   const fetchBusList = useCallback(
     (pageNumber: number, searchText = "") => {
-      setLoading(true);
       const offset = pageNumber * rowsPerPage;
       dispatch(
         companyBusListApi({
@@ -111,52 +121,56 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
                 ? formattedBusList
                 : [...prev.busList, ...formattedBusList],
           }));
+          setHasMore((prev) => ({
+            ...prev,
+            bus: items.length === rowsPerPage,
+          }));
         })
         .catch((error) => {
-          showErrorToast(error || "Failed to fetch Bus list");
-        })
-        .finally(() => setLoading(false));
+          showErrorToast(error.message || "Failed to fetch Bus list");
+        });
     },
-    [dispatch]
+    [dispatch ]
   );
 
   const fetchFareList = useCallback(
-    (pageNumber: number, searchText = "") => {
-      setLoading(true);
-      const offset = pageNumber * rowsPerPage;
-      dispatch(
-        fareListingApi({
+  async (pageNumber: number, searchText = "") => {
+    setLoading(true);
+    const offset = pageNumber * rowsPerPage;
+    try {
+      const res = await dispatch(
+        fareListApi({
           limit: rowsPerPage,
           offset,
           name: searchText,
         })
-      )
-        .unwrap()
-        .then((res) => {
-          const items = res.data || [];
-          const formattedFareList = items.map((fare: any) => ({
-            id: fare.id,
-            name: fare.name ?? "-",
-          }));
-          setDropdownData((prev) => ({
-            ...prev,
-            fareList:
-              pageNumber === 0
-                ? formattedFareList
-                : [...prev.fareList, ...formattedFareList],
-          }));
-        })
-        .catch((error) => {
-          showErrorToast(error || "Failed to fetch Fare list");
-        })
-        .finally(() => setLoading(false));
-    },
-    [dispatch]
-  );
+      ).unwrap();
+
+      const fares = res.data || [];
+      
+      const formattedFareList = fares.map((fare: any) => ({
+        id: fare.id,
+        name: fare.name ?? "-",
+      }));
+
+      setDropdownData((prev) => ({
+        ...prev,
+        fareList:
+          pageNumber === 0
+            ? formattedFareList
+            : [...prev.fareList, ...formattedFareList],
+      }));
+    } catch (error: any) {
+      showErrorToast(error?.message || "Failed to fetch Fare list");
+    } finally {
+      setLoading(false);
+    }
+  },
+  [dispatch,  rowsPerPage]
+);
 
   const fetchRouteList = useCallback(
     (pageNumber: number, searchText = "") => {
-      setLoading(true);
       const offset = pageNumber * rowsPerPage;
       dispatch(
         busRouteListApi({
@@ -184,10 +198,9 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
             route: items.length === rowsPerPage,
           }));
         })
-        .catch((error) => {
-          showErrorToast(error|| "Failed to fetch Route list");
-        })
-        .finally(() => setLoading(false));
+        .catch((error: any) => {
+          showErrorToast(error || "Failed to fetch Route list");
+        });
     },
     [dispatch]
   );
@@ -198,26 +211,25 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
     fetchRouteList(0);
   }, [fetchBusList, fetchFareList, fetchRouteList]);
 
-  const handleAccountCreation: SubmitHandler<Service> = async (data) => {
+  const handleServiceCreation: SubmitHandler<Service> = async (data) => {
     try {
       setLoading(true);
       const formatDateToUTC = (dateString: string | null): string | null => {
         if (!dateString) return null;
         const date = new Date(dateString);
-        return date.toISOString();
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+        const day = String(date.getUTCDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`; // "YYYY-MM-DD"
       };
 
       const formData = new FormData();
-      formData.append("name", data.name);
-      formData.append("route_id", data.route_id.toString());
+      formData.append("route", data.route_id.toString());
       formData.append("bus_id", data.bus_id.toString());
-      formData.append("fare_id", data.fare_id.toString());
-      formData.append(
-        "starting_date",
-        formatDateToUTC(data.starting_date) || ""
-      );
+      formData.append("fare", data.fare_id.toString());
+      formData.append("starting_at", formatDateToUTC(data.starting_at) || "");
+
       formData.append("ticket_mode", data.ticket_mode.toString());
-      formData.append("created_mode", data.created_mode.toString());
 
       const response = await dispatch(serviceCreationApi(formData)).unwrap();
 
@@ -228,8 +240,8 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
       } else {
         showErrorToast("Service creation failed. Please try again.");
       }
-    } catch (error:any) {
-      showErrorToast(error||"Something went wrong. Please try again.");
+    } catch (error: any) {
+      showErrorToast(error || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -260,6 +272,7 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
       }
     }
   };
+  const today = new Date().toISOString().split("T")[0];
 
   return (
     <Container component="main" maxWidth="xs">
@@ -275,37 +288,33 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
         <Typography component="h1" variant="h5">
           Service Creation
         </Typography>
+        <Box mb={2}>
+          <Alert severity="info">
+            For a new service, the starting date must be today or the next day.
+          </Alert>
+        </Box>
         <Box
           component="form"
           noValidate
           sx={{ mt: 1 }}
-          onSubmit={handleSubmit(handleAccountCreation)}
+          onSubmit={handleSubmit(handleServiceCreation)}
         >
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            label="Service Name"
-            {...register("name", { required: "Service name is required" })}
-            error={!!errors.name}
-            helperText={errors.name?.message}
-            size="small"
-          />
-
           <Controller
             name="route_id"
             control={control}
             rules={{ required: "Route is required" }}
             render={({ field }) => (
               <Autocomplete
-                options={dropdownData.routeList}
+                options={memoizedRouteList}
                 getOptionLabel={(option) => option.name}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
                 value={
-                  dropdownData.routeList.find(
-                    (item) => item.id === field.value
-                  ) || null
+                  memoizedRouteList.find((item) => item.id === field.value) ||
+                  null
                 }
-                onChange={(_, newValue) => field.onChange(newValue?.id)}
+                onChange={(_, newValue) => {
+                  field.onChange(newValue?.id);
+                }}
                 onInputChange={(_, newInputValue) => {
                   setSearchParams((prev) => ({
                     ...prev,
@@ -322,10 +331,6 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
                     error={!!errors.route_id}
                     helperText={errors.route_id?.message}
                     required
-                    InputProps={{
-                      ...params.InputProps,
-                      
-                    }}
                   />
                 )}
                 ListboxProps={{
@@ -342,16 +347,19 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
             rules={{ required: "Bus is required" }}
             render={({ field }) => (
               <Autocomplete
-                options={dropdownData.busList}
+                options={memoizedBusList}
                 getOptionLabel={(option) => option.name}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
                 value={
-                  dropdownData.busList.find(
-                    (item) => item.id === field.value
-                  ) || null
+                  memoizedBusList.find((item) => item.id === field.value) ||
+                  null
                 }
-                onChange={(_, newValue) => field.onChange(newValue?.id)}
+                onChange={(_, newValue) => {
+                  field.onChange(newValue?.id);
+                }}
                 onInputChange={(_, newInputValue) => {
                   setSearchParams((prev) => ({ ...prev, bus: newInputValue }));
+                  setPage((prev) => ({ ...prev, bus: 0 }));
                   fetchBusList(0, newInputValue);
                 }}
                 renderInput={(params) => (
@@ -362,10 +370,6 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
                     error={!!errors.bus_id}
                     helperText={errors.bus_id?.message}
                     required
-                    InputProps={{
-                      ...params.InputProps,
-                      
-                    }}
                   />
                 )}
                 ListboxProps={{
@@ -382,16 +386,19 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
             rules={{ required: "Fare is required" }}
             render={({ field }) => (
               <Autocomplete
-                options={dropdownData.fareList}
+                options={memoizedFareList}
                 getOptionLabel={(option) => option.name}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
                 value={
-                  dropdownData.fareList.find(
-                    (item) => item.id === field.value
-                  ) || null
+                  memoizedFareList.find((item) => item.id === field.value) ||
+                  null
                 }
-                onChange={(_, newValue) => field.onChange(newValue?.id)}
+                onChange={(_, newValue) => {
+                  field.onChange(newValue?.id);
+                }}
                 onInputChange={(_, newInputValue) => {
                   setSearchParams((prev) => ({ ...prev, fare: newInputValue }));
+                  setPage((prev) => ({ ...prev, fare: 0 }));
                   fetchFareList(0, newInputValue);
                 }}
                 renderInput={(params) => (
@@ -402,10 +409,6 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
                     error={!!errors.fare_id}
                     helperText={errors.fare_id?.message}
                     required
-                    InputProps={{
-                      ...params.InputProps,
-                      
-                    }}
                   />
                 )}
                 ListboxProps={{
@@ -423,14 +426,22 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
             label="Starting Date"
             type="date"
             InputLabelProps={{ shrink: true }}
-            {...register("starting_date", {
+            {...register("starting_at", {
               required: "Starting date is required",
+              validate: (value) => {
+                const selectedDate = new Date(value);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return (
+                  selectedDate >= today || "Date must be today or in the future"
+                );
+              },
             })}
-            error={!!errors.starting_date}
-            helperText={errors.starting_date?.message}
+            error={!!errors.starting_at}
+            helperText={errors.starting_at?.message}
             size="small"
             inputProps={{
-              max: "9999-12-31",
+              min: today,
             }}
           />
 
@@ -449,29 +460,6 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
                 size="small"
               >
                 {ticketModeOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
-
-          <Controller
-            name="created_mode"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                margin="normal"
-                fullWidth
-                select
-                label="Created Mode"
-                {...field}
-                error={!!errors.created_mode}
-                helperText={errors.created_mode?.message}
-                size="small"
-              >
-                {createdModeOptions.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
                     {option.label}
                   </MenuItem>

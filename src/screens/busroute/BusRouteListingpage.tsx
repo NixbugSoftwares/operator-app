@@ -40,7 +40,7 @@ interface Route {
   id: number;
   companyId: number;
   name: string;
-  starting_time: string;
+  start_time: string;
 }
 
 const BusRouteListing = () => {
@@ -53,7 +53,7 @@ const BusRouteListing = () => {
   const [selectedRoute, setSelectedRoute] = useState<{
     id: number;
     name: string;
-    starting_time: string;
+    start_time: string;
   } | null>(null);
 
   const mapRef = useRef<{
@@ -76,10 +76,12 @@ const BusRouteListing = () => {
   const [page, setPage] = useState(0);
   const [hasNextPage, setHasNextPage] = useState(false);
   const rowsPerPage = 10;
-  const canManageRoutes = useSelector((state: RootState) =>
-    state.app.permissions.includes("manage_route")
+  const canCreateRoutes = useSelector((state: RootState) =>
+    state.app.permissions.includes("create_route")
   );
-
+  const canDeleteRoutes = useSelector((state: RootState) =>
+    state.app.permissions.includes("delete_route")
+  );
   const handleStartingTimeChange = (time: string) => {
     setRouteStartingTime(time);
   };
@@ -89,23 +91,28 @@ const BusRouteListing = () => {
       setIsLoading(true);
       const offSet = pageNumber * rowsPerPage;
       dispatch(
-        busRouteListApi({ limit: rowsPerPage, offset: offSet, ...searchParams })
+        busRouteListApi({
+          limit: rowsPerPage,
+          offset: offSet,
+          ...searchParams,
+        })
       )
         .unwrap()
         .then((res) => {
+          console.log("API Response:", res);
+
           const items = res.data || [];
-          console.log("items", items);
           const formattedRoute = items.map((route: any) => ({
             id: route.id,
             name: route.name,
-            starting_time: route.starting_time,
+            start_time: route.start_time,
           }));
           setRouteList(formattedRoute);
           setHasNextPage(items.length === rowsPerPage);
         })
         .catch((error) => {
           console.error("Fetch Error:", error);
-          showErrorToast(error|| "Failed to fetch Bus Route list");
+          showErrorToast(error || "Failed to fetch Bus Route list");
         })
         .finally(() => setIsLoading(false));
     },
@@ -230,8 +237,8 @@ const BusRouteListing = () => {
 
       showSuccessToast("Route deleted successfully");
       fetchRoute(page, debouncedSearch);
-    } catch (error:any) {
-      showErrorToast(error  || "Failed to delete route");
+    } catch (error: any) {
+      showErrorToast(error || "Failed to delete route");
     } finally {
       setDeleteConfirmOpen(false);
       setRouteToDelete(null);
@@ -270,12 +277,12 @@ const BusRouteListing = () => {
         }}
       >
         {selectedRoute ? (
+          // In BusRouteListing component
           <BusRouteDetailsPage
             routeId={selectedRoute.id}
             routeName={selectedRoute.name}
-            routeStartingTime={`1970-01-01T${selectedRoute.starting_time}`}
+            routeStartingTime={`1970-01-01T${selectedRoute.start_time}`}
             refreshList={(value: any) => refreshList(value)}
-            routeManagePermission={canManageRoutes}
             onBack={() => {
               setSelectedRoute(null);
               setMapLandmarks([]);
@@ -331,7 +338,7 @@ const BusRouteListing = () => {
             >
               <Tooltip
                 title={
-                  !canManageRoutes
+                  !canCreateRoutes
                     ? "You don't have permission, contact the admin"
                     : "click to open the route creation form"
                 }
@@ -339,7 +346,7 @@ const BusRouteListing = () => {
               >
                 <span
                   style={{
-                    cursor: !canManageRoutes ? "not-allowed" : "default",
+                    cursor: !canCreateRoutes ? "not-allowed" : "default",
                   }}
                 >
                   <Button
@@ -348,7 +355,7 @@ const BusRouteListing = () => {
                       mr: 2,
                       mb: 2,
                       display: "block",
-                      backgroundColor: !canManageRoutes
+                      backgroundColor: !canCreateRoutes
                         ? "#6c87b7 !important"
                         : "#00008B",
                       color: "white",
@@ -359,7 +366,7 @@ const BusRouteListing = () => {
                     }}
                     variant="contained"
                     onClick={toggleCreationForm}
-                    disabled={!canManageRoutes}
+                    disabled={!canCreateRoutes}
                   >
                     Add New Routes
                   </Button>
@@ -379,7 +386,7 @@ const BusRouteListing = () => {
               <Table stickyHeader>
                 <TableHead>
                   <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                    <TableCell sx={{ width: "26%" }}>
+                    <TableCell sx={{ width: "20%" }}>
                       <Box
                         display="flex"
                         flexDirection="column"
@@ -387,7 +394,7 @@ const BusRouteListing = () => {
                       >
                         <b>ID</b>
                         <TextField
-                        type="number"
+                          type="number"
                           variant="outlined"
                           size="small"
                           placeholder="Search"
@@ -445,22 +452,23 @@ const BusRouteListing = () => {
                             setSelectedRoute({
                               id: row.id,
                               name: row.name,
-                              starting_time: row.starting_time,
+                              start_time: row.start_time,
                             })
                           }
                         >
                           <Tooltip title={row.name} placement="bottom">
                             <Typography noWrap>
-                              {row.name.length > 25
-                                ? `${row.name.substring(0, 25)}...`
+                              {row.name.length > 15
+                                ? `${row.name.substring(0, 15)}...`
                                 : row.name}
                             </Typography>
                           </Tooltip>
                         </TableCell>
+
                         <TableCell sx={{ textAlign: "center", boxShadow: 1 }}>
                           <Tooltip
                             title={
-                              !canManageRoutes
+                              !canDeleteRoutes
                                 ? "You don't have permission, contact the admin"
                                 : " DELETE the route"
                             }
@@ -468,7 +476,7 @@ const BusRouteListing = () => {
                           >
                             <span
                               style={{
-                                cursor: !canManageRoutes
+                                cursor: !canDeleteRoutes
                                   ? "not-allowed"
                                   : "default",
                               }}
@@ -478,7 +486,7 @@ const BusRouteListing = () => {
                                 color="error"
                                 size="small"
                                 startIcon={<DeleteIcon />}
-                                disabled={!canManageRoutes}
+                                disabled={!canDeleteRoutes}
                                 onClick={() => handleDeleteClick(row)}
                                 sx={{
                                   ml: "auto",
@@ -491,12 +499,12 @@ const BusRouteListing = () => {
                                   borderRadius: 2,
                                   fontWeight: 500,
                                   boxShadow: "none",
-                                  backgroundColor: !canManageRoutes
+                                  backgroundColor: !canDeleteRoutes
                                     ? "#f46a6a"
                                     : "#d32f2f",
                                   color: "#fff",
                                   "&:hover": {
-                                    backgroundColor: !canManageRoutes
+                                    backgroundColor: !canDeleteRoutes
                                       ? "#f46a6a"
                                       : "#b71c1c",
                                     boxShadow: "0 2px 5px rgba(0,0,0,0.2)",

@@ -15,7 +15,7 @@ import {
   scheduleUpdationApi,
   companyBusListApi,
   busRouteListApi,
-  fareListingApi,
+  fareListApi,
 } from "../../slices/appSlice";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import {
@@ -31,7 +31,6 @@ interface DropdownItem {
 type ScheduleFormValues = {
   id: number;
   name: string;
-  permit_no: string;
   ticket_mode: number;
   trigger_mode: number;
   bus_id: number;
@@ -91,7 +90,9 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
     fare: true,
   });
   const [_selectedBus, setSelectedBus] = useState<DropdownItem | null>(null);
-  const [_selectedRoute, setSelectedRoute] = useState<DropdownItem | null>(null);
+  const [_selectedRoute, setSelectedRoute] = useState<DropdownItem | null>(
+    null
+  );
   const [_selectedFare, setSelectedFare] = useState<DropdownItem | null>(null);
   const isFirstLoad = useRef(true);
   const [isReady, setIsReady] = useState(false);
@@ -129,15 +130,43 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
       const apiMap = {
         bus: companyBusListApi,
         route: busRouteListApi,
-        fare: fareListingApi,
+        fare: fareListApi,
       };
 
       try {
-        const response = await dispatch(
-          apiMap[type]({ limit: rowsPerPage, offset, name: searchText })
-        ).unwrap();
+        let items: any[] = [];
 
-        const items = response.data || [];
+        if (type === "fare") {
+          // Special handling for fare - make two API calls
+          const [companyRes] = await Promise.all([
+            dispatch(
+              fareListApi({
+                limit: rowsPerPage,
+                offset,
+                name: searchText,
+              })
+            ).unwrap(),
+          ]);
+
+          const companyFares = companyRes.data || [];
+
+          // Combine and deduplicate by id
+          items = [...companyFares].filter(
+            (fare, index, self) =>
+              index === self.findIndex((f) => f.id === fare.id)
+          );
+        } else {
+          // Normal handling for bus and route
+          const response = await dispatch(
+            apiMap[type]({
+              limit: rowsPerPage,
+              offset,
+              name: searchText,
+            })
+          ).unwrap();
+          items = response.data || [];
+        }
+
         const formattedList = items.map((item: any) => ({
           id: item.id,
           name: item.name ?? "-",
@@ -204,13 +233,13 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
           }
         }
       } catch (error: any) {
-        showErrorToast(error.message || `Failed to fetch ${type} list`);
+        showErrorToast(error || `Failed to fetch ${type} list`);
       } finally {
         if (type === "fare") isFirstLoad.current = false;
         setLoading(false);
       }
     },
-    [dispatch, scheduleData]
+    [dispatch, scheduleData ]
   );
 
   useEffect(() => {
@@ -219,13 +248,17 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
         setLoading(true);
         const [busResp, routeResp, fareResp] = await Promise.all([
           dispatch(
-            companyBusListApi({ limit: rowsPerPage, offset: 0, name: "" })
+            companyBusListApi({
+              limit: rowsPerPage,
+              offset: 0,
+              name: "",
+            })
           ).unwrap(),
           dispatch(
             busRouteListApi({ limit: rowsPerPage, offset: 0, name: "" })
           ).unwrap(),
           dispatch(
-            fareListingApi({ limit: rowsPerPage, offset: 0, name: "" })
+            fareListApi({ limit: rowsPerPage, offset: 0, name: "" })
           ).unwrap(),
         ]);
 
@@ -291,14 +324,14 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
       const updationData = {
         id: scheduleId,
         name: data.name,
-        permit_no: data.permit_no,
-        ticket_mode: data.ticket_mode,
-        trigger_mode: data.trigger_mode,
+        ticketing_mode: data.ticket_mode,
+        triggering_mode: data.trigger_mode,
         bus_id: data.bus_id,
         fare_id: data.fare_id,
         route_id: data.route_id,
         frequency: data.frequency,
       };
+console.log("Updation Data:", updationData);
 
       await dispatch(scheduleUpdationApi(updationData)).unwrap();
 
@@ -308,9 +341,7 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
       onClose();
     } catch (error: any) {
       console.error("Error updating schedule:", error);
-      showErrorToast(
-        error || "Failed to update schedule. Please try again."
-      );
+      showErrorToast(error || "Failed to update schedule. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -364,55 +395,43 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
           />
 
           <Controller
-            name="permit_no"
+            name="bus_id"
             control={control}
-            rules={{ required: "Permit No is required" }}
+            rules={{ required: "Bus is required" }}
             render={({ field }) => (
-              <TextField
-                {...field}
-                label="Permit No"
-                fullWidth
-                margin="normal"
-                error={!!errors.permit_no}
-                helperText={errors.permit_no?.message}
+              <Autocomplete
+                options={dropdownData.busList}
+                getOptionLabel={(option) => option.name}
+                value={
+                  dropdownData.busList.find(
+                    (item) => item.id === field.value
+                  ) || null
+                }
+                onChange={(_, newValue) => {
+                  field.onChange(newValue?.id || null);
+                }}
+                onInputChange={(_, newInputValue) => {
+                  fetchDropdownData("bus", 0, newInputValue);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Select Bus"
+                    error={!!errors.bus_id}
+                    helperText={errors.bus_id?.message}
+                    fullWidth
+                    margin="normal"
+                  />
+                )}
+                ListboxProps={{
+                  onScroll: (event) => handleScroll(event, "bus"),
+                  style: { maxHeight: 200, overflow: "auto" },
+                }}
+                loading={loading}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
               />
             )}
           />
-
-          <Controller
-  name="bus_id"
-  control={control}
-  rules={{ required: "Bus is required" }}
-  render={({ field }) => (
-    <Autocomplete
-      options={dropdownData.busList}
-      getOptionLabel={(option) => option.name}
-      value={dropdownData.busList.find((item) => item.id === field.value) || null}
-      onChange={(_, newValue) => {
-        field.onChange(newValue?.id || null);
-      }}
-      onInputChange={(_, newInputValue) => {
-        fetchDropdownData("bus", 0, newInputValue);
-      }}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label="Select Bus"
-          error={!!errors.bus_id}
-          helperText={errors.bus_id?.message}
-          fullWidth
-          margin="normal"
-        />
-      )}
-      ListboxProps={{
-        onScroll: (event) => handleScroll(event, "bus"),
-        style: { maxHeight: 200, overflow: "auto" },
-      }}
-      loading={loading}
-      isOptionEqualToValue={(option, value) => option.id === value.id}
-    />
-  )}
-/>
 
           <Controller
             name="route_id"
@@ -421,7 +440,11 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
               <Autocomplete
                 options={dropdownData.routeList}
                 getOptionLabel={(option) => option.name}
-                value={dropdownData.routeList.find((item) => item.id === field.value) || null}
+                value={
+                  dropdownData.routeList.find(
+                    (item) => item.id === field.value
+                  ) || null
+                }
                 onChange={(_, newValue) => {
                   setSelectedRoute(newValue);
                   field.onChange(newValue?.id || null);
@@ -456,7 +479,11 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
               <Autocomplete
                 options={dropdownData.fareList}
                 getOptionLabel={(option) => option.name}
-                value={dropdownData.fareList.find((item) => item.id === field.value) || null}
+                value={
+                  dropdownData.fareList.find(
+                    (item) => item.id === field.value
+                  ) || null
+                }
                 onChange={(_, newValue) => {
                   setSelectedFare(newValue);
                   field.onChange(newValue?.id || null);
@@ -568,7 +595,7 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
             {loading ? (
               <CircularProgress size={24} sx={{ color: "white" }} />
             ) : (
-              "Update Schedule"
+              "Update Duty"
             )}
           </Button>
         </Box>

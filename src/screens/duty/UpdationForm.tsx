@@ -42,21 +42,16 @@ const statusOptions = [
   { label: "Assigned", value: 1 },
   { label: "Started", value: 2 },
   { label: "Terminated", value: 3 },
-  { label: "Finished", value: 4 },
+  { label: "Ended", value: 4 },
 ];
 
-const typeModeOptions = [
-  { label: "Driver", value: 1 },
-  { label: "Conductor", value: 2 },
-  { label: "Kili", value: 3 },
-  { label: "Other", value: 4 },
-];
+
 
 const allowedTransitions: Record<number, number[]> = {
-  1: [2, 3],
-  2: [3, 4],
-  3: [],
-  4: [],
+  1: [2,3],
+  2: [3,4],
+  3: [2],
+  4: [2],
 };
 
 interface DropdownItem {
@@ -91,11 +86,6 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
     return option ? option.value : 2;
   };
 
-  const getInitialTypeValue = (typeLabel: string): number => {
-    const option = typeModeOptions.find((opt) => opt.label === typeLabel);
-    return option ? option.value : 4;
-  };
-
   const {
     handleSubmit,
     control,
@@ -105,14 +95,12 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
     defaultValues: {
       id: dutyData.id,
       status: getInitialStatusValue(dutyData.status),
-      type: getInitialTypeValue(dutyData.type),
       service_id: dutyData.service_id,
     },
   });
   console.log("Initial form values:", {
     id: dutyData.id,
     status: getInitialStatusValue(dutyData.status),
-    type: getInitialTypeValue(dutyData.type),
     service_id: dutyData.service_id,
   });
 
@@ -120,7 +108,6 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
     const initialStatus = getInitialStatusValue(dutyData.status);
     setCurrentStatus(initialStatus);
     setValue("status", initialStatus);
-    setValue("type", getInitialTypeValue(dutyData.type));
     setValue("service_id", dutyData.service_id);
 
     // Fetch initial service list
@@ -142,7 +129,6 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
           limit: rowsPerPage,
           offset,
           name: searchText,
-          status_list: [1, 2],
         })
       )
         .unwrap()
@@ -209,7 +195,6 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
       const formData = new FormData();
       formData.append("id", dutyId.toString());
       formData.append("status", data.status.toString());
-      formData.append("type", data.type.toString());
       if (data.service_id) {
         formData.append("service_id", data.service_id.toString());
       }
@@ -346,29 +331,6 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
                 clearOnBlur={false}
                 clearOnEscape
               />
-            )}
-          />
-
-          <Controller
-            name="type"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                select
-                fullWidth
-                label="Type"
-                value={field.value}
-                onChange={field.onChange}
-                error={!!errors.type}
-                size="small"
-                margin="normal"
-              >
-                {typeModeOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
             )}
           />
 

@@ -33,29 +33,22 @@ import {
 } from "../../common/toastMessageHelper";
 import FormModal from "../../common/formModal";
 import AccountUpdateForm from "./updationForm";
-
+import { useSelector } from "react-redux";
+import { RootState } from "../../store/Store";
+import { Account } from "../../types/type";
 interface AccountCardProps {
-  account: {
-    id: number;
-    fullName: string;
-    username: string;
-    gender: string;
-    email_id: string;
-    phoneNumber: string;
-    status: string;
-  };
+  account: Account;
   onUpdate: () => void;
   onDelete: (id: number) => void;
   onBack: () => void;
   refreshList: (value: any) => void;
-  canManageOperator: boolean;
   onCloseDetailCard: () => void;
 }
 const genderOptions = [
-  { label: "Female", value: 1 },
-  { label: "Male", value: 2 },
-  { label: "Transgender", value: 3 },
-  { label: "Other", value: 4 },
+  { label: "Other", value: 1 },
+  { label: "Femal", value: 2 },
+  { label: "Male", value: 3 },
+  { label: "Transgender", value: 4 },
 ];
 
 const statusOptions = [
@@ -70,14 +63,23 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
   refreshList,
   onDelete,
   onBack,
-  canManageOperator,
   onCloseDetailCard,
 }) => {
+  console.log("account", account);
+  
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const dispatch = useAppDispatch();
   const isLoggedInUser = account.id === userId;
   const [updateFormOpen, setUpdateFormOpen] = useState(false);
-  const getGenderValue = (genderText: string): number | undefined => {
+  
+  const canUpdateOperator = useSelector((state: RootState) =>
+    state.app.permissions.includes("update_operator")
+  );
+  
+  const canDeleteOperator = useSelector((state: RootState) =>
+    state.app.permissions.includes("delete_operator")
+  );
+   const getGenderValue = (genderText: string): number | undefined => {
     const option = genderOptions.find((opt) => opt.label === genderText);
     return option?.value;
   };
@@ -219,7 +221,7 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
             {/* Update Button with Tooltip */}
             <Tooltip
               title={
-                !canManageOperator && !isLoggedInUser
+                !canUpdateOperator && !isLoggedInUser
                   ? "You don't have permission, contact the admin"
                   : ""
               }
@@ -229,7 +231,7 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
               <span
                 style={{
                   cursor:
-                    !canManageOperator && !isLoggedInUser
+                    !canUpdateOperator && !isLoggedInUser
                       ? "not-allowed"
                       : "default",
                 }}
@@ -242,7 +244,7 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
                     setUpdateFormOpen(true);
                   }}
                   startIcon={<EditIcon />}
-                  disabled={!canManageOperator && !isLoggedInUser}
+                  disabled={!canUpdateOperator && !isLoggedInUser}
                   sx={{
                     "&.Mui-disabled": {
                       backgroundColor: "#81c784 !important",
@@ -258,7 +260,7 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
             {!isLoggedInUser && (
               <Tooltip
                 title={
-                  !canManageOperator
+                  !canDeleteOperator
                     ? "You don't have permission, contact the admin"
                     : ""
                 }
@@ -267,7 +269,7 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
               >
                 <span
                   style={{
-                    cursor: !canManageOperator ? "not-allowed" : "default",
+                    cursor: !canDeleteOperator ? "not-allowed" : "default",
                   }}
                 >
                   <Button
@@ -276,7 +278,7 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
                     size="small"
                     onClick={() => setDeleteConfirmOpen(true)}
                     startIcon={<DeleteIcon />}
-                    disabled={!canManageOperator}
+                    disabled={!canDeleteOperator}
                     sx={{
                       "&.Mui-disabled": {
                         backgroundColor: "#e57373 !important",
@@ -307,7 +309,7 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
           refreshList={refreshList}
           onClose={() => setUpdateFormOpen(false)}
           onCloseDetailCard={onCloseDetailCard}
-          canManageOperator={canManageOperator}
+          canupdateOperator={canUpdateOperator}
         />
       </FormModal>
 

@@ -177,7 +177,14 @@ const LoginPage: React.FC = () => {
           loginUserAssignedRoleApi(assignedRole.roleId)
         ).unwrap();
 
-        if (roleListingResponse && roleListingResponse.length > 0) {
+        console.log(
+          "roleDetails=================================",
+          roleListingResponse[0]
+        );
+
+        if (roleListingResponse.length > 0) {
+          dispatch(setRoleDetails(roleListingResponse[0]));
+
           const roleDetails = roleListingResponse[0];
           dispatch(setRoleDetails(roleDetails));
 
@@ -185,18 +192,24 @@ const LoginPage: React.FC = () => {
             .filter(([_, value]) => value === true)
             .map(([key]) => key);
 
-          if (permissions && permissions.length > 0) {
+          localStorage.setItem("@permissions", JSON.stringify(permissions));
+          dispatch(setPermissions(permissions));
+          console.log(
+            "Permissions=================================s:",
+            permissions
+          );
+
+          if (permissions) {
             localStorage.setItem("@permissions", JSON.stringify(permissions));
             dispatch(setPermissions(permissions));
-          } else {
-            showErrorToast("No permissions found for this role");
           }
         } else {
           showErrorToast("Role details not found");
         }
       }
     } catch (error: any) {
-      showErrorToast(error);
+      console.error("Login Error:", error);
+      showErrorToast(error?.detail || error || "Login failed");
     }
   };
   const handleScroll = (event: React.UIEvent<HTMLElement>, type: "company") => {

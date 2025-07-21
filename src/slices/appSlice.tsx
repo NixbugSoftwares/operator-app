@@ -67,8 +67,8 @@ interface LandmarkListParams {
   id?: number;
   name?: string;
   location?:string;
-  status?: number;
   ids?: number[];
+  type?: string
 }
 interface RouteListParams {
   limit?: number;
@@ -101,8 +101,8 @@ interface ScheduleListParams {
   id?: string;
   name?: string;
   permit_no?: string;
-  trigger_mode?: number;
-  ticket_mode?: number;
+  triggering_mode?: number;
+  ticketing_mode?: number;
 }
 
 interface DutyListParams {
@@ -320,7 +320,7 @@ export const operatorRoleListApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "get",
-        "operator/company/role",
+        "/operator/company/role",
         queryParams,
         true,
         "application/json"
@@ -347,7 +347,7 @@ export const operatorRoleCreationApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "post",
-        "/role",
+        "/operator/company/role",
         data,
         true,
         "application/x-www-form-urlencoded"
@@ -371,7 +371,7 @@ export const operatorRoleUpdationApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "patch",
-        "/role",
+        "/operator/company/role",
         formData,
         true,
         "application/x-www-form-urlencoded"
@@ -387,13 +387,13 @@ export const operatorRoleUpdationApi = createAsyncThunk(
 );
 
 //Delete operator role
-export const RoleDeleteApi = createAsyncThunk(
+export const operatorRoleDeleteApi = createAsyncThunk(
   "/delete",
   async (data: FormData, { rejectWithValue }) => {
     try {
       const response = await commonApi.apiCall(
         "delete",
-        "/role",
+        "/operator/company/role",
         data,
         true,
         "application/x-www-form-urlencoded"
@@ -445,7 +445,7 @@ export const operatorRoleAssignApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "post",
-        "/account/role",
+        "/operator/company/account/role",
         { operator_id, role_id },
         true,
         "application/x-www-form-urlencoded"
@@ -475,7 +475,7 @@ export const roleAssignUpdateApi = createAsyncThunk(
 
       const response = await commonApi.apiCall(
         "patch",
-        "/account/role",
+        "/operator/company/account/role",
         formData,
         true,
         "application/x-www-form-urlencoded"
@@ -511,7 +511,7 @@ export const companyBusListApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "get",
-        "/company/bus",
+        "/operator/company/bus",
         queryParams,
         true,
         "application/json"
@@ -538,7 +538,7 @@ export const companyBusCreateApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "post",
-        "/company/bus",
+        "/operator/company/bus",
         data,
         true,
         "application/x-www-form-urlencoded"
@@ -557,7 +557,7 @@ export const companyBusUpdateApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "patch",
-        "/company/bus",
+        "/operator/company/bus",
         formData,
         true,
         "application/x-www-form-urlencoded"
@@ -576,7 +576,7 @@ export const companyBusDeleteApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "delete",
-        "/company/bus",
+        "/operator/company/bus",
         data,
         true,
         "application/x-www-form-urlencoded"
@@ -592,7 +592,7 @@ export const companyBusDeleteApi = createAsyncThunk(
 export const landmarkListApi = createAsyncThunk(
   "/executive/landmark",
   async (params: LandmarkListParams, { rejectWithValue }) => {
-    const { limit, offset, id, ids, name, location, status } = params;
+    const { limit, offset, id, ids, name, location,type } = params;
     const queryParams = {
       limit,
       offset,
@@ -600,12 +600,12 @@ export const landmarkListApi = createAsyncThunk(
       ...(ids && { ids }),
       ...(name && { name }),
       ...(location && { location }),
-      ...(status && { status }),
+      ...(type && { type }),
     };
     try {
       const response = await commonApi.apiCall(
         "get",
-        "/landmark",
+        "/operator/landmark",
         queryParams,
         true,
         "application/json"
@@ -642,7 +642,7 @@ export const busRouteListApi = createAsyncThunk(
       
       const response = await commonApi.apiCall(
         "get",
-        "/company/route",
+        "/operator/company/route",
         queryParams,
         true,
         "application/json"
@@ -672,7 +672,7 @@ export const busRouteLandmarkListApi = createAsyncThunk(
       const params = routeId ? { route_id: routeId } : {};
       const response = await commonApi.apiCall(
         "get",
-        "/company/route/landmark",
+        "/operator/company/route/landmark",
         params,
         true,
         "application/json"
@@ -707,7 +707,7 @@ export const routeDeleteApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "delete",
-        "/company/route",
+        "/operator/company/route",
         data,
         true,
         "application/x-www-form-urlencoded"
@@ -729,7 +729,7 @@ export const routeCreationApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "post",
-        "/company/route",
+        "/operator/company/route",
         data,
         true,
         "application/www-form-urlencoded"
@@ -750,7 +750,7 @@ export const routeLandmarkCreationApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "post",
-        "/company/route/landmark",
+        "/operator/company/route/landmark",
         data,
         true,
         "application/www-form-urlencoded"
@@ -771,7 +771,7 @@ export const routeLandmarkDeleteApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "delete",
-        "/company/route/landmark",
+        "/operator/company/route/landmark",
         data,
         true,
         "application/x-www-form-urlencoded"
@@ -797,7 +797,7 @@ export const routeUpdationApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "patch",
-        "/company/route",
+        "/operator/company/route",
         formData,
         true,
         "application/x-www-form-urlencoded"
@@ -822,7 +822,7 @@ export const routeLandmarkUpdationApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "patch",
-        "/company/route/landmark",
+        "/operator/company/route/landmark",
         formData,
         true,
         "application/x-www-form-urlencoded"
@@ -840,83 +840,87 @@ export const routeLandmarkUpdationApi = createAsyncThunk(
 
 
 //*******************************Fare******************************
-//fare listing Api
-export const fareListingApi = createAsyncThunk(
-   "/fare",
+//fare get api
+export const fareListApi = createAsyncThunk(
+  "/fare",
   async (params: FareListParams, { rejectWithValue }) => {
-    const { limit, offset, id, name } =
-      params;
-    console.log("companyBusListApi called with:", params);
+    const {
+      limit,
+      offset,
+      id,
+      name,
+      scope, 
+    } = params;
 
     const queryParams = {
       limit,
       offset,
       ...(id && { id }),
-      ...(name && { name: name }),
-      scop:2
+      ...(name && { name }),
+      ...(scope && { scope }),
     };
     try {
       const response = await commonApi.apiCall(
         "get",
-        "/company/fare",
+        "/operator/company/fare",
         queryParams,
         true,
         "application/json"
       );
       if (!response) throw new Error("No response received");
-
-      return {
-        data: response.data || response,
-      };
+      return { data: response };
     } catch (error: any) {
       console.error("API Error:", error);
       return rejectWithValue(
-        error.detail || error.message || error ||
+        error.detail ||
+          error.message ||
+          error ||
           "Failed to fetch fare list"
-      );
-    }
-  }
-)
-
-//fare creation API
-export const fareCreationApi = createAsyncThunk(
-  "/company/fare",
-  async (data: FormData, { rejectWithValue }) => {
-    try {
-      const response = await commonApi.apiCall(
-        "post",
-        "/company/fare",
-        data,
-        true,
-        "application/x-www-form-urlencoded"
-      );
-      return response;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "fare creation failed"
       );
     }
   }
 );
 
+//fare creation API
+export const fareCreationApi = createAsyncThunk(
+  "/executive/company/fare",
+  async (data: any, { rejectWithValue }) => {
+    try {
+      const response = await commonApi.apiCall(
+        "post",
+        "/operator/company/fare",
+        data,
+        true,
+        "application/json" 
+      );
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.detail || error.message || error || "Fare creation failed"
+      );
+    }
+  }
+);
+
+
 //fare updation API
 export const fareupdationApi = createAsyncThunk(
-  "/company/fare",
+  "/executive/company/fare",
   async (
-    { formData }: { fareId: number; formData: FormData },
+    {  fareUpdate }: { fareId: number; fareUpdate: any },
     { rejectWithValue }
   ) => {
     try {
       const response = await commonApi.apiCall(
         "patch",
-        `/company/fare`,
-        formData,
+        `/operator/company/fare`,
+        fareUpdate,
         true,
-        "application/x-www-form-urlencoded" // Use the correct content type
+        "application/json" 
       );
       return response;
     } catch (error: any) {
-      console.error("Backend Error Response:", error.response?.data); // Log the full error response
+      console.error("Backend Error Response:", error.response?.data);
       return rejectWithValue(
         error.detail || error.message || error || "Fare update failed"
       );
@@ -925,15 +929,15 @@ export const fareupdationApi = createAsyncThunk(
 );
 //fare delete API
 export const fareDeleteApi = createAsyncThunk(
-  "/company/fare",
-  async (data: FormData, { rejectWithValue }) => {
+  "executive/company/fare",
+  async ({  fareId }: { fareId: number;}, { rejectWithValue }) => {
     try {
       const response = await commonApi.apiCall(
         "delete",
-        "/company/fare",
-        data,
+        "/operator/company/fare",
+        fareId,
         true,
-        "application/x-www-form-urlencoded"
+        "application/jason"
       );
       return response;
     } catch (error: any) {
@@ -966,7 +970,7 @@ export const serviceListingApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "get",
-        "/company/service",
+        "/operator/company/service",
         queryParams,
         true,
         "application/json"
@@ -993,7 +997,7 @@ export const serviceCreationApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "post",
-        "/company/service",
+        "/operator/company/service",
         data,
         true,
         "application/x-www-form-urlencoded"
@@ -1017,7 +1021,7 @@ export const serviceupdationApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "patch",
-        `/company/service`,
+        `/operator/company/service`,
         formData,
         true,
         "application/x-www-form-urlencoded" 
@@ -1039,7 +1043,7 @@ export const serviceDeleteApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "delete",
-        "/company/service",
+        "/operator/company/service",
         data,
         true,
         "application/x-www-form-urlencoded"
@@ -1059,7 +1063,7 @@ export const serviceDeleteApi = createAsyncThunk(
 export const scheduleListingApi = createAsyncThunk(
   "/schedule",
   async (params: ScheduleListParams, { rejectWithValue }) => {
-    const { limit, offset, id, name, permit_no , trigger_mode, ticket_mode,  } =
+    const { limit, offset, id, name, permit_no , triggering_mode, ticketing_mode,  } =
       params;
 
     const queryParams = {
@@ -1068,13 +1072,13 @@ export const scheduleListingApi = createAsyncThunk(
       ...(id && { id }),
       ...(name && { name: name }),
       ...(permit_no && { permit_no }),
-      ...(ticket_mode && { ticket_mode }),
-      ...(trigger_mode && { trigger_mode }),
+      ...(ticketing_mode && { ticketing_mode }),
+      ...(triggering_mode && { triggering_mode }),
     };
     try {
       const response = await commonApi.apiCall(
         "get",
-        "/company/schedule",
+        "/operator/company/schedule",
         queryParams,
         true,
         "application/json"
@@ -1101,7 +1105,7 @@ export const scheduleCreationApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "post",
-        "/company/schedule",
+        "/operator/company/schedule",
         data, 
         true,
         "application/json" 
@@ -1122,7 +1126,7 @@ export const scheduleUpdationApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "patch",
-        "/company/schedule",
+        "/operator/company/schedule",
         data, 
         true,
         "application/json" 
@@ -1144,7 +1148,7 @@ export const scheduleDeleteApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "delete",
-        "/company/schedule",
+        "/operator/company/schedule",
         id, 
         true,
         "application/json"
@@ -1177,7 +1181,7 @@ export const dutyListingApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "get",
-        "/company/service/duty",
+        "/operator/company/service/duty",
         queryParams,
         true,
         "application/json"
@@ -1203,7 +1207,7 @@ export const dutyCreationApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "post",
-        "/company/service/duty",
+        "/operator/company/service/duty",
         data,
         true,
         "application/x-www-form-urlencoded"
@@ -1227,7 +1231,7 @@ export const dutyupdationApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "patch",
-        `/company/service/duty`,
+        `/operator/company/service/duty`,
         formData,
         true,
         "application/x-www-form-urlencoded"
@@ -1249,7 +1253,7 @@ export const dutyDeleteApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "delete",
-        "/company/service/duty",
+        "/operator/company/service/duty",
         data,
         true,
         "application/x-www-form-urlencoded"
@@ -1283,7 +1287,7 @@ export const paperTicketListingApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "get",
-        "/company/service/paper_ticket",
+        "/operator/company/service/ticket/paper",
         queryParams,
         true,
         "application/json"
@@ -1315,7 +1319,7 @@ export const landmarkNameApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "get",
-        "/landmark",
+        "/operator/landmark",
         queryParams,
         true,
         "application/json"

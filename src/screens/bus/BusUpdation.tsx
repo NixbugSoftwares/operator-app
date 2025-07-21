@@ -47,7 +47,7 @@ const statusOptions = [
 const extractDateOnly = (dateString?: string): string => {
   if (!dateString || dateString === "-") return "";
   try {
-    return new Date(dateString).toISOString().slice(0, 10); 
+    return new Date(dateString).toISOString().slice(0, 10);
   } catch {
     return "";
   }
@@ -115,9 +115,9 @@ const BusUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
       onCloseDetailCard();
       refreshList("refresh");
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating bus:", error);
-      showErrorToast("Failed to update bus. Please try again.");
+      showErrorToast(error || "Failed to update bus. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -152,7 +152,9 @@ const BusUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
             error={!!errors.registration_number}
             helperText={errors.registration_number?.message}
             size="small"
+            InputProps={{ readOnly: true }}
           />
+
           <TextField
             margin="normal"
             required
