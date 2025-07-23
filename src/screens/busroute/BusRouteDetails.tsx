@@ -122,7 +122,7 @@ const canUpdateRoutes = useSelector((state: RootState) =>
       updateParentMapLandmarks(sortedLandmarks);
       const landmarkIds = sortedLandmarks.map((lm) => Number(lm.landmark_id)).filter(Boolean);
       const landmarkRes = await dispatch(
-        landmarkListApi({ ids: landmarkIds }) 
+        landmarkListApi({ id_list: landmarkIds }) 
       ).unwrap();
 
       setLandmarks(landmarkRes.data);
@@ -830,6 +830,7 @@ const getLandmarkName = (landmarkId: string | number) => {
 
       {isLoading ? (
         <Typography>Loading route details...</Typography>
+        
       ) : routeLandmarks.length === 0 ? (
         <Typography variant="body1" color="text.secondary">
           No landmarks found for this route.

@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   MenuItem,
   Select,
   Table,
@@ -69,7 +70,7 @@ const ScheduleListingTable = () => {
   });
   const [debouncedSearch, setDebouncedSearch] = useState<SearchFilter>(search);
   const debounceRef = useRef<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [hasNextPage, setHasNextPage] = useState(false);
   const rowsPerPage = 10;
@@ -118,14 +119,16 @@ const ScheduleListingTable = () => {
                 : schedule.ticketing_mode === 2
                 ? "Digital"
                 : schedule.ticketing_mode === 3
-                ? "Conventional":"",
+                ? "Conventional"
+                : "",
             triggering_mode:
               schedule.triggering_mode === 1
                 ? "Automatic"
                 : schedule.triggering_mode === 2
                 ? "Manual"
                 : schedule.triggering_mode === 3
-                ? "Disabled":"",
+                ? "Disabled"
+                : "",
             frequency: Array.isArray(schedule.frequency)
               ? schedule.frequency
               : [],
@@ -253,8 +256,27 @@ const ScheduleListingTable = () => {
             overflowY: "auto",
             borderRadius: 2,
             border: "1px solid #e0e0e0",
+            position: "relative",
           }}
         >
+          {isLoading && (
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                zIndex: 1,
+              }}
+            >
+              <CircularProgress />
+            </Box>
+          )}
           <Table stickyHeader>
             <TableHead>
               <TableRow>
@@ -347,7 +369,11 @@ const ScheduleListingTable = () => {
             </TableHead>
 
             <TableBody>
-              {scheduleList.length > 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center"></TableCell>
+                </TableRow>
+              ) : scheduleList.length > 0 ? (
                 scheduleList.map((row) => (
                   <TableRow
                     key={row.id}

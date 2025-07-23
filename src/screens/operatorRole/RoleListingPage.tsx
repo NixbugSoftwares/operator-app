@@ -11,6 +11,7 @@ import {
   TextField,
   Tooltip,
   Typography,
+  CircularProgress,
 } from "@mui/material";
 import RoleDetailsCard from "./RoleDetailCard";
 import RoleCreatingForm from "./RoleCreatingForm";
@@ -40,7 +41,7 @@ const RoleListingTable = () => {
   const [debouncedSearch, setDebouncedSearch] = useState(search);
   const [page, setPage] = useState(0);
   const [hasNextPage, setHasNextPage] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const debounceRef = useRef<number | null>(null);
   const rowsPerPage = 10;
   const canCreateRole = useSelector((state: RootState) =>
@@ -60,13 +61,13 @@ const RoleListingTable = () => {
         .unwrap()
         .then((res) => {
           const items = res.data || [];
-          console.log("items",items);
-          
+          console.log("items", items);
+
           const formattedRoleList = items.map((role: any) => ({
             id: role.id,
             name: role.name,
             created_on: role.created_on,
-            updated_on: role.updated_on|| "not updated",
+            updated_on: role.updated_on || "not updated",
             roleDetails: {
               ...role,
             },
@@ -190,8 +191,27 @@ const RoleListingTable = () => {
             overflowY: "auto",
             borderRadius: 2,
             border: "1px solid #e0e0e0",
+            position: "relative",
           }}
         >
+          {isLoading && (
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                zIndex: 1,
+              }}
+            >
+              <CircularProgress />
+            </Box>
+          )}
           <Table stickyHeader>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
@@ -252,7 +272,11 @@ const RoleListingTable = () => {
             </TableHead>
 
             <TableBody>
-              {roleList.length > 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center"></TableCell>
+                </TableRow>
+              ) : roleList.length > 0 ? (
                 roleList.map((row) => {
                   const isSelected = selectedRole?.id === row.id;
                   return (
@@ -427,7 +451,6 @@ const RoleListingTable = () => {
         <RoleCreatingForm
           refreshList={refreshList}
           onClose={() => setOpenCreateModal(false)}
-
         />
       </FormModal>
     </Box>

@@ -67,7 +67,7 @@ interface LandmarkListParams {
   id?: number;
   name?: string;
   location?:string;
-  ids?: number[];
+  id_list?: number[];
   type?: string
 }
 interface RouteListParams {
@@ -592,12 +592,12 @@ export const companyBusDeleteApi = createAsyncThunk(
 export const landmarkListApi = createAsyncThunk(
   "/executive/landmark",
   async (params: LandmarkListParams, { rejectWithValue }) => {
-    const { limit, offset, id, ids, name, location,type } = params;
+    const { limit, offset, id, id_list, name, location,type } = params;
     const queryParams = {
       limit,
       offset,
       ...(id && { id }),
-      ...(ids && { ids }),
+      ...(id_list && { id_list }),
       ...(name && { name }),
       ...(location && { location }),
       ...(type && { type }),

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
+  CircularProgress,
   Table,
   TableBody,
   TableCell,
@@ -35,7 +36,7 @@ const BusListingTable = () => {
   });
   const [debouncedSearch, setDebouncedSearch] = useState(search);
   const debounceRef = useRef<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [hasNextPage, setHasNextPage] = useState(false);
   const rowsPerPage = 10;
@@ -48,7 +49,9 @@ const BusListingTable = () => {
     (pageNumber: number, searchParams = {}) => {
       setIsLoading(true);
       const offset = pageNumber * rowsPerPage;
-      dispatch(companyBusListApi({ limit: rowsPerPage, offset, ...searchParams}))
+      dispatch(
+        companyBusListApi({ limit: rowsPerPage, offset, ...searchParams })
+      )
         .unwrap()
         .then((res) => {
           const items = res.data || [];
@@ -179,8 +182,27 @@ const BusListingTable = () => {
             overflowY: "auto",
             borderRadius: 2,
             border: "1px solid #e0e0e0",
+            position: "relative",
           }}
         >
+          {isLoading && (
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                zIndex: 1,
+              }}
+            >
+              <CircularProgress />
+            </Box>
+          )}
           <Table stickyHeader>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
@@ -270,7 +292,11 @@ const BusListingTable = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {busList.length > 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center"></TableCell>
+                </TableRow>
+              ) : busList.length > 0 ? (
                 busList.map((row) => (
                   <TableRow
                     key={row.id}
@@ -285,13 +311,15 @@ const BusListingTable = () => {
                   >
                     <TableCell sx={{ textAlign: "center" }}>{row.id}</TableCell>
                     <TableCell>
-                      <Typography noWrap><Tooltip title={row.name} placement="bottom">
-                                                <Typography noWrap>
-                                                  {row.name.length > 15
-                                                    ? `${row.name.substring(0, 15)}...`
-                                                    : row.name}
-                                                </Typography>
-                                              </Tooltip></Typography>
+                      <Typography noWrap>
+                        <Tooltip title={row.name} placement="bottom">
+                          <Typography noWrap>
+                            {row.name.length > 15
+                              ? `${row.name.substring(0, 15)}...`
+                              : row.name}
+                          </Typography>
+                        </Tooltip>
+                      </Typography>
                     </TableCell>
                     <TableCell>
                       <Typography noWrap>{row.registrationNumber}</Typography>
@@ -356,7 +384,6 @@ const BusListingTable = () => {
         />
       </FormModal>
     </Box>
-    // ...existing code...
   );
 };
 

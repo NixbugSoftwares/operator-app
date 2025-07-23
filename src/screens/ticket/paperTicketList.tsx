@@ -11,9 +11,10 @@ import {
   Box,
   Typography,
   Button,
+  CircularProgress,
 } from "@mui/material";
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
 import { useDispatch } from "react-redux";
 import { paperTicketListingApi, landmarkNameApi } from "../../slices/appSlice";
 import type { AppDispatch } from "../../store/Store";
@@ -31,7 +32,8 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const [paperTicketList, setPaperTicketList] = useState<PaperTicket[]>([]);
-  const [selectedPaperTicket, setSelectedPaperTicket] = useState<PaperTicket | null>(null);
+  const [selectedPaperTicket, setSelectedPaperTicket] =
+    useState<PaperTicket | null>(null);
   const [search, setSearch] = useState({
     id: "",
     duty_id: "",
@@ -41,7 +43,7 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
   });
   const [debouncedSearch, setDebouncedSearch] = useState(search);
   const debounceRef = useRef<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [hasNextPage, setHasNextPage] = useState(false);
   const rowsPerPage = 10;
@@ -51,16 +53,16 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
     async (pageNumber: number, searchParams = {}) => {
       setIsLoading(true);
       const offset = pageNumber * rowsPerPage;
-      
+
       try {
         const res = await dispatch(
           paperTicketListingApi({ limit: rowsPerPage, offset, ...searchParams })
         ).unwrap();
         const items = Array.isArray(res.data) ? res.data : [];
         const nameRequests = items.map(async (ticket: any) => {
-          let pickupName = ticket.pickup_point?.toString() || '';
-          let droppingName = ticket.dropping_point?.toString() || '';
-          
+          let pickupName = ticket.pickup_point?.toString() || "";
+          let droppingName = ticket.dropping_point?.toString() || "";
+
           try {
             if (ticket.pickup_point) {
               const pickupRes = await dispatch(
@@ -70,11 +72,12 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
                   id: ticket.pickup_point,
                 })
               ).unwrap();
-              pickupName = Array.isArray(pickupRes.data) && pickupRes.data[0]?.name 
-                ? pickupRes.data[0].name 
-                : pickupName;
+              pickupName =
+                Array.isArray(pickupRes.data) && pickupRes.data[0]?.name
+                  ? pickupRes.data[0].name
+                  : pickupName;
             }
-            
+
             // Fetch dropping landmark name if exists
             if (ticket.dropping_point) {
               const dropRes = await dispatch(
@@ -84,11 +87,12 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
                   id: ticket.dropping_point,
                 })
               ).unwrap();
-              droppingName = Array.isArray(dropRes.data) && dropRes.data[0]?.name 
-                ? dropRes.data[0].name 
-                : droppingName;
+              droppingName =
+                Array.isArray(dropRes.data) && dropRes.data[0]?.name
+                  ? dropRes.data[0].name
+                  : droppingName;
             }
-          } catch (err:any) {
+          } catch (err: any) {
             console.error("Error fetching landmark names:", err);
             showErrorToast(err || "Failed to fetch landmark names");
           }
@@ -114,7 +118,7 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
         setHasNextPage(items.length === rowsPerPage);
       } catch (error: any) {
         console.error("Fetch Error:", error);
-        showErrorToast(error|| "Failed to fetch paper ticket list");
+        showErrorToast(error || "Failed to fetch paper ticket list");
         setPaperTicketList([]);
       } finally {
         setIsLoading(false);
@@ -140,11 +144,11 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
             offset: 0,
           })
         ).unwrap();
-        
+
         if (Array.isArray(pickupRes.data)) {
           const pickupIds = pickupRes.data.map((item: any) => item.id);
           if (pickupIds.length > 0) {
-            searchParams.pickup_point = pickupIds.join(","); 
+            searchParams.pickup_point = pickupIds.join(",");
           } else {
             // If no landmarks found with this name, return empty
             setPaperTicketList([]);
@@ -152,7 +156,6 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
           }
         }
       }
-  
 
       if (debouncedSearch.droppingName && !debouncedSearch.id) {
         const dropRes = await dispatch(
@@ -162,7 +165,7 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
             offset: 0,
           })
         ).unwrap();
-        
+
         if (Array.isArray(dropRes.data)) {
           const droppingIds = dropRes.data.map((item: any) => item.id);
           if (droppingIds.length > 0) {
@@ -197,7 +200,10 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
   };
 
   const handleSearchChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, column: keyof typeof search) => {
+    (
+      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+      column: keyof typeof search
+    ) => {
       const value = e.target.value;
       setSearch((prev) => ({ ...prev, [column]: value }));
 
@@ -230,7 +236,9 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
       {/* Left Side - Table */}
       <Box
         sx={{
-          flex: selectedPaperTicket ? { xs: "0 0 100%", md: "0 0 65%" } : "0 0 100%",
+          flex: selectedPaperTicket
+            ? { xs: "0 0 100%", md: "0 0 65%" }
+            : "0 0 100%",
           maxWidth: selectedPaperTicket ? { xs: "100%", md: "65%" } : "100%",
           transition: "all 0.3s ease",
           height: "100%",
@@ -260,8 +268,27 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
             overflowY: "auto",
             borderRadius: 2,
             border: "1px solid #e0e0e0",
+            position: "relative",
           }}
         >
+          {isLoading && (
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                zIndex: 1,
+              }}
+            >
+              <CircularProgress />
+            </Box>
+          )}
           <Table stickyHeader>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
@@ -303,19 +330,17 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
                     }}
                   />
                 </TableCell>
-                <TableCell>
-                  
-                </TableCell>
-                <TableCell>
-                  
-                </TableCell>
-                <TableCell>
-                  
-                </TableCell>
+                <TableCell></TableCell>
+                <TableCell></TableCell>
+                <TableCell></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {paperTicketList.length > 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center"></TableCell>
+                </TableRow>
+              ) : paperTicketList.length > 0 ? (
                 paperTicketList.map((row) => (
                   <TableRow
                     key={row.id}
@@ -324,7 +349,9 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
                     sx={{
                       cursor: "pointer",
                       backgroundColor:
-                        selectedPaperTicket?.id === row.id ? "#E3F2FD" : "inherit",
+                        selectedPaperTicket?.id === row.id
+                          ? "#E3F2FD"
+                          : "inherit",
                       "&:hover": { backgroundColor: "#E3F2FD" },
                     }}
                   >
@@ -336,7 +363,13 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
                       <Typography noWrap>{row.droppingName}</Typography>
                     </TableCell>
                     <TableCell sx={{ textAlign: "center" }}>
-                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
                         <CurrencyRupeeIcon sx={{ fontSize: 16, mr: 0.5 }} />
                         <Typography component="span" fontWeight={600}>
                           {row.amount}
