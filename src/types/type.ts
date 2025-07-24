@@ -88,6 +88,8 @@ export interface SelectedLandmark {
   departureHour?: number;
   departureMinute?: number;
   departureAmPm?: "AM" | "PM";
+
+  location: { lat: number; lon: number };
 }
 
 

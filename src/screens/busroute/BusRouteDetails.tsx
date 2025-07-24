@@ -75,8 +75,6 @@ const BusRouteDetailsPage = ({
   setNewLandmarks,
   refreshList,
 }: BusRouteDetailsProps) => {
-  console.log("starting_time", routeStartingTime);
-  
   const dispatch = useAppDispatch();
   const [routeLandmarks, setRouteLandmarks] = useState<RouteLandmark[]>([]);
   const [landmarks, setLandmarks] = useState<Landmark[]>([]);
@@ -390,12 +388,12 @@ const getLandmarkName = (landmarkId: string | number) => {
     const departureDayOffset = Math.floor(
       (departureDate.getTime() - Date.UTC(1970, 0, 1)) / (86400 * 1000)
     );
-    console.log(
-      "arrival_delta:",
-      landmark.arrival_delta,
-      "arrivalDayOffset:",
-      arrivalDayOffset
-    );
+    // console.log(
+    //   "arrival_delta:",
+    //   landmark.arrival_delta,
+    //   "arrivalDayOffset:",
+    //   arrivalDayOffset
+    // );
 
     setArrivalDayOffset(arrivalDayOffset);
     setDepartureDayOffset(departureDayOffset);
@@ -486,7 +484,7 @@ const getLandmarkName = (landmarkId: string | number) => {
       const formData = new FormData();
       formData.append("id", routeId.toString());
       formData.append("name", updatedRouteName);
-      formData.append("starting_time", timeString.displayTime + "Z");
+      formData.append("start_time", timeString.displayTime + "Z");
 
       await dispatch(routeUpdationApi({ routeId, formData })).unwrap();
       refreshList("refresh");
@@ -536,12 +534,12 @@ const getLandmarkName = (landmarkId: string | number) => {
         (departureDate.getTime() - startDate.getTime()) / 1000
       );
 
-      console.log(
-        "Calculated deltas - arrival:",
-        arrivalDelta,
-        "departure:",
-        departureDelta
-      );
+      // console.log(
+      //   "Calculated deltas - arrival:",
+      //   arrivalDelta,
+      //   "departure:",
+      //   departureDelta
+      // );
 
       const formData = new FormData();
       formData.append("id", editingLandmark.id.toString());

@@ -201,8 +201,6 @@ export const operatorListApi = createAsyncThunk(
   async (params: OperatorListParams, { rejectWithValue }) => {
     const { limit, offset, id, fullName, gender, email_id, phoneNumber } =
       params;
-    console.log("operatorListApi called with:", params);
-
     const queryParams = {
       limit,
       offset,
@@ -450,7 +448,6 @@ export const operatorRoleAssignApi = createAsyncThunk(
         true,
         "application/x-www-form-urlencoded"
       );
-      console.log("slice Responseyyyyyy==================>", response);
 
       return response;
     } catch (error: any) {
@@ -480,7 +477,6 @@ export const roleAssignUpdateApi = createAsyncThunk(
         true,
         "application/x-www-form-urlencoded"
       );
-      console.log("Role Assignment Update Response:", response);
       return response;
     } catch (error: any) {
       console.error("Backend Error Response:", error.response?.data);
@@ -498,7 +494,6 @@ export const companyBusListApi = createAsyncThunk(
   async (params: BusListParams, { rejectWithValue }) => {
     const { limit, offset, id, name, registration_number, capacity } =
       params;
-    console.log("companyBusListApi called with:", params);
 
     const queryParams = {
       limit,
@@ -610,7 +605,6 @@ export const landmarkListApi = createAsyncThunk(
         true,
         "application/json"
       );
-      console.log("landmarkListApi called with:", params);
 
       return { data: response || response.data };
     } catch (error: any) {
@@ -631,7 +625,6 @@ export const busRouteListApi = createAsyncThunk(
   "/company/route",
   async (params: RouteListParams, { rejectWithValue }) => {
     const{limit,offset,id,name}=params;
-    console.log("companyBusListApi called with:", params);
     const queryParams = {
       limit,
       offset,
@@ -677,7 +670,6 @@ export const busRouteLandmarkListApi = createAsyncThunk(
         true,
         "application/json"
       );
-      console.log("Full API Response==================>", response);
 
       // Check if response is directly an array
       if (Array.isArray(response)) {
@@ -691,7 +683,6 @@ export const busRouteLandmarkListApi = createAsyncThunk(
 
       return response.data; // Ensure correct return
     } catch (error: any) {
-      console.log("Error fetching route landmarks =====================>", error);
       return rejectWithValue(
         error.detail || error.message || error || "Failed to fetch route landmarks"
       );

@@ -61,7 +61,7 @@ const BusRouteListing = () => {
     clearRoutePath: () => void;
     toggleAddLandmarkMode?: () => void;
   }>(null);
-  const [_selectedRouteLandmarks, setSelectedRouteLandmarks] = useState<
+  const [selectedRouteLandmarks, setSelectedRouteLandmarks] = useState<
     RouteLandmark[]
   >([]);
   const [mapLandmarks, setMapLandmarks] = useState<SelectedLandmark[]>([]);
@@ -100,8 +100,6 @@ const BusRouteListing = () => {
       )
         .unwrap()
         .then((res) => {
-          console.log("API Response:", res);
-
           const items = res.data || [];
           const formattedRoute = items.map((route: any) => ({
             id: route.id,
@@ -130,16 +128,14 @@ const BusRouteListing = () => {
 
           const processed = response.map((lm: any) => ({
             id: lm.landmark_id,
-            name: lm.name,
             arrivalTime: lm.arrival_delta,
             departureTime: lm.departure_delta,
             distance_from_start: lm.distance_from_start ?? 0,
           }));
-
           setSelectedRouteLandmarks(processed);
           setMapLandmarks(processed);
-        } catch (error) {
-          showErrorToast("Failed to load route landmarks");
+        } catch (error: any) {
+          showErrorToast(error||"Failed to load route landmarks");
         }
       }
     };
@@ -256,6 +252,7 @@ const BusRouteListing = () => {
       fetchRoute(page, debouncedSearch);
     }
   };
+          console.log("Passing landmark IDs:", selectedRouteLandmarks.map((landmark) => landmark.id));
 
   return (
     <Box
@@ -590,6 +587,7 @@ const BusRouteListing = () => {
           gap: 2,
         }}
       >
+        
         <MapComponent
           onAddLandmark={
             isEditingRoute ? handleAddLandmarkEdit : handleAddLandmark

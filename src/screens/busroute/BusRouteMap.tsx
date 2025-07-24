@@ -49,6 +49,7 @@ interface MapComponentProps {
   isEditing?: boolean;
   startingTime?: string;
   isNewRoute?: boolean;
+  selectedLandmarkIds?: number[];
 }
 
 const MapComponent = React.forwardRef(
@@ -136,66 +137,80 @@ const MapComponent = React.forwardRef(
       }
     }, []);
     useEffect(() => {
-  if (!mapInstance.current) return;
+      if (mode !== "view" && mapInstance.current) {
+        const map = mapInstance.current;
 
-  const map = mapInstance.current;
+        const handleMoveEnd = () => {
+          const centerRaw = map.getView().getCenter();
+          if (!centerRaw) return;
+          const center = toLonLat(centerRaw);
+          const [lon, lat] = center;
+          const locationaskey = `POINT(${lon} ${lat})`;
 
-  const handleMoveEnd = () => {
-    const centerRaw = map.getView().getCenter();
-    if (!centerRaw) return;
-    const center = toLonLat(centerRaw);
-    const [lon, lat] = center;
-    const locationaskey = `POINT(${lon} ${lat})`;
-    fetchLandmark(locationaskey);
-  };
+          // Only for create/edit modes
+          fetchLandmark(locationaskey, []);
+        };
 
-  map.on("moveend", handleMoveEnd);
+        map.on("moveend", handleMoveEnd);
+        handleMoveEnd();
 
-  // Initial fetch
-  handleMoveEnd();
+        return () => {
+          map.un("moveend", handleMoveEnd);
+        };
+      }
+    }, [mode]);
 
-  return () => {
-    map.un("moveend", handleMoveEnd);
-  };
-}, []);
-const fetchLandmark = (locationaskey: string) => {
-  dispatch(landmarkListApi({location:locationaskey }))
-    .unwrap()
-    .then((res) => {
-      const formattedLandmarks = res.data.map((landmark: any) => ({
-        id: landmark.id,
-        name: landmark.name,
-        boundary: extractRawPoints(landmark.boundary),
-        importance:
-          landmark.importance === 1
-            ? "Low"
-            : landmark.importance === 2
-            ? "Medium"
-            : "High",
-        status: landmark.status === 1 ? "Validating" : "Verified",
-      }));
-      setLandmarks(formattedLandmarks);
-    })
-    .catch((err: any) => {
-      showErrorToast(err);
-    });
-};
+    const fetchLandmark = (locationaskey: string, idList: number[] = []) => {
+      const params: any = {
+        location: locationaskey,
+        limit: 100,
+      };
 
-    const handleViewModeLandmarks = () => {
+      // Only filter by ID if we're in view mode
+      if (mode === "view") {
+        params.id_list = idList;
+      }
+
+      dispatch(landmarkListApi(params))
+        .unwrap()
+        .then((res) => {
+          const formattedLandmarks = res.data.map((landmark: any) => ({
+            id: landmark.id,
+            name: landmark.name,
+            boundary: extractRawPoints(landmark.boundary),
+            importance:
+              landmark.importance === 1
+                ? "Low"
+                : landmark.importance === 2
+                ? "Medium"
+                : "High",
+            status: landmark.status === 1 ? "Validating" : "Verified",
+          }));
+          setLandmarks(formattedLandmarks);
+
+          // For view mode, highlight selected landmarks
+          if (mode === "view") {
+            handleViewModeLandmarks(formattedLandmarks);
+          }
+        })
+        .catch((err) => {
+          showErrorToast(err || "Failed to fetch landmarks");
+        });
+    };
+
+    const handleViewModeLandmarks = (landmarksData: Landmark[]) => {
       selectedLandmarksSource.current.clear();
       routePathSource.current.clear();
       routeCoordsRef.current = [];
 
-      if (!propLandmarks || propLandmarks.length === 0) {
-        return;
-      }
+      if (!propLandmarks || propLandmarks.length === 0) return;
 
       const sortedLandmarks = [...propLandmarks].sort(
         (a, b) => (a.distance_from_start || 0) - (b.distance_from_start || 0)
       );
 
       sortedLandmarks.forEach((landmark, index) => {
-        const lm = landmarks.find((l) => l.id === landmark.id);
+        const lm = landmarksData.find((l) => l.id === landmark.id);
         if (lm?.boundary) {
           try {
             const coordinates = lm.boundary
@@ -261,13 +276,18 @@ const fetchLandmark = (locationaskey: string) => {
         });
       }
     };
-    useEffect(() => {
-      if (mode === "view") {
-        handleViewModeLandmarks();
-      }
-    }, [propLandmarks, mode]);
 
     useEffect(() => {
+      if (mode === "view" && propLandmarks.length > 0) {
+        const idList = propLandmarks.map((lm) => lm.id);
+        const locationaskey = "POINT(76.9366 8.5241)";
+        fetchLandmark(locationaskey, idList);
+      }
+    }, [mode, propLandmarks]);
+
+    useEffect(() => {
+      console.log("isEditing+++++++", isEditing);
+
       if (isEditing !== undefined) {
         setIsAddingLandmark(isEditing);
         setShowAllBoundaries(isEditing);
@@ -338,15 +358,13 @@ const fetchLandmark = (locationaskey: string) => {
       return matches ? matches[1] : "";
     };
 
-
-
     useEffect(() => {
       if (!mapInstance.current) return;
 
       allBoundariesSource.current.clear();
       const features: Feature[] = [];
 
-      if (showAllBoundaries && landmarks) {
+      if (landmarks) {
         landmarks.forEach((landmark) => {
           if (landmark.boundary) {
             try {
@@ -358,26 +376,39 @@ const fetchLandmark = (locationaskey: string) => {
               const polygon = new Polygon([coordinates]);
               const feature = new Feature(polygon);
               feature.set("id", landmark.id);
-              feature.setStyle(
-                new Style({
-                  stroke: new Stroke({
-                    color: "rgba(0, 0, 255, 0.7)",
-                    width: 2,
-                  }),
-                  fill: new Fill({
-                    color: "rgba(0, 0, 255, 0.1)",
-                  }),
-                  text: new Text({
-                    text: landmark.name,
-                    font: "bold 14px Arial",
-                    fill: new Fill({ color: "#000" }),
-                    stroke: new Stroke({ color: "#fff", width: 2 }),
-                    offsetY: -30,
-                    textAlign: "center",
-                  }),
-                })
+
+              // Check if this landmark is already selected
+              const isSelected = selectedLandmarks.some(
+                (sl) => sl.id === landmark.id
               );
-              features.push(feature);
+
+              // Always show selected landmarks, show others only in edit mode when showAllBoundaries is true
+              if (isSelected || (isEditing && showAllBoundaries)) {
+                feature.setStyle(
+                  new Style({
+                    stroke: new Stroke({
+                      color: isSelected
+                        ? "rgba(0, 150, 0, 0.7)"
+                        : "rgba(0, 0, 255, 0.7)",
+                      width: 2,
+                    }),
+                    fill: new Fill({
+                      color: isSelected
+                        ? "rgba(0, 150, 0, 0.1)"
+                        : "rgba(0, 0, 255, 0.1)",
+                    }),
+                    text: new Text({
+                      text: landmark.name,
+                      font: "bold 14px Arial",
+                      fill: new Fill({ color: "#000" }),
+                      stroke: new Stroke({ color: "#fff", width: 2 }),
+                      offsetY: -30,
+                      textAlign: "center",
+                    }),
+                  })
+                );
+                features.push(feature);
+              }
             } catch (error) {
               console.error(`Error processing landmark ${landmark.id}:`, error);
             }
@@ -387,15 +418,26 @@ const fetchLandmark = (locationaskey: string) => {
 
       if (features.length > 0) {
         allBoundariesSource.current.addFeatures(features);
-        // const extent = allBoundariesSource.current.getExtent();
-        // if (extent[0] !== Infinity) {
-        //   mapInstance.current.getView().fit(extent, {
-        //     padding: [50, 50, 50, 50],
-        //     duration: 1000,
-        //   });
-        // }
       }
-    }, [showAllBoundaries, landmarks]);
+    }, [showAllBoundaries, landmarks, selectedLandmarks, isEditing]);
+    useEffect(() => {
+      console.log("isEditing+++++++", isEditing);
+
+      if (isEditing !== undefined) {
+        setIsAddingLandmark(isEditing);
+        setShowAllBoundaries(isEditing);
+
+        // When entering edit mode, fetch all landmarks
+        if (isEditing && mapInstance.current) {
+          const centerRaw = mapInstance.current.getView().getCenter();
+          if (centerRaw) {
+            const center = toLonLat(centerRaw);
+            const locationaskey = `POINT(${center[0]} ${center[1]})`;
+            fetchLandmark(locationaskey, []);
+          }
+        }
+      }
+    }, [isEditing]);
 
     const handleSearch = async () => {
       if (!searchQuery || !mapInstance.current) return;
@@ -755,15 +797,15 @@ const fetchLandmark = (locationaskey: string) => {
       setShowTimeError("");
 
       if (
-    selectedLandmark?.distance_from_start === undefined ||
-    selectedLandmark?.distance_from_start === null ||
-    selectedLandmark?.distance_from_start === "" ||
-    isNaN(selectedLandmark?.distance_from_start)
-  ) {
-    setDistanceError("Distance from Start is required");
-    return;
-  }
-  setDistanceError("");
+        selectedLandmark?.distance_from_start === undefined ||
+        selectedLandmark?.distance_from_start === null ||
+        selectedLandmark?.distance_from_start === "" ||
+        isNaN(selectedLandmark?.distance_from_start)
+      ) {
+        setDistanceError("Distance from Start is required");
+        return;
+      }
+      setDistanceError("");
 
       // For first landmark, force times to match starting time
       if (isFirstLandmark && startingTime) {
@@ -826,7 +868,7 @@ const fetchLandmark = (locationaskey: string) => {
     };
 
     return (
-      <Box height="100%">
+      <Box height="100%" display="flex" flexDirection="column">
         <Box
           sx={{
             display: "flex",
@@ -874,25 +916,45 @@ const fetchLandmark = (locationaskey: string) => {
               title={showAllBoundaries ? "Hide landmarks" : "Show landmarks"}
             >
               <IconButton
-                onClick={() => setShowAllBoundaries(!showAllBoundaries)}
+                onClick={() => {
+                  const newShowState = !showAllBoundaries;
+                  setShowAllBoundaries(newShowState);
+
+                  if (mapInstance.current && isEditing) {
+                    const centerRaw = mapInstance.current.getView().getCenter();
+                    if (centerRaw) {
+                      const center = toLonLat(centerRaw);
+                      const locationaskey = `POINT(${center[0]} ${center[1]})`;
+                      fetchLandmark(
+                        locationaskey,
+                        newShowState ? [] : selectedLandmarks.map((lm) => lm.id)
+                      );
+                    }
+                  }
+                }}
               >
                 <LocationOnIcon
                   sx={{ color: showAllBoundaries ? "blue" : undefined }}
                 />
               </IconButton>
             </Tooltip>
-            <Box>
-              <Tooltip title="Refresh Map" placement="bottom">
-                <IconButton color="warning" onClick={refreshMap}>
-                  <Refresh />
-                </IconButton>
-              </Tooltip>
-            </Box>
+
+            <Tooltip title="Refresh Map" placement="bottom">
+              <IconButton color="warning" onClick={refreshMap}>
+                <Refresh />
+              </IconButton>
+            </Tooltip>
           </Box>
         </Box>
 
-        <Box ref={mapRef} width="100%" height="calc(100% - 128px)" flex={1} />
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+        <Box
+          ref={mapRef}
+          width="100%"
+          flex={1}
+          sx={{ height: "calc(100% - 128px)" }}
+        />
+
+        <Box sx={{ display: "flex", gap: 2, alignItems: "center", p: 1 }}>
           <Typography variant="body2">
             <strong>[{mousePosition || "coordinates"}]</strong>
           </Typography>
@@ -1056,21 +1118,22 @@ const fetchLandmark = (locationaskey: string) => {
 
             {(selectedLandmarks.length > 0 || propLandmarks.length > 0) && (
               <TextField
-  label="Distance from Start (meters)"
-  type="number"
-  fullWidth
-  margin="normal"
-  value={selectedLandmark?.distance_from_start ?? ""}
-  onChange={(e) => {
-    setSelectedLandmark({
-      ...selectedLandmark!,
-      distance_from_start: e.target.value === "" ? "" : parseFloat(e.target.value),
-    });
-    setDistanceError(""); 
-  }}
-  error={!!distanceError}
-  helperText={distanceError}
-/>
+                label="Distance from Start (meters)"
+                type="number"
+                fullWidth
+                margin="normal"
+                value={selectedLandmark?.distance_from_start ?? ""}
+                onChange={(e) => {
+                  setSelectedLandmark({
+                    ...selectedLandmark!,
+                    distance_from_start:
+                      e.target.value === "" ? "" : parseFloat(e.target.value),
+                  });
+                  setDistanceError("");
+                }}
+                error={!!distanceError}
+                helperText={distanceError}
+              />
             )}
           </DialogContent>
           <DialogActions>
