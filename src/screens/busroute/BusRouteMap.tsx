@@ -26,7 +26,7 @@ import {
   Typography,
   Alert,
 } from "@mui/material";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
+// import LocationOnIcon from "@mui/icons-material/LocationOn";
 import { Refresh } from "@mui/icons-material";
 import { showErrorToast } from "../../common/toastMessageHelper";
 import { landmarkListApi } from "../../slices/appSlice";
@@ -83,10 +83,10 @@ const MapComponent = React.forwardRef(
     const selectInteractionRef = useRef<OlSelect | null>(null);
     const routeCoordsRef = useRef<Coordinate[]>([]);
     // Time selection states
-    const [arrivalHour, setArrivalHour] = useState<number>(12);
+    const [arrivalHour, setArrivalHour] = useState<number>(6);
     const [arrivalMinute, setArrivalMinute] = useState<number>(30);
     const [arrivalAmPm, setArrivalAmPm] = useState<string>("AM");
-    const [departureHour, setDepartureHour] = useState<number>(12);
+    const [departureHour, setDepartureHour] = useState<number>(6);
     const [departureMinute, setDepartureMinute] = useState<number>(30);
     const [departureAmPm, setDepartureAmPm] = useState<string>("AM");
     const [arrivalDayOffset, setArrivalDayOffset] = useState<number>(0);
@@ -131,72 +131,136 @@ const MapComponent = React.forwardRef(
 
       return map;
     };
+
     useEffect(() => {
       if (!mapInstance.current) {
         mapInstance.current = initializeMap();
       }
     }, []);
-    useEffect(() => {
-      if (mode !== "view" && mapInstance.current) {
-        const map = mapInstance.current;
 
-        const handleMoveEnd = () => {
-          const centerRaw = map.getView().getCenter();
-          if (!centerRaw) return;
-          const center = toLonLat(centerRaw);
-          const [lon, lat] = center;
-          const locationaskey = `POINT(${lon} ${lat})`;
+    const fetchLandmark = async (
+      locationaskey: string,
+      idList: number[] = [],
+      zoom?: number
+    ) => {
+      try {
+        if ((mode === "view" || isEditing) && idList.length > 0) {
+          const selectedParams = {
+            id_list: idList,
+            order_by: 2,
+            order_in: 1,
+          };
 
-          // Only for create/edit modes
-          fetchLandmark(locationaskey, []);
-        };
+          const selectedRes = await dispatch(
+            landmarkListApi(selectedParams)
+          ).unwrap();
+          const selectedLandmarksData = selectedRes.data.map(
+            (landmark: any) => ({
+              id: landmark.id,
+              name: landmark.name,
+              boundary: extractRawPoints(landmark.boundary),
+            })
+          );
 
-        map.on("moveend", handleMoveEnd);
-        handleMoveEnd();
+          if (isEditing) {
+            const nearbyParams = {
+              location: locationaskey,
+              limit: Math.min(100, Math.max(10, Math.floor((zoom || 10) * 5))),
+              order_by: 2,
+              order_in: 1,
+            };
 
-        return () => {
-          map.un("moveend", handleMoveEnd);
-        };
-      }
-    }, [mode]);
+            const nearbyRes = await dispatch(
+              landmarkListApi(nearbyParams)
+            ).unwrap();
+            console.log("nearbyRes", nearbyRes);
+            
+            const nearbyLandmarksData = nearbyRes.data.map((landmark: any) => ({
+              id: landmark.id,
+              name: landmark.name,
+              boundary: extractRawPoints(landmark.boundary),
+            }));
 
-    const fetchLandmark = (locationaskey: string, idList: number[] = []) => {
-      const params: any = {
-        location: locationaskey,
-        limit: 100,
-      };
+            const combinedLandmarks = [
+              ...selectedLandmarksData,
+              ...nearbyLandmarksData.filter(
+                (lm: any) =>
+                  !selectedLandmarksData.some((slm: any) => slm.id === lm.id)
+              ),
+            ];
 
-      // Only filter by ID if we're in view mode
-      if (mode === "view") {
-        params.id_list = idList;
-      }
+            setLandmarks(combinedLandmarks);
+            // Don't call handleViewModeLandmarks for edit mode
+            return;
+          }
 
-      dispatch(landmarkListApi(params))
-        .unwrap()
-        .then((res) => {
+          setLandmarks(selectedLandmarksData);
+          handleViewModeLandmarks(selectedLandmarksData);
+          return;
+        }
+
+        if (mode !== "view") {
+          const params = {
+            location: locationaskey,
+            limit: Math.min(100, Math.max(10, Math.floor((zoom || 10) * 5))),
+            order_by: 2,
+            order_in: 1,
+          };
+
+          const res = await dispatch(landmarkListApi(params)).unwrap();
           const formattedLandmarks = res.data.map((landmark: any) => ({
             id: landmark.id,
             name: landmark.name,
             boundary: extractRawPoints(landmark.boundary),
-            importance:
-              landmark.importance === 1
-                ? "Low"
-                : landmark.importance === 2
-                ? "Medium"
-                : "High",
-            status: landmark.status === 1 ? "Validating" : "Verified",
           }));
           setLandmarks(formattedLandmarks);
-
-          // For view mode, highlight selected landmarks
-          if (mode === "view") {
-            handleViewModeLandmarks(formattedLandmarks);
-          }
-        })
-        .catch((err) => {
-          showErrorToast(err || "Failed to fetch landmarks");
-        });
+        }
+      } catch (err: any) {
+        showErrorToast(err || "Failed to fetch landmarks");
+      }
     };
+
+    useEffect(() => {
+      if (!mapInstance.current) return;
+
+      const map = mapInstance.current;
+      let debounceTimer: number;
+
+      const handleViewChange = () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = window.setTimeout(() => {
+          const centerRaw = map.getView().getCenter();
+          if (!centerRaw) return;
+
+          const center = toLonLat(centerRaw);
+          const locationaskey = `POINT(${center[0]} ${center[1]})`;
+          const zoom = map.getView().getZoom();
+
+          // Get IDs of selected landmarks if in edit mode
+          const idList =
+            mode === "view" || isEditing
+              ? mode === "view"
+                ? propLandmarks.map((lm) => lm.id)
+                : selectedLandmarks.map((lm) => lm.id)
+              : [];
+
+          fetchLandmark(locationaskey, idList, zoom);
+        }, 300);
+      };
+
+      // Always set up listeners, but handle logic inside
+      map.getView().on("change:resolution", handleViewChange);
+      map.on("moveend", handleViewChange);
+
+      // Initial fetch
+      handleViewChange();
+
+      return () => {
+        clearTimeout(debounceTimer);
+        map.getView().un("change:resolution", handleViewChange);
+        map.un("moveend", handleViewChange);
+      };
+    }, [mode, isEditing, selectedLandmarks, propLandmarks]);
 
     const handleViewModeLandmarks = (landmarksData: Landmark[]) => {
       selectedLandmarksSource.current.clear();
@@ -242,7 +306,6 @@ const MapComponent = React.forwardRef(
             );
 
             selectedLandmarksSource.current.addFeature(feature);
-
             const center = getCenter(polygon.getExtent());
             routeCoordsRef.current.push(center);
           } catch (error) {
@@ -268,7 +331,12 @@ const MapComponent = React.forwardRef(
         routePathSource.current.addFeature(routeFeature);
       }
 
-      if (routeCoordsRef.current.length > 0 && mapInstance.current) {
+      // Only fit view to selected landmarks in view mode, not edit mode
+      if (
+        routeCoordsRef.current.length > 0 &&
+        mapInstance.current &&
+        mode === "view"
+      ) {
         const extent = selectedLandmarksSource.current.getExtent();
         mapInstance.current.getView().fit(extent, {
           padding: [50, 50, 50, 50],
@@ -286,17 +354,27 @@ const MapComponent = React.forwardRef(
     }, [mode, propLandmarks]);
 
     useEffect(() => {
-      console.log("isEditing+++++++", isEditing);
-
       if (isEditing !== undefined) {
         setIsAddingLandmark(isEditing);
         setShowAllBoundaries(isEditing);
+
+        if (isEditing && mapInstance.current) {
+          const centerRaw = mapInstance.current.getView().getCenter();
+          const zoom = mapInstance.current.getView().getZoom();
+          if (centerRaw) {
+            const center = toLonLat(centerRaw);
+            const locationaskey = `POINT(${center[0]} ${center[1]})`;
+            const idList = selectedLandmarks.map((lm) => lm.id);
+            fetchLandmark(locationaskey, idList, zoom);
+          }
+        }
       }
     }, [isEditing]);
-
     useEffect(() => {
-      if (!mapInstance.current) return;
+      console.log(mode);
 
+      console.log("isAddingLandmark+++++++", isAddingLandmark);
+      if (!mapInstance.current) return;
       const layers = mapInstance.current.getLayers().getArray();
       const allBoundariesLayer =
         layers[1] instanceof VectorLayer ? layers[1] : null;
@@ -357,8 +435,8 @@ const MapComponent = React.forwardRef(
       const matches = polygonString.match(/\(\((.*?)\)\)/);
       return matches ? matches[1] : "";
     };
-
     useEffect(() => {
+      console.log("is editingggg>>>>>>>>>>>>>>>>>>>", isEditing);
       if (!mapInstance.current) return;
 
       allBoundariesSource.current.clear();
@@ -377,13 +455,20 @@ const MapComponent = React.forwardRef(
               const feature = new Feature(polygon);
               feature.set("id", landmark.id);
 
-              // Check if this landmark is already selected
+              // Check if this landmark is selected
               const isSelected = selectedLandmarks.some(
                 (sl) => sl.id === landmark.id
               );
 
-              // Always show selected landmarks, show others only in edit mode when showAllBoundaries is true
-              if (isSelected || (isEditing && showAllBoundaries)) {
+              // Show if:
+              // 1. It's selected (in any mode)
+              // 2. We're in create mode and showAllBoundaries is true
+              // 3. We're in edit mode (regardless of showAllBoundaries)
+              if (
+                isSelected ||
+                (mode === "create" && showAllBoundaries) ||
+                isEditing
+              ) {
                 feature.setStyle(
                   new Style({
                     stroke: new Stroke({
@@ -398,7 +483,7 @@ const MapComponent = React.forwardRef(
                         : "rgba(0, 0, 255, 0.1)",
                     }),
                     text: new Text({
-                      text: landmark.name,
+                      text: isSelected ? landmark.name : "",
                       font: "bold 14px Arial",
                       fill: new Fill({ color: "#000" }),
                       stroke: new Stroke({ color: "#fff", width: 2 }),
@@ -419,10 +504,9 @@ const MapComponent = React.forwardRef(
       if (features.length > 0) {
         allBoundariesSource.current.addFeatures(features);
       }
-    }, [showAllBoundaries, landmarks, selectedLandmarks, isEditing]);
+    }, [showAllBoundaries, landmarks, selectedLandmarks, isEditing, mode]);
     useEffect(() => {
-      console.log("isEditing+++++++", isEditing);
-
+      console.log("mode", mode);
       if (isEditing !== undefined) {
         setIsAddingLandmark(isEditing);
         setShowAllBoundaries(isEditing);
@@ -911,33 +995,38 @@ const MapComponent = React.forwardRef(
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               />
             </Box>
-
-            <Tooltip
-              title={showAllBoundaries ? "Hide landmarks" : "Show landmarks"}
-            >
-              <IconButton
-                onClick={() => {
-                  const newShowState = !showAllBoundaries;
-                  setShowAllBoundaries(newShowState);
-
-                  if (mapInstance.current && isEditing) {
-                    const centerRaw = mapInstance.current.getView().getCenter();
-                    if (centerRaw) {
-                      const center = toLonLat(centerRaw);
-                      const locationaskey = `POINT(${center[0]} ${center[1]})`;
-                      fetchLandmark(
-                        locationaskey,
-                        newShowState ? [] : selectedLandmarks.map((lm) => lm.id)
-                      );
-                    }
-                  }
-                }}
+            {/* {isAddingLandmark && (
+              <Tooltip
+                title={showAllBoundaries ? "Hide landmarks" : "Show landmarks"}
               >
-                <LocationOnIcon
-                  sx={{ color: showAllBoundaries ? "blue" : undefined }}
-                />
-              </IconButton>
-            </Tooltip>
+                <IconButton
+                  onClick={() => {
+                    const newShowState = !showAllBoundaries;
+                    setShowAllBoundaries(newShowState);
+
+                    if (mapInstance.current && isEditing) {
+                      const centerRaw = mapInstance.current
+                        .getView()
+                        .getCenter();
+                      if (centerRaw) {
+                        const center = toLonLat(centerRaw);
+                        const locationaskey = `POINT(${center[0]} ${center[1]})`;
+                        fetchLandmark(
+                          locationaskey,
+                          newShowState
+                            ? []
+                            : selectedLandmarks.map((lm) => lm.id)
+                        );
+                      }
+                    }
+                  }}
+                >
+                  <LocationOnIcon
+                    sx={{ color: showAllBoundaries ? "blue" : undefined }}
+                  />
+                </IconButton>
+              </Tooltip>
+            )} */}
 
             <Tooltip title="Refresh Map" placement="bottom">
               <IconButton color="warning" onClick={refreshMap}>

@@ -68,6 +68,7 @@ export const companyListApi = createAsyncThunk(
       return {
         data: response.data || response,
       };
+      
     } catch (error: any) {
       console.error("API Error:", error);
       return rejectWithValue(

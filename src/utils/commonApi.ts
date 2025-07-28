@@ -6,7 +6,7 @@ import commonHelper from "./commonHelper";
 
 
 
-export const base_URL = "https://entebus-api.nixbug.com"; //base URL
+export const base_URL = "https://api.entebus.nixbug.com"; //base URL
 
 //******************************************************Token **************************************** */
 const getAuthToken = async () => {

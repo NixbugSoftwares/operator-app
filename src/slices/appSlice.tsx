@@ -60,15 +60,17 @@ interface BusListParams {
   capacity?: number;
 
 }
-
 interface LandmarkListParams {
   limit?: number;
   offset?: number;
   id?: number;
-  name?: string;
-  location?:string;
   id_list?: number[];
-  type?: string
+  name?: string;
+  location?: string;
+  type?: string;
+  type_list?: number[];
+  order_by?: number;
+  order_in?: number;
 }
 interface RouteListParams {
   limit?: number;
@@ -124,6 +126,11 @@ interface paperTicketListParams {
   amount?: number;  
 }
 
+interface CompanyGetParams{
+  limit?: number;
+  offset?: number;
+  id?: number;
+}
 //Logout API
 export const logoutApi = createAsyncThunk(
   "token",
@@ -171,6 +178,38 @@ export const loginUserAssignedRoleApi = createAsyncThunk<any[], number | undefin
 );
 
 
+export const userCompanyGetApi = createAsyncThunk(
+  "/company",
+  async (params: CompanyGetParams, { rejectWithValue }) => {
+    const { limit, offset, id } = params;
+    const queryParams = {
+      limit,
+      offset,
+      ...(id && { id }),
+    };
+    try {
+      const response = await commonApi.apiCall(
+        "get",
+        "/operator/company",
+        queryParams,
+        true,
+        "application/json"
+      );
+      if (!response) throw new Error("No response received");
+      return {
+        data: response.data || response,
+      };
+      
+    } catch (error: any) {
+      console.error("API Error:", error);
+      return rejectWithValue(
+        error.detail ||
+          "Failed to fetch company list"
+      );
+    }
+  }
+);
+
 export const companyUpdateApi = createAsyncThunk(
   "/company",
   async (
@@ -179,7 +218,7 @@ export const companyUpdateApi = createAsyncThunk(
   ) => {
     const response = await commonApi.apiCall(
       "patch",
-      `/company`,
+      `/operator/company`,
       formData,
       true,
       "application/x-www-form-urlencoded"
@@ -587,7 +626,7 @@ export const companyBusDeleteApi = createAsyncThunk(
 export const landmarkListApi = createAsyncThunk(
   "/executive/landmark",
   async (params: LandmarkListParams, { rejectWithValue }) => {
-    const { limit, offset, id, id_list, name, location,type } = params;
+    const { limit, offset, id, id_list, name, location,type, order_by, order_in, type_list } = params;
     const queryParams = {
       limit,
       offset,
@@ -596,6 +635,10 @@ export const landmarkListApi = createAsyncThunk(
       ...(name && { name }),
       ...(location && { location }),
       ...(type && { type }),
+      ...(order_by && { order_by }),
+      ...(order_in && { order_in }),
+      ...(type_list && { type_list }),
+
     };
     try {
       const response = await commonApi.apiCall(
