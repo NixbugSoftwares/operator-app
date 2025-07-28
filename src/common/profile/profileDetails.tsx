@@ -96,13 +96,13 @@ const ProfilePage: React.FC = () => {
   const getGender = (value: number): string => {
     switch (value) {
       case 1:
-        return "Female";
-      case 2:
-        return "Male";
-      case 3:
-        return "Transgender";
-      default:
         return "Other";
+      case 2:
+        return "Female";
+      case 3:
+        return "Male";
+      default:
+        return "Transgender";
     }
   };
   const getStatus = (value: number): string => {
@@ -193,7 +193,7 @@ const ProfilePage: React.FC = () => {
         });
       }
     } catch (error: any) {
-      showErrorToast(error.message || "Failed to load profile");
+      showErrorToast(error || "Failed to load profile");
     } finally {
       setIsLoading(false);
     }
@@ -220,7 +220,7 @@ const ProfilePage: React.FC = () => {
           ownerName: company.contact_person,
           phoneNumber: company.phone_number ?? "-",
           email: company.email_id ?? "-",
-          companyType: company.type === 1 ? "private" : "government",
+          companyType: company.type === 1 ? "other" : company.type === 2 ? "private" : company.type === 3 ? "government" : "",
           status:
             company.status === 1
               ? "Validating"
@@ -297,8 +297,8 @@ const ProfilePage: React.FC = () => {
               setRoleAssignmentId(roleAssignResponse.id);
             }
           }
-        } catch (error) {
-          showErrorToast("Account updated, but role assignment failed!");
+        } catch (error:any) {
+          showErrorToast(error||"Account updated, but role assignment failed!");
           console.error("Role assignment error:", error);
           return;
         }
@@ -316,21 +316,17 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    console.log("Attempting to logout...");
     try {
-      console.log("Dispatching logoutApi...");
-      const response = await dispatch(logoutApi({})).unwrap();
-      console.log("Logout response:", response);
-
+      await dispatch(logoutApi({})).unwrap();
       localStorageHelper.clearStorage();
       localStorageHelper.removeStoredItem("@user");
       dispatch(clearRoleDetails());
       commonHelper.logout();
       dispatch(userLoggedOut());
       showSuccessToast("Logout successful!");
-    } catch (error) {
+    } catch (error:any) {
       console.error("Logout Error:", error);
-      showErrorToast("Logout failed. Please try again.");
+      showErrorToast(error||"Logout failed. Please try again.");
     }
   };
 

@@ -14,6 +14,7 @@ import {
   FormControl,
   InputLabel,
   TextField,
+  Alert,
 } from "@mui/material";
 import Feature from "ol/Feature";
 import Point from "ol/geom/Point";
@@ -38,8 +39,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
   initialCoordinates,
 }) => {
 
-  const canManageCompany = useSelector((state: RootState) =>
-    state.app.permissions.includes("manage_company")
+  const canUpdateCompany = useSelector((state: RootState) =>
+    state.app.permissions.includes("update_company")
   );
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<Map | null>(null);
@@ -65,7 +66,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
     }
   };
 
-  // Initialize the map and add a marker for initialCoordinates
   useEffect(() => {
     if (!mapRef.current) return;
 
@@ -265,34 +265,45 @@ const MapComponent: React.FC<MapComponentProps> = ({
   };
 
   return (
-    <Box height="100%">
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: 1,
-          backgroundColor: "#f5f5f5",
-          borderRadius: 1,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <FormControl variant="outlined" size="small">
-            <InputLabel>Map Type</InputLabel>
-            <Select
-              value={mapType}
-              onChange={(e) =>
-                changeMapType(e.target.value as "osm" | "satellite" | "hybrid")
-              }
-              label="Map Type"
-            >
-              <MenuItem value="osm">OSM</MenuItem>
-              <MenuItem value="satellite">Satellite</MenuItem>
-              <MenuItem value="hybrid">Hybrid</MenuItem>
-            </Select>
-          </FormControl>
-          {canManageCompany && (
-            <Button
+  <Box height="100%">
+    {/* Alert Box - Moved to top */}
+    <Box mb={2}>
+      <Alert severity="info"> 
+        <Typography variant="body2">
+          This is a preview of your company's map. You can update your company's location by clicking on the map.
+        </Typography>
+      </Alert>
+    </Box>
+
+    {/* Map Controls */}
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: 1,
+        backgroundColor: "#f5f5f5",
+        borderRadius: 1,
+        mb: 2,
+      }}
+    >
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <FormControl variant="outlined" size="small">
+          <InputLabel>Map Type</InputLabel>
+          <Select
+            value={mapType}
+            onChange={(e) =>
+              changeMapType(e.target.value as "osm" | "satellite" | "hybrid")
+            }
+            label="Map Type"
+          >
+            <MenuItem value="osm">OSM</MenuItem>
+            <MenuItem value="satellite">Satellite</MenuItem>
+            <MenuItem value="hybrid">Hybrid</MenuItem>
+          </Select>
+        </FormControl>
+        {canUpdateCompany && (
+          <Button
             onClick={() => setIsMarkingEnabled(!isMarkingEnabled)}
             variant="contained"
             size="small"
@@ -300,30 +311,31 @@ const MapComponent: React.FC<MapComponentProps> = ({
           >
             {isMarkingEnabled ? "Disable Marking" : "Update Location"}
           </Button>
-          )}
-          
-        </Box>
-
-        <Typography variant="body2">
-          <strong>{mousePosition}</strong>
-        </Typography>
+        )}
       </Box>
 
-      <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
-        <TextField
-          fullWidth
-          label="Search Location"
-          value={locationName}
-          onChange={(e) => setLocationName(e.target.value)}
-        />
-        <Button variant="contained" onClick={handleSearch}>
-          Search
-        </Button>
-      </Box>
-
-      <Box ref={mapRef} width="100%" height="500px" flex={1} />
+      <Typography variant="body2">
+        <strong>{mousePosition}</strong>
+      </Typography>
     </Box>
-  );
+
+    {/* Search Box */}
+    <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+      <TextField
+        fullWidth
+        label="Search Location"
+        value={locationName}
+        onChange={(e) => setLocationName(e.target.value)}
+      />
+      <Button variant="contained" onClick={handleSearch}>
+        Search
+      </Button>
+    </Box>
+
+    {/* Map Container */}
+    <Box ref={mapRef} width="100%" height="500px" flex={1} />
+  </Box>
+);
 };
 
 export default MapComponent;

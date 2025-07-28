@@ -10,9 +10,6 @@ import {
   TextField,
   IconButton,
   Stack,
-  FormControl,
-  MenuItem,
-  Select,
 } from "@mui/material";
 import {
   Email as EmailIcon,
@@ -29,8 +26,7 @@ import {
 } from "@mui/icons-material";
 
 import { useAppDispatch } from "../../store/Hooks";
-import { companyUpdateApi } from "../../slices/appSlice";
-import { companyListApi } from "../../slices/authSlice";
+import { userCompanyGetApi, companyUpdateApi } from "../../slices/appSlice";
 import { showErrorToast, showSuccessToast } from "../toastMessageHelper";
 import MapModal from "./MapModal";
 import { RootState } from "../../store/Store";
@@ -43,19 +39,14 @@ interface CompanyData {
   ownerName: string;
   phoneNumber: string;
   email: string;
-  companyType: "private" | "government";
-  status: "Validating" | "Verified" | "Suspended";
+  companyType: String;
+  status: string;
 }
 
 interface CompanyCardProps {
   companyId: number;
 }
 
-const STATUS_MAP = {
-  VALIDATING: 1,
-  VERIFIED: 2,
-  SUSPENDED: 3,
-};
 
 const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
   const theme = useTheme();
@@ -66,16 +57,15 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [tempValue, setTempValue] = useState<string>("");
   const [_loading, setLoading] = useState(false);
-  const [statusValue, setStatusValue] = useState(1);
 
-  const canManageCompany = useSelector((state: RootState) =>
-    state.app.permissions.includes("manage_company")
+  const canUpdateCompany = useSelector((state: RootState) =>
+    state.app.permissions.includes("update_company")
   );
 
   // Helper Functions
   const extractCoordinates = (location: string) => {
     if (!location) return null;
-    const regex = /POINT\(([\d.]+) ([\d.]+)\)/;
+    const regex = /POINT\s*\(\s*([\d.-]+)\s+([\d.-]+)\s*\)/;
     const match = location.match(regex);
 
     if (match) {
@@ -107,10 +97,9 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
       setIsLoading(true);
       const [companyRes] = await Promise.all([
         dispatch(
-          companyListApi({ id: companyId, limit: 1, offset: 0 })
+          userCompanyGetApi({ id: companyId, limit: 1, offset: 0 })
         ).unwrap(),
       ]);
-
       const company = companyRes.data?.[0];
       if (company) {
         const companyData: CompanyData = {
@@ -121,7 +110,8 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
           ownerName: company.contact_person,
           phoneNumber: company.phone_number ?? "-",
           email: company.email_id ?? "-",
-          companyType: company.type === 1 ? "private" : "government",
+          companyType: company.type === 1 ? "other" 
+          : company.type === 2 ? "private" : company.type === 3 ? "government" : "",
           status:
             company.status === 1
               ? "Validating"
@@ -130,7 +120,6 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
               : "Suspended",
         };
         setCompany(companyData);
-        setStatusValue(company.status);
       }
     } catch (error: any) {
       showErrorToast(error.message || "Failed to load company profile");
@@ -170,9 +159,6 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
       formData.append("id", companyId.toString());
 
       switch (field) {
-        case "name":
-          formData.append("name", tempValue);
-          break;
         case "ownerName":
           formData.append("contact_person", tempValue);
           break;
@@ -184,9 +170,6 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
           break;
         case "email":
           formData.append("email_id", tempValue);
-          break;
-        case "status":
-          formData.append("status", tempValue);
           break;
       }
 
@@ -201,23 +184,7 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
     }
   };
 
-  const handleStatusEditSave = async () => {
-    try {
-      setLoading(true);
-      const formData = new FormData();
-      formData.append("id", companyId.toString());
-      formData.append("status", statusValue.toString());
 
-      await dispatch(companyUpdateApi({ companyId, formData })).unwrap();
-      showSuccessToast("Status updated successfully!");
-      setEditingField(null);
-      fetchCompanyData();
-    } catch (error: any) {
-      showErrorToast(`Error updating status: ${error}`);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleLocationUpdate = (location: { lat: number; lng: number }) => {
     const formData = new FormData();
@@ -306,6 +273,15 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
             icon={<BusinessIcon />}
             label="Private"
             color="success"
+            variant="outlined"
+          />
+        );
+        case "other":
+        return (
+          <Chip
+            icon={<BusinessIcon />}
+            label="other"
+            color="primary"
             variant="outlined"
           />
         );
@@ -445,7 +421,7 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
           >
             {value || "Not specified"}
           </Typography>
-          {canManageCompany && (
+          {canUpdateCompany && (
             <IconButton
               onClick={() => handleEditStart(field, value)}
               color="primary"
@@ -485,7 +461,6 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
           minHeight: 400,
         }}
       >
-        {/* Left Section: Company Summary */}
         <Box
           sx={{
             flex: 1,
@@ -541,12 +516,6 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
             Company Details
           </Typography>
           <Box>
-            {renderEditableField(
-              "name",
-              "Company Name",
-              company.name,
-              <BusinessIcon />
-            )}
             {renderEditableField(
               "ownerName",
               "Owner Name",
@@ -628,7 +597,7 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
                   Not available
                 </Typography>
               )}
-              {canManageCompany && (
+              {canUpdateCompany && (
                 <IconButton
                   onClick={() => setMapModalOpen(true)}
                   color="primary"
@@ -644,8 +613,6 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
                 </IconButton>
               )}
             </Box>
-
-            {/* Status Field */}
             <Box
               sx={{
                 p: 1,
@@ -661,93 +628,8 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
                 },
               }}
             >
-              <Avatar
-                sx={{
-                  bgcolor: "background.paper",
-                  color: "primary.main",
-                  width: 32,
-                  height: 32,
-                  fontSize: 18,
-                  mr: 1,
-                }}
-              >
-                <VerifiedIcon />
-              </Avatar>
-              <Typography
-                variant="subtitle2"
-                color="text.secondary"
-                fontWeight={600}
-                sx={{ minWidth: 110 }}
-              >
-                Status:
-              </Typography>
-              {editingField === "status" ? (
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    flex: 1,
-                  }}
-                >
-                  <FormControl size="small" fullWidth>
-                    <Select
-                      value={statusValue}
-                      onChange={(e) => setStatusValue(Number(e.target.value))}
-                      sx={{ minWidth: 150 }}
-                    >
-                      <MenuItem value={1}>VALIDATING</MenuItem>
-                      <MenuItem value={2}>VERIFIED</MenuItem>
-                      <MenuItem value={3}>SUSPENDED</MenuItem>
-                    </Select>
-                  </FormControl>
-                  <IconButton
-                    onClick={handleStatusEditSave}
-                    color="primary"
-                    size="small"
-                  >
-                    <CheckIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton
-                    onClick={handleEditCancel}
-                    color="error"
-                    size="small"
-                  >
-                    <CloseIcon fontSize="small" />
-                  </IconButton>
-                </Box>
-              ) : (
-                <Typography
-                  variant="body1"
-                  color="text.primary"
-                  fontWeight={500}
-                  sx={{ wordBreak: "break-word", flex: 1 }}
-                >
-                  {company.status}
-                </Typography>
-              )}
-              {canManageCompany && editingField !== "status" && (
-                <IconButton
-                  onClick={() => {
-                    setEditingField("status");
-                    setStatusValue(
-                      STATUS_MAP[
-                        company.status.toUpperCase() as keyof typeof STATUS_MAP
-                      ]
-                    );
-                  }}
-                  color="primary"
-                  size="small"
-                  sx={{
-                    opacity: 0.7,
-                    "&:hover": {
-                      opacity: 1,
-                    },
-                  }}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              )}
+             
+             
             </Box>
           </Box>
         </Box>
@@ -762,7 +644,7 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
             ? { lat: coordinates.latitude, lng: coordinates.longitude }
             : undefined
         }
-        canManageCompany={canManageCompany}
+        canUpdateCompany={canUpdateCompany}
       />
     </Box>
   );
