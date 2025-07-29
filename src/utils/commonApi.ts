@@ -15,7 +15,7 @@ const getAuthToken = async () => {
     console.log("token=====================>", token);
 
     const response = await axios.patch( 
-      `${base_URL}/token`,
+      `${base_URL}/operator/company/account/token`,
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -110,11 +110,14 @@ const handleErrorResponse = (errorResponse: any) => {
     commonHelper.logout();
   } 
 
-  if (status == 400 && Array.isArray(data?.detail)) {
-    const validationErrors = (data as any).message
-      .map((err: any) => Object.values(err.constraints).join(', '))
-      .join(' | ');
-    console.log('validation====>', validationErrors);
+ if (status == 422 && Array.isArray(data?.detail)) {
+    const validationErrors = data.detail
+      .map((err: any) => {
+        const field = err.loc?.slice(1).join('.') || 'Field'; 
+        return `${field}: ${err.msg}`;
+      }).join(' | ');
+
+    console.log('Validation Errors ===>', validationErrors);
     showErrorToast(validationErrors);
   } else {
     console.log('errormessagge====>', errorMessage);
