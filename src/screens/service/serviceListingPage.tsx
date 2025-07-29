@@ -129,6 +129,8 @@ const ServiceListingTable = () => {
           starting_at: service.starting_at ?? "",
           ending_at: service.ending_at ?? "",
           remarks: service.remark ?? "",
+          created_on: service.created_on ?? "",
+          updated_on: service.updated_on ?? "",
         }));
         console.log("Formatted Services:", formattedServices);
         
@@ -385,7 +387,7 @@ const ServiceListingTable = () => {
                         </Typography>
                       </Tooltip>
                     </TableCell>
-                    <TableCell>
+                    <TableCell align="center">
                       <Chip
                         label={row.status}
                         size="small"
@@ -413,7 +415,7 @@ const ServiceListingTable = () => {
                         }}
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell align="center">
                       <Chip
                         label={row.ticket_mode}
                         size="small"

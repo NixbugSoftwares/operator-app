@@ -82,10 +82,10 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
 
   const rowsPerPage = 10;
 
-  const { register, handleSubmit, control, formState: { errors } } = useForm<Schedule>({
+  const {  handleSubmit, control, formState: { errors } } = useForm<Schedule>({
     defaultValues: {
-      ticketing_mode: 1,
-      triggering_mode: 1,
+      ticketing_mode: "1",
+      triggering_mode: "1",
       frequency: [],
     },
   });
@@ -345,15 +345,31 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
           sx={{ mt: 1 }}
           onSubmit={handleSubmit(handleAccountCreation)}
         >
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            label="Schedule Name"
-            {...register("name", { required: "Service name is required" })}
-            error={!!errors.name}
-            helperText={errors.name?.message}
-            size="small"
+           <Controller
+            name="name"
+            control={control}
+            rules={{
+              required: "Schedule name is required",
+              minLength: {
+                value: 4,
+                message: "Schedule name must be at least 4 characters",
+              },
+              maxLength: {
+                value: 32,
+                message: "Schedule name must be at most 32 characters",
+              },
+            }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                margin="normal"
+                fullWidth
+                label="Schedule Name"
+                error={!!errors.name}
+                helperText={errors.name?.message}
+                size="small"
+              />
+            )}
           />
 
           {renderAutocomplete("route_id", "Route", memoizedRouteList, "route")}

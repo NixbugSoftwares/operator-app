@@ -148,7 +148,7 @@ const RoleCreationForm: React.FC<IRoleCreationFormProps> = ({
 
   const defaultValues = permissionGroups.reduce((acc, group) => {
     group.permissions.forEach((permission) => {
-      acc[permission.key as keyof RoleFormValues] = false;
+      acc[permission.key as keyof RoleFormValues] = false as any;
     });
     return acc;
   }, {} as Partial<RoleFormValues>);

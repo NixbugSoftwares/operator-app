@@ -14,7 +14,7 @@ import {
   Tooltip,
   Chip,
 } from "@mui/material";
-
+import DateRangeOutlinedIcon from "@mui/icons-material/DateRangeOutlined";
 import { Delete as DeleteIcon } from "@mui/icons-material";
 import AssignmentTurnedInRoundedIcon from "@mui/icons-material/AssignmentTurnedInRounded";
 import { useAppDispatch } from "../../store/Hooks";
@@ -24,17 +24,10 @@ import DutyUpdateForm from "./UpdationForm";
 import { showErrorToast, showSuccessToast } from "../../common/toastMessageHelper";
 import { RootState } from "../../store/Store";
 import { useSelector } from "react-redux";
-
+import moment from "moment";
+import { Duty } from "../../types/type";
 interface DutyCardProps {
-  duty: {
-    id: number;
-    operatorName: string;
-    serviceName: string;
-    status: string;
-    type: string;
-    service_id: number;
-    created_on: string;
-  };
+  duty: Duty
   refreshList: (value: any) => void;
   onUpdate: () => void;
   onDelete: (id: number) => void;
@@ -84,24 +77,7 @@ const canUpdateDuty = useSelector((state: RootState) =>
   const deleteDutyPermission =
     canDeleteDuty && (duty.status === "Assigned" || duty.status === "Finished");
 
-const formatUTCDateToLocal = (dateString: string | null): string => {
-    if (!dateString || dateString.trim() === "") return "Not added yet";
 
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "Not added yet";
-
-    const options: Intl.DateTimeFormatOptions = {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-      timeZone: "Asia/Kolkata",
-    };
-
-    return date.toLocaleString("en-IN", options);
-  };
   const handleBusDelete = async () => {
     if (!duty.id) {
       console.error("Error: Bus ID is missing");
@@ -159,15 +135,15 @@ const formatUTCDateToLocal = (dateString: string | null): string => {
             sx={{
               display: "flex",
               flexDirection: "column",
-              gap: 1,
+              gap: 1.5,
               alignItems: "flex-start",
             }}
           >
             <Typography variant="body2" color="textSecondary">
               <b>Assigned Operator:</b> {duty.operatorName}
             </Typography>
-            <Typography variant="body2" color="textSecondary">
-              <b>Service:</b> {duty.serviceName}
+            <Typography variant="body2" align="left"  color="textSecondary">
+              <b>Service name:</b> {duty.serviceName}
             </Typography>
             <Typography
               variant="body1"
@@ -188,10 +164,26 @@ const formatUTCDateToLocal = (dateString: string | null): string => {
                 size="small"
               />
             </Typography>
-           
-            <Typography variant="body2" color="textSecondary">
-              <b>Created On:</b> {formatUTCDateToLocal(duty.created_on)}
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+            <DateRangeOutlinedIcon color="action" sx={{ mr: 1 }} />
+
+            <Typography variant="body2">
+              <b> Created at:</b>
+              {moment(duty.created_on).local().format("DD-MM-YYYY, hh:mm A")}
             </Typography>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+            <DateRangeOutlinedIcon color="action" sx={{ mr: 1 }} />
+
+            <Typography variant="body2">
+              <b> Last updated at:</b>
+              {moment(duty?.updated_on).isValid()
+                ? moment(duty.updated_on)
+                    .local()
+                    .format("DD-MM-YYYY, hh:mm A")
+                : "Not updated yet"}
+            </Typography>
+          </Box>
           </Box>
         </Card>
 

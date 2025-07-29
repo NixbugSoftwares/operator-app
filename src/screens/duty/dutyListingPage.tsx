@@ -120,6 +120,7 @@ const DutyListingTable = () => {
                     ? "Ended"
                     : "",
                 created_on: duty.created_on,
+                updated_on: duty.updated_on,
               };
             } catch (error) {
               console.error(

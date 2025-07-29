@@ -80,6 +80,8 @@ const AccountListingTable = () => {
           email_id: account.email_id || account.email,
           phoneNumber: account.phone_number || account.phoneNumber || "",
           status: account.status === 1 ? "Active" : "Suspended",
+          created_on: account.created_on,
+          updated_on: account.updated_on
         }));
 
         setAccountList(formattedAccounts);

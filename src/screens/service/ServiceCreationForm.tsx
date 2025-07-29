@@ -127,15 +127,14 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
           }));
         })
         .catch((error) => {
-          showErrorToast(error.message || "Failed to fetch Bus list");
+          showErrorToast(error || "Failed to fetch Bus list");
         });
     },
-    [dispatch ]
+    [dispatch, rowsPerPage]
   );
 
-  const fetchFareList = useCallback(
+    const fetchFareList = useCallback(
   async (pageNumber: number, searchText = "") => {
-    setLoading(true);
     const offset = pageNumber * rowsPerPage;
     try {
       const res = await dispatch(
@@ -143,11 +142,12 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
           limit: rowsPerPage,
           offset,
           name: searchText,
+          
         })
       ).unwrap();
 
       const fares = res.data || [];
-      
+
       const formattedFareList = fares.map((fare: any) => ({
         id: fare.id,
         name: fare.name ?? "-",
@@ -161,12 +161,10 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
             : [...prev.fareList, ...formattedFareList],
       }));
     } catch (error: any) {
-      showErrorToast(error?.message || "Failed to fetch Fare list");
-    } finally {
-      setLoading(false);
+      showErrorToast(error || "Failed to fetch Fare list");
     }
   },
-  [dispatch,  rowsPerPage]
+  [dispatch, rowsPerPage]
 );
 
   const fetchRouteList = useCallback(
@@ -202,7 +200,7 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
           showErrorToast(error || "Failed to fetch Route list");
         });
     },
-    [dispatch]
+    [dispatch, rowsPerPage]
   );
 
   useEffect(() => {

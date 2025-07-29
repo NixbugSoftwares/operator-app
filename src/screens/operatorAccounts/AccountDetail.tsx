@@ -22,6 +22,7 @@ import {
   AccountCircle as UserIcon,
   Person as PersonIcon,
 } from "@mui/icons-material";
+import DateRangeOutlinedIcon from "@mui/icons-material/DateRangeOutlined";
 import ToggleOnIcon from "@mui/icons-material/ToggleOn";
 import ToggleOffIcon from "@mui/icons-material/ToggleOff";
 import { useAppDispatch } from "../../store/Hooks";
@@ -36,6 +37,7 @@ import AccountUpdateForm from "./updationForm";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/Store";
 import { Account } from "../../types/type";
+import moment from "moment";
 interface AccountCardProps {
   account: Account;
   onUpdate: () => void;
@@ -66,20 +68,20 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
   onCloseDetailCard,
 }) => {
   console.log("account", account);
-  
+
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const dispatch = useAppDispatch();
   const isLoggedInUser = account.id === userId;
   const [updateFormOpen, setUpdateFormOpen] = useState(false);
-  
+
   const canUpdateOperator = useSelector((state: RootState) =>
     state.app.permissions.includes("update_operator")
   );
-  
+
   const canDeleteOperator = useSelector((state: RootState) =>
     state.app.permissions.includes("delete_operator")
   );
-   const getGenderValue = (genderText: string): number | undefined => {
+  const getGenderValue = (genderText: string): number | undefined => {
     const option = genderOptions.find((opt) => opt.label === genderText);
     return option?.value;
   };
@@ -139,6 +141,9 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
         <Card sx={{ p: 2, bgcolor: "grey.100", mb: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
             <PhoneIcon color="action" sx={{ mr: 1 }} />
+            <Typography>
+              <b>Phone:</b>
+            </Typography>
             {account.phoneNumber ? (
               <a
                 href={`tel:${account.phoneNumber.replace("tel:", "")}`}
@@ -157,6 +162,9 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
 
           <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
             <EmailIcon color="action" sx={{ mr: 1 }} />
+            <Typography>
+              <b>Email:</b>
+            </Typography>
             {account.email_id ? (
               <a
                 href={`mailto:${account.email_id}`}
@@ -175,8 +183,31 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
 
           <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
             <PersonIcon color="action" sx={{ mr: 1 }} />
+            <Typography>
+              <b>Gender:</b>
+            </Typography>
             <Typography variant="body2">
               {account.gender ? account.gender : "Not added yet"}
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+            <DateRangeOutlinedIcon color="action" sx={{ mr: 1 }} />
+
+            <Typography variant="body2">
+              <b> Created at:</b>
+              {moment(account.created_on).local().format("DD-MM-YYYY, hh:mm A")}
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+            <DateRangeOutlinedIcon color="action" sx={{ mr: 1 }} />
+
+            <Typography variant="body2">
+              <b> Last updated at:</b>
+              {moment(account?.updated_on).isValid()
+                ? moment(account.updated_on)
+                    .local()
+                    .format("DD-MM-YYYY, hh:mm A")
+                : "Not updated yet"}
             </Typography>
           </Box>
 

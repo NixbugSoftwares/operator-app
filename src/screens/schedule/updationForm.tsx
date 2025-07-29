@@ -31,8 +31,8 @@ interface DropdownItem {
 type ScheduleFormValues = {
   id: number;
   name: string;
-  ticket_mode: number;
-  trigger_mode: number;
+  ticketing_mode?: string;
+  triggering_mode?: string;
   bus_id: number;
   fare_id?: number;
   route_id?: number;
@@ -114,11 +114,11 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
   } = useForm<ScheduleFormValues>({
     defaultValues: {
       ...scheduleData,
-      ticket_mode: getTicketModeValue(
-        scheduleData.ticket_mode as unknown as string
+      ticketing_mode: String(
+        getTicketModeValue(scheduleData.ticketing_mode ?? "")
       ),
-      trigger_mode: getTriggerModeValue(
-        scheduleData.trigger_mode as unknown as string
+      triggering_mode: String(
+        getTriggerModeValue(scheduleData.triggering_mode as unknown as string)
       ),
     },
   });
@@ -324,8 +324,8 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
       const updationData = {
         id: scheduleId,
         name: data.name,
-        ticketing_mode: data.ticket_mode,
-        triggering_mode: data.trigger_mode,
+        ticketing_mode: data.ticketing_mode,
+        triggering_mode: data.triggering_mode,
         bus_id: data.bus_id,
         fare_id: data.fare_id,
         route_id: data.route_id,
@@ -512,7 +512,7 @@ console.log("Updation Data:", updationData);
           />
 
           <Controller
-            name="ticket_mode"
+            name="ticketing_mode"
             control={control}
             render={({ field }) => (
               <TextField
@@ -521,7 +521,7 @@ console.log("Updation Data:", updationData);
                 label="Ticket Mode"
                 value={field.value}
                 onChange={field.onChange}
-                error={!!errors.ticket_mode}
+                error={!!errors.ticketing_mode}
                 size="small"
                 margin="normal"
               >
@@ -535,16 +535,16 @@ console.log("Updation Data:", updationData);
           />
 
           <Controller
-            name="trigger_mode"
+            name="triggering_mode"
             control={control}
             render={({ field }) => (
               <TextField
                 select
                 fullWidth
-                label="Trigger Mode"
+                label="Triggering Mode"
                 value={field.value}
                 onChange={field.onChange}
-                error={!!errors.trigger_mode}
+                error={!!errors.triggering_mode}
                 size="small"
                 margin="normal"
               >

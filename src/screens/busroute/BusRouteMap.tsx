@@ -16,18 +16,18 @@ import {
   DialogContent,
   DialogActions,
   FormControl,
-  IconButton,
+  // IconButton,
   InputLabel,
   MenuItem,
   Select,
   SelectChangeEvent,
   TextField,
-  Tooltip,
+  // Tooltip,
   Typography,
   Alert,
 } from "@mui/material";
 // import LocationOnIcon from "@mui/icons-material/LocationOn";
-import { Refresh } from "@mui/icons-material";
+// import { Refresh } from "@mui/icons-material";
 import { showErrorToast } from "../../common/toastMessageHelper";
 import { landmarkListApi } from "../../slices/appSlice";
 import { useDispatch } from "react-redux";
@@ -173,8 +173,6 @@ const MapComponent = React.forwardRef(
             const nearbyRes = await dispatch(
               landmarkListApi(nearbyParams)
             ).unwrap();
-            console.log("nearbyRes", nearbyRes);
-            
             const nearbyLandmarksData = nearbyRes.data.map((landmark: any) => ({
               id: landmark.id,
               name: landmark.name,
@@ -370,6 +368,7 @@ const MapComponent = React.forwardRef(
         }
       }
     }, [isEditing]);
+
     useEffect(() => {
       console.log(mode);
 
@@ -460,10 +459,6 @@ const MapComponent = React.forwardRef(
                 (sl) => sl.id === landmark.id
               );
 
-              // Show if:
-              // 1. It's selected (in any mode)
-              // 2. We're in create mode and showAllBoundaries is true
-              // 3. We're in edit mode (regardless of showAllBoundaries)
               if (
                 isSelected ||
                 (mode === "create" && showAllBoundaries) ||
@@ -482,17 +477,41 @@ const MapComponent = React.forwardRef(
                         ? "rgba(0, 150, 0, 0.1)"
                         : "rgba(0, 0, 255, 0.1)",
                     }),
-                    text: new Text({
-                      text: isSelected ? landmark.name : "",
-                      font: "bold 14px Arial",
-                      fill: new Fill({ color: "#000" }),
-                      stroke: new Stroke({ color: "#fff", width: 2 }),
-                      offsetY: -30,
-                      textAlign: "center",
-                    }),
                   })
                 );
                 features.push(feature);
+
+                // Calculate centroid of the polygon
+                const getCentroid = (coords: Coordinate[]): Coordinate => {
+                  let x = 0;
+                  let y = 0;
+                  const numPoints = coords.length;
+
+                  for (const point of coords) {
+                    x += point[0];
+                    y += point[1];
+                  }
+
+                  return [x / numPoints, y / numPoints];
+                };
+
+                const centroid = getCentroid(coordinates);
+                const labelFeature = new Feature(new Point(centroid));
+                labelFeature.set("id", `label-${landmark.id}`);
+                labelFeature.setStyle(
+                  new Style({
+                    text: new Text({
+                      text: ` ${(landmark?.name || "Landmark").toUpperCase()}`,
+                      font: "bold 12px Arial",
+                      fill: new Fill({ color: "darkblue" }),
+                      stroke: new Stroke({ color: "#FFF", width: 3 }),
+                      offsetY: 0, // No offset needed since we're using centroid
+                      textAlign: "center",
+                      placement: "point", // Ensures text is placed at the point
+                    }),
+                  })
+                );
+                features.push(labelFeature);
               }
             } catch (error) {
               console.error(`Error processing landmark ${landmark.id}:`, error);
@@ -505,6 +524,7 @@ const MapComponent = React.forwardRef(
         allBoundariesSource.current.addFeatures(features);
       }
     }, [showAllBoundaries, landmarks, selectedLandmarks, isEditing, mode]);
+    // ...existing code...
     useEffect(() => {
       console.log("mode", mode);
       if (isEditing !== undefined) {
@@ -728,25 +748,29 @@ const MapComponent = React.forwardRef(
       clearRoutePath,
       toggleAddLandmarkMode,
       isAddingLandmark,
+      disableAddLandmarkMode: () => {
+        setIsAddingLandmark(false);
+        setShowAllBoundaries(false);
+      },
     }));
 
-    const refreshMap = () => {
-      setTimeout(() => {
-        selectedLandmarksSource.current.clear();
-        setShowAllBoundaries(false);
-      }, 300);
+    // const refreshMap = () => {
+    //   setTimeout(() => {
+    //     selectedLandmarksSource.current.clear();
+    //     setShowAllBoundaries(false);
+    //   }, 300);
 
-      if (mapInstance.current) {
-        mapInstance.current.getView().animate({
-          center: fromLonLat([76.9366, 8.5241]),
-          zoom: 10,
-          duration: 1000,
-        });
-      }
-      setTimeout(() => {
-        mapInstance.current?.render();
-      }, 1100);
-    };
+    //   if (mapInstance.current) {
+    //     mapInstance.current.getView().animate({
+    //       center: fromLonLat([76.9366, 8.5241]),
+    //       zoom: 10,
+    //       duration: 1000,
+    //     });
+    //   }
+    //   setTimeout(() => {
+    //     mapInstance.current?.render();
+    //   }, 1100);
+    // };
 
     //*************************************** time selection and logics for adding landmarks **********************************
 
@@ -1028,11 +1052,11 @@ const MapComponent = React.forwardRef(
               </Tooltip>
             )} */}
 
-            <Tooltip title="Refresh Map" placement="bottom">
+            {/* <Tooltip title="Refresh Map" placement="bottom">
               <IconButton color="warning" onClick={refreshMap}>
                 <Refresh />
               </IconButton>
-            </Tooltip>
+            </Tooltip> */}
           </Box>
         </Box>
 

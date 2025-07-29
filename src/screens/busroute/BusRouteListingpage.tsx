@@ -60,6 +60,7 @@ const BusRouteListing = () => {
   const mapRef = useRef<{
     clearRoutePath: () => void;
     toggleAddLandmarkMode?: () => void;
+    disableAddLandmarkMode?: () => void;
   }>(null);
   const [selectedRouteLandmarks, setSelectedRouteLandmarks] = useState<
     RouteLandmark[]
@@ -185,12 +186,14 @@ const BusRouteListing = () => {
     fetchRoute(page, searchParams);
   }, [page, debouncedSearch, fetchRoute]);
 
-  const toggleCreationForm = () => {
-    setShowCreationForm(!showCreationForm);
-    if (showCreationForm) {
-      setLandmarks([]);
-    }
-  };
+const toggleCreationForm = () => {
+  setShowCreationForm(!showCreationForm);
+  setLandmarks([]);
+  // Disable add landmark mode on map when leaving creation form
+  if (mapRef.current && typeof mapRef.current.disableAddLandmarkMode === "function") {
+    mapRef.current.disableAddLandmarkMode();
+  }
+};
 
   const handleRouteCreated = () => {
     setShowCreationForm(true);

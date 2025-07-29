@@ -289,8 +289,8 @@ const RoleListingTable = () => {
                           backgroundColor: isSelected ? "#E3F2FD" : "inherit",
                         }}
                       >
-                        <TableCell>{row.id}</TableCell>
-                        <TableCell>
+                        <TableCell align="center">{row.id}</TableCell>
+                        <TableCell >
                           <Tooltip title={row.name} placement="bottom">
                             <Typography noWrap>
                               {row.name.length > 30
@@ -302,12 +302,14 @@ const RoleListingTable = () => {
                         <TableCell align="center">
                           {moment(row.created_on)
                             .local()
-                            .format("YYYY-MM-DD hh:mm A")}
+                            .format("DD-MM-YYYY, hh:mm A")}
                         </TableCell>
                         <TableCell align="center">
-                          {moment(row.updated_on)
-                            .local()
-                            .format("YYYY-MM-DD hh:mm A")}
+                          {moment(row?.updated_on).isValid()
+                            ? moment(row.updated_on)
+                                .local()
+                                .format("DD-MM-YYYY, hh:mm A")
+                            : "Not updated yet"}
                         </TableCell>
                       </TableRow>
                       <TableRow>

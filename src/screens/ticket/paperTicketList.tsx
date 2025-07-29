@@ -357,10 +357,10 @@ const PaperTicketListingTable: React.FC<PaperTicketListingTableProps> = ({
                   >
                     <TableCell sx={{ textAlign: "center" }}>{row.id}</TableCell>
                     <TableCell>
-                      <Typography noWrap>{row.pickupName}</Typography>
+                      <Typography align="center">{row.pickupName}</Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography noWrap>{row.droppingName}</Typography>
+                      <Typography align="center" noWrap>{row.droppingName}</Typography>
                     </TableCell>
                     <TableCell sx={{ textAlign: "center" }}>
                       <Box

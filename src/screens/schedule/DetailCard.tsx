@@ -14,7 +14,7 @@ import {
   Tooltip,
   Chip,
 } from "@mui/material";
-
+import DateRangeOutlinedIcon from "@mui/icons-material/DateRangeOutlined";
 import { Delete as DeleteIcon } from "@mui/icons-material";
 import AssignmentIndRoundedIcon from "@mui/icons-material/AssignmentIndRounded";
 import { useAppDispatch } from "../../store/Hooks";
@@ -32,6 +32,7 @@ import {
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/Store";
 import { Schedule } from "../../types/type";
+import moment from "moment";
 interface ServiceCardProps {
   schedule: Schedule;
   refreshList: (value: any) => void;
@@ -101,11 +102,11 @@ const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
   const [busName, setBusName] = useState("Bus not found");
   const [fareName, setFareName] = useState("Fare not found");
   const canUpdateSchedule = useSelector((state: RootState) =>
-      state.app.permissions.includes("create_schedule")
-    );
-    const canDeleteSchedule = useSelector((state: RootState) =>
-        state.app.permissions.includes("create_schedule")
-      );
+    state.app.permissions.includes("create_schedule")
+  );
+  const canDeleteSchedule = useSelector((state: RootState) =>
+    state.app.permissions.includes("create_schedule")
+  );
   const fetchRouteName = async () => {
     try {
       const id = schedule.route_id;
@@ -122,9 +123,7 @@ const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
   const fetchBusName = async () => {
     try {
       const id = schedule.bus_id;
-      const response = await dispatch(
-        companyBusListApi({ id})
-      ).unwrap();
+      const response = await dispatch(companyBusListApi({ id })).unwrap();
       setBusName(response.data[0].name);
       console.log("Bus Name Response:", response.data[0].name);
 
@@ -258,7 +257,8 @@ const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
                 }
                 sx={{
                   bgcolor: triggerModeMap[String(schedule.triggering_mode)]?.bg,
-                  color: triggerModeMap[String(schedule.triggering_mode)]?.color,
+                  color:
+                    triggerModeMap[String(schedule.triggering_mode)]?.color,
                   fontWeight: 600,
                   borderRadius: "12px",
                   px: 1.5,
@@ -268,20 +268,44 @@ const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
                 size="small"
               />
             </Typography>
-           <Typography variant="body1">
-  <b>Active Days:</b>
-  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
-    {schedule.frequency && Array.isArray(schedule.frequency) && schedule.frequency.length > 0 ? (
-      schedule.frequency.map((num) => (
-        <Chip key={num} label={dayMap[num] || num} size="small" />
-      ))
-    ) : (
-      <Typography variant="body2" color="text.secondary">
-        Not set
-      </Typography>
-    )}
-  </Box>
-</Typography>
+            <Typography variant="body1">
+              <b>Active Days:</b>
+              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1 }}>
+                {schedule.frequency &&
+                Array.isArray(schedule.frequency) &&
+                schedule.frequency.length > 0 ? (
+                  schedule.frequency.map((num) => (
+                    <Chip key={num} label={dayMap[num] || num} size="small" />
+                  ))
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    Not set
+                  </Typography>
+                )}
+              </Box>
+            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <DateRangeOutlinedIcon color="action" sx={{ mr: 1 }} />
+
+              <Typography variant="body2">
+                <b> Created at:</b>
+                {moment(schedule.created_on)
+                  .local()
+                  .format("DD-MM-YYYY, hh:mm A")}
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <DateRangeOutlinedIcon color="action" sx={{ mr: 1 }} />
+
+              <Typography variant="body2">
+                <b> Last updated at:</b>
+                {moment(schedule?.updated_on).isValid()
+                  ? moment(schedule.updated_on)
+                      .local()
+                      .format("DD-MM-YYYY, hh:mm A")
+                  : "Not updated yet"}
+              </Typography>
+            </Box>
           </Box>
         </Card>
 
@@ -402,7 +426,7 @@ const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
       <Dialog
         open={updateFormOpen}
         onClose={() => setUpdateFormOpen(false)}
-        maxWidth="xs"
+        maxWidth="sm"
         fullWidth
       >
         <DialogContent>
@@ -411,8 +435,8 @@ const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
             scheduleData={{
               id: schedule.id,
               name: schedule.name,
-              ticket_mode: schedule.ticketing_mode,
-              trigger_mode: schedule.triggering_mode,
+              ticketing_mode: schedule.ticketing_mode,
+              triggering_mode: schedule.triggering_mode,
               frequency: schedule.frequency,
               bus_id: schedule.bus_id,
               fare_id: schedule.fare_id,

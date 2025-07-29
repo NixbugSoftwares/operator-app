@@ -14,6 +14,7 @@ export  interface Account {
   phoneNumber: string;
   status: string;
   created_on: string;
+  updated_on: string;
 }
 export interface Company {
   id: number;
@@ -137,6 +138,8 @@ export interface Service{
   starting_at:string
   ending_at:string
   remarks:string
+  created_on:string
+  updated_on:string
 }
 
 
@@ -145,12 +148,14 @@ export interface Schedule{
   service_id:number
   name:string
   permit_no:string
-  triggering_mode:number
-  ticketing_mode:number
+  triggering_mode:string
+  ticketing_mode:string
   frequency:number[] 
   bus_id:number
   route_id:number
   fare_id:number
+  created_on:string
+  updated_on:string
 }
 
 export interface Duty{
@@ -162,6 +167,7 @@ export interface Duty{
   status:string
   type:string
   created_on:string
+  updated_on:string;
 }
 
 

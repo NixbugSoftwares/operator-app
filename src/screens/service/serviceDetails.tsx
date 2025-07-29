@@ -19,6 +19,7 @@ import {
 import { Delete as DeleteIcon } from "@mui/icons-material";
 import AssignmentIndRoundedIcon from "@mui/icons-material/AssignmentIndRounded";
 import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
+import DateRangeOutlinedIcon from "@mui/icons-material/DateRangeOutlined";
 import { useAppDispatch } from "../../store/Hooks";
 import { serviceDeleteApi } from "../../slices/appSlice";
 import localStorageHelper from "../../utils/localStorageHelper";
@@ -31,6 +32,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/Store";
 import { Service } from "../../types/type";
+import moment from "moment";
 interface ServiceCardProps {
   service: Service;
   refreshList: (value: any) => void;
@@ -104,25 +106,6 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
   const canDeleteService = useSelector((state: RootState) =>
     state.app.permissions.includes("update_service")
   );
-
-  const formatUTCDateToLocal = (dateString: string | null): string => {
-    if (!dateString || dateString.trim() === "") return "Not added yet";
-
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "Not added yet";
-
-    const options: Intl.DateTimeFormatOptions = {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-      timeZone: "Asia/Kolkata",
-    };
-
-    return date.toLocaleString("en-IN", options);
-  };
 
   const handleServiceDelete = async () => {
     if (!service.id) {
@@ -234,11 +217,21 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
               />
             </Typography>
 
-            <Typography variant="body1">
-              <b>Starting Date:</b> {formatUTCDateToLocal(service.starting_at)}
+           <Typography variant="body1">
+              <b>Starting Date:</b>{" "}
+              {moment(service?.starting_at).isValid()
+                ? moment(service.starting_at)
+                    .local()
+                    .format("DD-MM-YYYY, hh:mm A")
+                : ""}
             </Typography>
             <Typography variant="body1">
-              <b>Ending Date:</b> {formatUTCDateToLocal(service.ending_at)}
+              <b>Ending Date:</b>{" "}
+              {moment(service?.ending_at).isValid()
+                ? moment(service.ending_at)
+                    .local()
+                    .format("DD-MM-YYYY, hh:mm A")
+                : ""}
             </Typography>
 
             <TextField
@@ -274,6 +267,28 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
                 },
               }}
             />
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <DateRangeOutlinedIcon color="action" sx={{ mr: 1 }} />
+
+              <Typography variant="body2">
+                <b> Created at:</b>
+                {moment(service.created_on)
+                  .local()
+                  .format("DD-MM-YYYY, hh:mm A")}
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <DateRangeOutlinedIcon color="action" sx={{ mr: 1 }} />
+
+              <Typography variant="body2">
+                <b> Last updated at:</b>
+                {moment(service?.updated_on).isValid()
+                  ? moment(service.updated_on)
+                      .local()
+                      .format("DD-MM-YYYY, hh:mm A")
+                  : "Not updated yet"}
+              </Typography>
+            </Box>
           </Box>
           <Box sx={{ mt: 2, textAlign: "center" }}>
             <Button

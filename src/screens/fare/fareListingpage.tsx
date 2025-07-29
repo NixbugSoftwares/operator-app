@@ -19,6 +19,7 @@ import ErrorIcon from "@mui/icons-material/Error";
 import PersonIcon from "@mui/icons-material/Person";
 import ChildCareIcon from "@mui/icons-material/ChildCare";
 import SchoolIcon from "@mui/icons-material/School";
+import BoyIcon from "@mui/icons-material/Boy";
 import { fareListApi } from "../../slices/appSlice";
 import type { AppDispatch } from "../../store/Store";
 import { showErrorToast } from "../../common/toastMessageHelper";
@@ -27,6 +28,7 @@ import { Fare } from "../../types/type";
 import PaginationControls from "../../common/paginationControl";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/Store";
+import moment from "moment";
 
 const FareListingPage = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -311,11 +313,7 @@ const FareListingPage = () => {
               </TableHead>
 
               <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center"></TableCell>
-                  </TableRow>
-                ) : fareList.length > 0 ? (
+                {fareList.length > 0 ? (
                   fareList.map((fare) => {
                     const isSelected = selectedFare?.id === fare.id;
                     return (
@@ -360,9 +358,18 @@ const FareListingPage = () => {
                         {/* Ticket Types - Block Style */}
                         <TableCell>
                           {fare.attributes.ticket_types?.length > 0 ? (
-                            <Box display="flex" gap={1}>
+                            <Box
+                              display="flex"
+                              flexWrap="wrap"
+                              gap={1}
+                              sx={{
+                                maxWidth: "390px", 
+                              }}
+                            >
                               {fare.attributes.ticket_types.map(
                                 (type, index) => {
+                                  const typeName =
+                                    type.name?.toLowerCase() || "";
                                   const typeConfig = {
                                     adult: {
                                       bg: "rgba(25, 118, 210, 0.1)",
@@ -374,20 +381,29 @@ const FareListingPage = () => {
                                       color: "#ef6c00",
                                       icon: <ChildCareIcon fontSize="small" />,
                                     },
-                                    default: {
+                                    student: {
                                       bg: "rgba(76, 175, 80, 0.1)",
                                       color: "#2e7d32",
                                       icon: <SchoolIcon fontSize="small" />,
                                     },
+                                    other: {
+                                      bg: "#554e4e3f",
+                                      color: "#080000ff",
+                                      icon: <BoyIcon fontSize="small" />,
+                                    },
                                   };
 
-                                  const typeKey = type.name
-                                    ?.toLowerCase()
-                                    .includes("adult")
-                                    ? "adult"
-                                    : type.name?.toLowerCase().includes("child")
-                                    ? "child"
-                                    : "default";
+                                  let typeKey:
+                                    | "adult"
+                                    | "child"
+                                    | "student"
+                                    | "other" = "other";
+                                  if (typeName.includes("adult"))
+                                    typeKey = "adult";
+                                  else if (typeName.includes("child"))
+                                    typeKey = "child";
+                                  else if (typeName.includes("student"))
+                                    typeKey = "student";
 
                                   return (
                                     <Chip
@@ -396,8 +412,7 @@ const FareListingPage = () => {
                                       icon={typeConfig[typeKey].icon}
                                       label={type.name || `Type ${index + 1}`}
                                       sx={{
-                                        width: "100%",
-                                        maxWidth: "120px",
+                                        width: "120px",
                                         justifyContent: "flex-start",
                                         borderRadius: "4px",
                                         backgroundColor: typeConfig[typeKey].bg,
@@ -430,14 +445,10 @@ const FareListingPage = () => {
                         </TableCell>
 
                         {/* Created On */}
-                        <TableCell sx={{ textAlign: "center" }}>
-                          {fare.created_on ? (
-                            new Date(fare.created_on).toLocaleDateString()
-                          ) : (
-                            <Tooltip title="Date not available">
-                              <ErrorIcon color="disabled" />
-                            </Tooltip>
-                          )}
+                        <TableCell align="center">
+                          {moment(fare.created_on)
+                            .local()
+                            .format("DD-MM-YYYY, hh:mm A")}
                         </TableCell>
                       </TableRow>
                     );
