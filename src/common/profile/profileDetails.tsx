@@ -88,10 +88,10 @@ const ProfilePage: React.FC = () => {
   const userId = user?.operator_id;
   const companyId = user?.company_id;
   const canManageOperator = useSelector((state: RootState) =>
-    state.app.permissions.includes("manage_operator")
+    state.app.permissions.includes("update_operator")
   );
   console.log("userId", userId);
-  
+
   const [showCompanyDetails, setShowCompanyDetails] = useState(false);
   const getGender = (value: number): string => {
     switch (value) {
@@ -101,8 +101,10 @@ const ProfilePage: React.FC = () => {
         return "Female";
       case 3:
         return "Male";
-      default:
+      case 4:
         return "Transgender";
+      default:
+        return "Not specified";
     }
   };
   const getStatus = (value: number): string => {
@@ -178,6 +180,7 @@ const ProfilePage: React.FC = () => {
           email_id: user.email_id,
           phoneNumber: formatPhoneNumber(user.phone_number),
           created_on: user.created_on,
+          updated_on: user.updated_on,
           role: role,
           roleAssignmentId: roleAssignmentId,
         };
@@ -220,7 +223,14 @@ const ProfilePage: React.FC = () => {
           ownerName: company.contact_person,
           phoneNumber: company.phone_number ?? "-",
           email: company.email_id ?? "-",
-          companyType: company.type === 1 ? "other" : company.type === 2 ? "private" : company.type === 3 ? "government" : "",
+          companyType:
+            company.type === 1
+              ? "other"
+              : company.type === 2
+              ? "private"
+              : company.type === 3
+              ? "government"
+              : "",
           status:
             company.status === 1
               ? "Validating"
@@ -231,7 +241,7 @@ const ProfilePage: React.FC = () => {
         setCompany(companyData);
       }
     } catch (error: any) {
-      showErrorToast(error.message || "Failed to load company profile");
+      showErrorToast(error || "Failed to load company profile");
     } finally {
       setIsLoading(false);
     }
@@ -297,8 +307,10 @@ const ProfilePage: React.FC = () => {
               setRoleAssignmentId(roleAssignResponse.id);
             }
           }
-        } catch (error:any) {
-          showErrorToast(error||"Account updated, but role assignment failed!");
+        } catch (error: any) {
+          showErrorToast(
+            error || "Account updated, but role assignment failed!"
+          );
           console.error("Role assignment error:", error);
           return;
         }
@@ -307,9 +319,9 @@ const ProfilePage: React.FC = () => {
       showSuccessToast(`${editingField} updated successfully!`);
       setEditingField(null);
       await fetchUserData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Update error:", error);
-      showErrorToast("Something went wrong. Please try again.");
+      showErrorToast(error||"Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -324,9 +336,9 @@ const ProfilePage: React.FC = () => {
       commonHelper.logout();
       dispatch(userLoggedOut());
       showSuccessToast("Logout successful!");
-    } catch (error:any) {
+    } catch (error: any) {
       console.error("Logout Error:", error);
-      showErrorToast(error||"Logout failed. Please try again.");
+      showErrorToast(error || "Logout failed. Please try again.");
     }
   };
 
@@ -437,10 +449,10 @@ const ProfilePage: React.FC = () => {
                     {...register("gender")}
                     onChange={(e) => setGenderValue(Number(e.target.value))}
                   >
-                    <MenuItem value={1}>Female</MenuItem>
-                    <MenuItem value={2}>Male</MenuItem>
-                    <MenuItem value={3}>Transgender</MenuItem>
-                    <MenuItem value={0}>Other</MenuItem>
+                    <MenuItem value={1}>Other</MenuItem>
+                    <MenuItem value={2}>Female</MenuItem>
+                    <MenuItem value={3}>Male</MenuItem>
+                    <MenuItem value={4}>Transgender</MenuItem>
                   </Select>
                 </FormControl>
               )}
