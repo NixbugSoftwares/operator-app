@@ -92,7 +92,6 @@ const permissionGroups = [
   {
     groupName: "Company Management",
     permissions: [
-     
       {
         label: "Update Company",
         key: "update_company",
@@ -150,7 +149,7 @@ const permissionGroups = [
       },
     ],
   },
-  
+
   {
     groupName: "Schedule Management",
     permissions: [

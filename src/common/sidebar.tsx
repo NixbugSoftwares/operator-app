@@ -40,7 +40,6 @@ const Sidebar: React.FC = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   
 const companyName = localStorageHelper.getItem("@companyName")?.toLowerCase();
-console.log("Company Name:", companyName);
   const sections = [
     {
       title: companyName ? companyName : "",

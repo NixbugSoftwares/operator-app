@@ -25,51 +25,47 @@ type RoleFormValues = {
   name: string;
   companyId: number;
   manage_token?: boolean;
-      update_company?: boolean;
-      create_operator?: boolean;
-      update_operator?: boolean;
-      delete_operator?: boolean;
-      create_route?: boolean;
-      update_route?: boolean;
-      delete_route?: boolean;
-      create_bus?: boolean;
-      update_bus?: boolean;
-      delete_bus?: boolean;
-      create_schedule?: boolean;
-      update_schedule?: boolean;
-      delete_schedule?: boolean;
-      create_service?: boolean;
-      update_service?: boolean;
-      delete_service?: boolean;
-      create_fare?: boolean;
-      update_fare?: boolean;
-      delete_fare?: boolean;
-      create_duty?: boolean;
-      update_duty?: boolean;
-      delete_duty?: boolean;
-      create_role?: boolean;
-      update_role?: boolean;
-      delete_role?: boolean;
+  update_company?: boolean;
+  create_operator?: boolean;
+  update_operator?: boolean;
+  delete_operator?: boolean;
+  create_route?: boolean;
+  update_route?: boolean;
+  delete_route?: boolean;
+  create_bus?: boolean;
+  update_bus?: boolean;
+  delete_bus?: boolean;
+  create_schedule?: boolean;
+  update_schedule?: boolean;
+  delete_schedule?: boolean;
+  create_service?: boolean;
+  update_service?: boolean;
+  delete_service?: boolean;
+  create_fare?: boolean;
+  update_fare?: boolean;
+  delete_fare?: boolean;
+  create_duty?: boolean;
+  update_duty?: boolean;
+  delete_duty?: boolean;
+  create_role?: boolean;
+  update_role?: boolean;
+  delete_role?: boolean;
 };
 
 interface IRoleCreationFormProps {
   onClose: () => void;
   refreshList: (value: any) => void;
-    defaultCompanyId?: number;
+  defaultCompanyId?: number;
 }
 
 const permissionGroups = [
   {
     groupName: "Token Management",
-    permissions: [
-      { label: "Operator Token", key: "manage_token" },
-    ],
+    permissions: [{ label: "Operator Token", key: "manage_token" }],
   },
   {
     groupName: "Company",
-    permissions: [
-      { label: "Update", key: "update_company" },
-    ],
+    permissions: [{ label: "Update", key: "update_company" }],
   },
   {
     groupName: "Operator",
@@ -140,7 +136,7 @@ const permissionGroups = [
 const RoleCreationForm: React.FC<IRoleCreationFormProps> = ({
   onClose,
   refreshList,
-  defaultCompanyId
+  defaultCompanyId,
 }) => {
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
@@ -166,9 +162,6 @@ const RoleCreationForm: React.FC<IRoleCreationFormProps> = ({
 
   const handleRoleCreation: SubmitHandler<RoleFormValues> = async (data) => {
     setLoading(true);
-    
-  console.log("defaultCompanyId", defaultCompanyId);
-  
     try {
       const formData = new FormData();
       formData.append("company_id", String(defaultCompanyId));
@@ -182,7 +175,9 @@ const RoleCreationForm: React.FC<IRoleCreationFormProps> = ({
         });
       });
 
-      const response = await dispatch(operatorRoleCreationApi(formData)).unwrap();
+      const response = await dispatch(
+        operatorRoleCreationApi(formData)
+      ).unwrap();
       if (response?.id) {
         showSuccessToast("Role created successfully!");
         refreshList("refresh");
@@ -216,26 +211,25 @@ const RoleCreationForm: React.FC<IRoleCreationFormProps> = ({
       </Typography>
 
       <TextField
-  label="Role Name"
-  {...register("name", {
-    required: "Role name is required",
-    minLength: {
-      value: 4,
-      message: "Minimum 4 characters required",
-    },
-    maxLength: {
-      value: 32,
-      message: "Maximum 32 characters allowed",
-    },
-  })}
-  error={!!errors.name}
-  helperText={errors.name?.message}
-  variant="outlined"
-  size="small"
-  fullWidth
-  sx={{ mb: 2 }}
-/>
-
+        label="Role Name"
+        {...register("name", {
+          required: "Role name is required",
+          minLength: {
+            value: 4,
+            message: "Minimum 4 characters required",
+          },
+          maxLength: {
+            value: 32,
+            message: "Maximum 32 characters allowed",
+          },
+        })}
+        error={!!errors.name}
+        helperText={errors.name?.message}
+        variant="outlined"
+        size="small"
+        fullWidth
+        sx={{ mb: 2 }}
+      />
 
       <Divider sx={{ my: 1 }} />
 
@@ -290,10 +284,8 @@ const RoleCreationForm: React.FC<IRoleCreationFormProps> = ({
                             onChange={(e) => field.onChange(e.target.checked)}
                             color="primary"
                           />
-                          
                         }
                         label={
-                          
                           <Typography variant="caption">
                             {permission.label}
                           </Typography>

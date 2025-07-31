@@ -90,8 +90,6 @@ const ProfilePage: React.FC = () => {
   const canManageOperator = useSelector((state: RootState) =>
     state.app.permissions.includes("update_operator")
   );
-  console.log("userId", userId);
-
   const [showCompanyDetails, setShowCompanyDetails] = useState(false);
   const getGender = (value: number): string => {
     switch (value) {
@@ -213,8 +211,6 @@ const ProfilePage: React.FC = () => {
 
       const company = companyRes.data?.[0];
       if (company) {
-        console.log("Company Data:", company);
-
         const companyData = {
           id: company.id,
           name: company.name ?? "-",
@@ -321,7 +317,7 @@ const ProfilePage: React.FC = () => {
       await fetchUserData();
     } catch (error: any) {
       console.error("Update error:", error);
-      showErrorToast(error||"Something went wrong. Please try again.");
+      showErrorToast(error || "Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }

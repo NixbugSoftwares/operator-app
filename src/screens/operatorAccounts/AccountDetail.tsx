@@ -67,8 +67,6 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
   onBack,
   onCloseDetailCard,
 }) => {
-  console.log("account", account);
-
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const dispatch = useAppDispatch();
   const isLoggedInUser = account.id === userId;

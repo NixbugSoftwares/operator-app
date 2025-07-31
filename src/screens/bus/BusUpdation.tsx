@@ -68,9 +68,6 @@ const BusUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
     control,
     formState: { errors },
   } = useForm<BusFormValues>();
-
-  console.log("busData+++++++++++===>", busData);
-
   // Handle bus update
   const handleBusUpdate: SubmitHandler<BusFormValues> = async (data) => {
     try {
@@ -97,18 +94,6 @@ const BusUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
       if (data.road_tax_upto)
         formData.append("road_tax_upto", formatDateToUTC(data.road_tax_upto));
       formData.append("status", data.status.toString());
-      console.log("FormData being sent:", {
-        id: busId,
-        registration_number: data.registration_number,
-        name: data.name,
-        capacity: data.capacity,
-        manufactured_on: formatDateToUTC(data.manufactured_on),
-        insurance_upto: formatDateToUTC(data.insurance_upto),
-        pollution_upto: formatDateToUTC(data.pollution_upto),
-        fitness_upto: formatDateToUTC(data.fitness_upto),
-        status: data.status,
-      });
-
       await dispatch(companyBusUpdateApi({ busId, formData })).unwrap();
 
       showSuccessToast("Bus updated successfully!");

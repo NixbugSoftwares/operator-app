@@ -10,9 +10,6 @@ const AppRouter: React.FC = () => {
   const [loading, setLoading] = useState(true);
  
   useEffect(() => {
-    console.log("logggedinnnnn+++++++++++++++", loggedIn);
-    console.log("loadingggggggggggggggg");
-    
   const checkUserLoggedIn = () => {
     const userData = localStorageHelper.getItem("@user");
     if (userData) {

@@ -168,7 +168,7 @@ const FareSkeletonPage = ({
 
   const attributes = watch("attributes");
 
- const handleRunCode = () => {
+  const handleRunCode = () => {
     let logs: any[] = [];
     const customConsole = {
       log: (...args: any[]) => logs.push(args.join(" ")),
@@ -687,10 +687,10 @@ const FareSkeletonPage = ({
           }}
         >
           <Alert severity="info">
-                      <Typography variant="body2">
-                        Use console.log to print output from your function.
-                      </Typography>
-                    </Alert>
+            <Typography variant="body2">
+              Use console.log to print output from your function.
+            </Typography>
+          </Alert>
           <Typography variant="subtitle1" gutterBottom>
             Output:
           </Typography>

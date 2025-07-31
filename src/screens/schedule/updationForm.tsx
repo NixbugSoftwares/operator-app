@@ -239,7 +239,7 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
         setLoading(false);
       }
     },
-    [dispatch, scheduleData ]
+    [dispatch, scheduleData]
   );
 
   useEffect(() => {
@@ -331,8 +331,6 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
         route_id: data.route_id,
         frequency: data.frequency,
       };
-console.log("Updation Data:", updationData);
-
       await dispatch(scheduleUpdationApi(updationData)).unwrap();
 
       showSuccessToast("Schedule updated successfully!");

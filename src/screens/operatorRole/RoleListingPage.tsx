@@ -61,8 +61,6 @@ const RoleListingTable = () => {
         .unwrap()
         .then((res) => {
           const items = res.data || [];
-          console.log("items", items);
-
           const formattedRoleList = items.map((role: any) => ({
             id: role.id,
             name: role.name,
@@ -290,7 +288,7 @@ const RoleListingTable = () => {
                         }}
                       >
                         <TableCell align="center">{row.id}</TableCell>
-                        <TableCell >
+                        <TableCell>
                           <Tooltip title={row.name} placement="bottom">
                             <Typography noWrap>
                               {row.name.length > 30

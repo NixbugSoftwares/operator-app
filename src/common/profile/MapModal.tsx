@@ -11,7 +11,7 @@ interface MapModalProps {
     lat: number;
     lng: number;
   }) => void;
-  initialCoordinates?: { lat: number; lng: number }; 
+  initialCoordinates?: { lat: number; lng: number };
   canUpdateCompany?: boolean;
 }
 
@@ -22,8 +22,6 @@ const MapModal: React.FC<MapModalProps> = ({
   initialCoordinates,
   canUpdateCompany,
 }) => {
-  console.log("canUpdateCompany", canUpdateCompany);
-  
   const [selectedLocation, setSelectedLocation] = useState<{
     name: string;
     lat: number;
@@ -96,19 +94,15 @@ const MapModal: React.FC<MapModalProps> = ({
         </Box>
         {canUpdateCompany && (
           <Button
-          onClick={handleConfirm}
-          disabled={!selectedLocation}
-          sx={{ mt: 2 }}
-        >
-          Confirm
-        </Button>
+            onClick={handleConfirm}
+            disabled={!selectedLocation}
+            sx={{ mt: 2 }}
+          >
+            Confirm
+          </Button>
         )}
-        
-        <Button
-          onClick={onClose}
-          sx={{ mt: 2, ml: 2 }}
-          variant="outlined"
-        >
+
+        <Button onClick={onClose} sx={{ mt: 2, ml: 2 }} variant="outlined">
           Back
         </Button>
       </Box>

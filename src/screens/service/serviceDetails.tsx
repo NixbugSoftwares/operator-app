@@ -95,7 +95,6 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
   onBack,
   onCloseDetailCard,
 }) => {
-  console.log("service>>>>>>>>>>>>>>>>>>>>>>>>>>>>", service);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [updateFormOpen, setUpdateFormOpen] = useState(false);
   const dispatch = useAppDispatch();
@@ -217,7 +216,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
               />
             </Typography>
 
-           <Typography variant="body1">
+            <Typography variant="body1">
               <b>Starting Date:</b>{" "}
               {moment(service?.starting_at).isValid()
                 ? moment(service.starting_at)
@@ -295,7 +294,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
               variant="outlined"
               color="secondary"
               sx={{ width: "300px" }}
-             onClick={() => navigate(`/ticket?service_id=${service.id}`)}
+              onClick={() => navigate(`/ticket?service_id=${service.id}`)}
             >
               <ConfirmationNumberIcon sx={{ mr: 1 }} />
               View All Ticketss

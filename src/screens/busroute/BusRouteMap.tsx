@@ -370,9 +370,6 @@ const MapComponent = React.forwardRef(
     }, [isEditing]);
 
     useEffect(() => {
-      console.log(mode);
-
-      console.log("isAddingLandmark+++++++", isAddingLandmark);
       if (!mapInstance.current) return;
       const layers = mapInstance.current.getLayers().getArray();
       const allBoundariesLayer =
@@ -435,7 +432,6 @@ const MapComponent = React.forwardRef(
       return matches ? matches[1] : "";
     };
     useEffect(() => {
-      console.log("is editingggg>>>>>>>>>>>>>>>>>>>", isEditing);
       if (!mapInstance.current) return;
 
       allBoundariesSource.current.clear();
@@ -524,9 +520,7 @@ const MapComponent = React.forwardRef(
         allBoundariesSource.current.addFeatures(features);
       }
     }, [showAllBoundaries, landmarks, selectedLandmarks, isEditing, mode]);
-    // ...existing code...
     useEffect(() => {
-      console.log("mode", mode);
       if (isEditing !== undefined) {
         setIsAddingLandmark(isEditing);
         setShowAllBoundaries(isEditing);

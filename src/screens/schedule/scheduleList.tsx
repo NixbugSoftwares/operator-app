@@ -79,7 +79,6 @@ const ScheduleListingTable = () => {
   );
   const [openCreateModal, setOpenCreateModal] = useState(false);
 
-
   const fetchScheduleList = useCallback(
     (pageNumber: number, searchParams: Partial<SearchFilter> = {}) => {
       setIsLoading(true);
@@ -426,7 +425,7 @@ const ScheduleListingTable = () => {
                         }}
                       />
                     </TableCell>
-                    <TableCell  align="center">
+                    <TableCell align="center">
                       <Chip
                         label={row.triggering_mode}
                         size="small"

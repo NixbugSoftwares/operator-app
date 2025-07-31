@@ -62,7 +62,7 @@ const BusRouteListing = () => {
     toggleAddLandmarkMode?: () => void;
     disableAddLandmarkMode?: () => void;
   }>(null);
-  const [selectedRouteLandmarks, setSelectedRouteLandmarks] = useState<
+  const [_selectedRouteLandmarks, setSelectedRouteLandmarks] = useState<
     RouteLandmark[]
   >([]);
   const [mapLandmarks, setMapLandmarks] = useState<SelectedLandmark[]>([]);
@@ -136,7 +136,7 @@ const BusRouteListing = () => {
           setSelectedRouteLandmarks(processed);
           setMapLandmarks(processed);
         } catch (error: any) {
-          showErrorToast(error||"Failed to load route landmarks");
+          showErrorToast(error || "Failed to load route landmarks");
         }
       }
     };
@@ -186,14 +186,17 @@ const BusRouteListing = () => {
     fetchRoute(page, searchParams);
   }, [page, debouncedSearch, fetchRoute]);
 
-const toggleCreationForm = () => {
-  setShowCreationForm(!showCreationForm);
-  setLandmarks([]);
-  // Disable add landmark mode on map when leaving creation form
-  if (mapRef.current && typeof mapRef.current.disableAddLandmarkMode === "function") {
-    mapRef.current.disableAddLandmarkMode();
-  }
-};
+  const toggleCreationForm = () => {
+    setShowCreationForm(!showCreationForm);
+    setLandmarks([]);
+    // Disable add landmark mode on map when leaving creation form
+    if (
+      mapRef.current &&
+      typeof mapRef.current.disableAddLandmarkMode === "function"
+    ) {
+      mapRef.current.disableAddLandmarkMode();
+    }
+  };
 
   const handleRouteCreated = () => {
     setShowCreationForm(true);
@@ -255,8 +258,6 @@ const toggleCreationForm = () => {
       fetchRoute(page, debouncedSearch);
     }
   };
-          console.log("Passing landmark IDs:", selectedRouteLandmarks.map((landmark) => landmark.id));
-
   return (
     <Box
       sx={{
@@ -590,7 +591,6 @@ const toggleCreationForm = () => {
           gap: 2,
         }}
       >
-        
         <MapComponent
           onAddLandmark={
             isEditingRoute ? handleAddLandmarkEdit : handleAddLandmark

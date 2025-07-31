@@ -99,8 +99,6 @@ const ServiceListingTable = () => {
         ).unwrap();
 
         const items = res?.data || [];
-        console.log("API Response:", items);
-        
         const formattedServices = items.map((service: any) => ({
           id: service.id,
           name: service.name ?? "",
@@ -132,8 +130,6 @@ const ServiceListingTable = () => {
           created_on: service.created_on ?? "",
           updated_on: service.updated_on ?? "",
         }));
-        console.log("Formatted Services:", formattedServices);
-        
 
         setServiceList(formattedServices);
         setHasNextPage(items.length === rowsPerPage);
@@ -194,11 +190,14 @@ const ServiceListingTable = () => {
     fetchServiceList(page, debouncedSearch);
   }, [page, debouncedSearch, fetchServiceList]);
 
-  const refreshList = useCallback((value: string) => {
-    if (value === "refresh") {
-      fetchServiceList(page, debouncedSearch);
-    }
-  }, [fetchServiceList, page, debouncedSearch]);
+  const refreshList = useCallback(
+    (value: string) => {
+      if (value === "refresh") {
+        fetchServiceList(page, debouncedSearch);
+      }
+    },
+    [fetchServiceList, page, debouncedSearch]
+  );
 
   return (
     <Box
@@ -212,7 +211,9 @@ const ServiceListingTable = () => {
     >
       <Box
         sx={{
-          flex: selectedService ? { xs: "0 0 100%", md: "0 0 65%" } : "0 0 100%",
+          flex: selectedService
+            ? { xs: "0 0 100%", md: "0 0 65%" }
+            : "0 0 100%",
           maxWidth: selectedService ? { xs: "100%", md: "65%" } : "100%",
           transition: "all 0.3s ease",
           height: "100%",
@@ -231,10 +232,10 @@ const ServiceListingTable = () => {
               color: "white",
               display: "flex",
               justifyContent: "flex-end",
-              '&:disabled': {
+              "&:disabled": {
                 backgroundColor: "#6c87b7",
                 cursor: "not-allowed",
-              }
+              },
             }}
             variant="contained"
             onClick={() => setOpenCreateModal(true)}
@@ -251,27 +252,27 @@ const ServiceListingTable = () => {
             overflowY: "auto",
             borderRadius: 2,
             border: "1px solid #e0e0e0",
-           position: "relative",
-                    }}
-                  >
-                    {isLoading && (
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          backgroundColor: "rgba(255, 255, 255, 0.7)",
-                          zIndex: 1,
-                        }}
-                      >
-                        <CircularProgress />
-                      </Box>
-                    )}
+            position: "relative",
+          }}
+        >
+          {isLoading && (
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                zIndex: 1,
+              }}
+            >
+              <CircularProgress />
+            </Box>
+          )}
           <Table stickyHeader>
             <TableHead>
               <TableRow>
@@ -360,11 +361,11 @@ const ServiceListingTable = () => {
             </TableHead>
 
             <TableBody>
-               {isLoading ? (
-                              <TableRow>
-                                <TableCell colSpan={6} align="center"></TableCell>
-                              </TableRow>
-                            ) : serviceList.length > 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center"></TableCell>
+                </TableRow>
+              ) : serviceList.length > 0 ? (
                 serviceList.map((row) => (
                   <TableRow
                     key={row.id}

@@ -55,15 +55,18 @@ const INTERNAL_STATUS = {
 const allowedTransitions: Record<number, number[]> = {
   1: [], // Created
   2: [3, 4], // Started → Terminated, Ended
-  3: [2],    // Terminated → Started
-  4: [2],    // Ended → Started
+  3: [2], // Terminated → Started
+  4: [2], // Ended → Started
 };
 
 const getStatusValue = (label: string) =>
-  statusOptions.find((opt) => opt.label.toLowerCase() === label.toLowerCase())?.value ?? 1;
+  statusOptions.find((opt) => opt.label.toLowerCase() === label.toLowerCase())
+    ?.value ?? 1;
 
 const getTicketModeValue = (label: string) =>
-  ticketModeOptions.find((opt) => opt.label.toLowerCase() === label.toLowerCase())?.value ?? 1;
+  ticketModeOptions.find(
+    (opt) => opt.label.toLowerCase() === label.toLowerCase()
+  )?.value ?? 1;
 
 const ServiceUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
   onClose,
@@ -92,7 +95,9 @@ const ServiceUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
     return allowedTransitions[current]?.includes(next) ?? false;
   };
 
-  const handleServiceUpdate: SubmitHandler<ServiceFormValues> = async (data) => {
+  const handleServiceUpdate: SubmitHandler<ServiceFormValues> = async (
+    data
+  ) => {
     try {
       setLoading(true);
 
@@ -163,10 +168,14 @@ const ServiceUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
                   } else {
                     showErrorToast(
                       `Invalid status transition from ${
-                        statusOptions.find((opt) => opt.value === currentStatus)?.label ||
-                        (currentStatus === INTERNAL_STATUS.STARTED ? "Started" : "Audited")
+                        statusOptions.find((opt) => opt.value === currentStatus)
+                          ?.label ||
+                        (currentStatus === INTERNAL_STATUS.STARTED
+                          ? "Started"
+                          : "Audited")
                       } to ${
-                        statusOptions.find((opt) => opt.value === newStatus)?.label
+                        statusOptions.find((opt) => opt.value === newStatus)
+                          ?.label
                       }`
                     );
                   }
@@ -225,18 +234,18 @@ const ServiceUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
             )}
           />
 
-            <TextField
-              margin="normal"
-              fullWidth
-              multiline
-              rows={4}
-              defaultValue={serviceData.remarks}
-              label="Remark"
-              {...register("remarks")}
-              error={!!errors.remarks}
-              helperText={errors.remarks?.message}
-              size="small"
-            />
+          <TextField
+            margin="normal"
+            fullWidth
+            multiline
+            rows={4}
+            defaultValue={serviceData.remarks}
+            label="Remark"
+            {...register("remarks")}
+            error={!!errors.remarks}
+            helperText={errors.remarks?.message}
+            size="small"
+          />
 
           <Button
             type="submit"

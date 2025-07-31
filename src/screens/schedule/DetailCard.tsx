@@ -112,8 +112,6 @@ const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
       const id = schedule.route_id;
       const response = await dispatch(busRouteListApi({ id })).unwrap();
       setRouteName(response.data[0].name);
-      console.log("Route Name Response:", response.data[0].name);
-
       return response.data[0].name;
     } catch (error) {
       console.error("Error fetching route name:", error);
@@ -125,8 +123,6 @@ const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
       const id = schedule.bus_id;
       const response = await dispatch(companyBusListApi({ id })).unwrap();
       setBusName(response.data[0].name);
-      console.log("Bus Name Response:", response.data[0].name);
-
       return response.data[0].name;
     } catch (error) {
       console.error("Error fetching bus name:", error);
@@ -139,8 +135,6 @@ const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
       const id = schedule.fare_id;
       const response = await dispatch(fareListApi({ id })).unwrap();
       setFareName(response.data[0].name);
-      console.log("Fare Name Response:", response.data[0].name);
-
       return response.data[0].name;
     } catch (error) {
       console.error("Error fetching fare name:", error);

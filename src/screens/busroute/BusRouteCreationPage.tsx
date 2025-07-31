@@ -163,8 +163,6 @@ const BusRouteCreation = ({
       const routeFormData = new FormData();
       routeFormData.append("name", data.name);
       routeFormData.append("start_time", data.starting_time);
-      console.log("starting_time", data.starting_time);
-      console.log("name", data.name);
 
       const routeResponse = await dispatch(
         routeCreationApi(routeFormData)
@@ -184,10 +182,6 @@ const BusRouteCreation = ({
         sortedLandmarks,
         "departure"
       );
-
-      console.log("Starting time:", data.starting_time);
-      console.log("Arrival deltas:", arrivalDeltas);
-      console.log("Departure deltas:", departureDeltas);
 
       const landmarkPromises = sortedLandmarks.map((landmark, index) => {
         const landmarkFormData = new FormData();
@@ -209,7 +203,6 @@ const BusRouteCreation = ({
 
         return dispatch(routeLandmarkCreationApi(landmarkFormData)).unwrap();
       });
-      console.log("Landmark promises:", landmarkPromises);
 
       await Promise.all(landmarkPromises);
       showSuccessToast("Route and landmarks created successfully");

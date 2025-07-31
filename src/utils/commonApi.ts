@@ -3,26 +3,23 @@ import localStorageHelper from "./localStorageHelper";
 import { showErrorToast } from "../common/toastMessageHelper";
 import commonHelper from "./commonHelper";
 
-
-
-
 export const base_URL = "https://api.entebus.nixbug.com"; //base URL
 
 //******************************************************Token **************************************** */
 const getAuthToken = async () => {
   try {
     const token = await localStorageHelper.getItem("@token");
-    console.log("token=====================>", token);
+    // console.log("token=====================>", token);
 
-    const response = await axios.patch( 
+    const response = await axios.patch(
       `${base_URL}/operator/company/account/token`,
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
     // console.log("getAuthtokenresponse=====>", response.data);
-    
+
     const data = response?.data;
-    const createdOn = new Date(data?.created_on).getTime(); 
+    const createdOn = new Date(data?.created_on).getTime();
     const expiresInMs = data?.expires_in * 1000;
     const expiresAt = createdOn + expiresInMs;
     localStorageHelper.storeItem("@token", data?.access_token);
@@ -37,33 +34,33 @@ const getAuthToken = async () => {
 //****************************************************** prepare Headers **************************************** */
 const prepareHeaders = async (tokenNeeded: boolean) => {
   let headers: any = { "Content-Type": "application/json" };
-  
+
   if (tokenNeeded) {
     let AuthToken = await localStorageHelper.getItem("@token");
     const tokenExpiry = await localStorageHelper.getItem("@token_expires");
 
     if (!AuthToken) {
       commonHelper.logout();
-      throw new Error('Token not found');
+      throw new Error("Token not found");
     }
 
     if (!tokenExpiry) {
       commonHelper.logout();
-      throw new Error('Token expiry not found');
+      throw new Error("Token expiry not found");
     }
 
     const tokenExpiryNumber = Number(tokenExpiry);
     if (isNaN(tokenExpiryNumber)) {
       commonHelper.logout();
-      throw new Error('Invalid token expiry timestamp');
+      throw new Error("Invalid token expiry timestamp");
     }
 
     const now = Date.now();
-    
+
     // If token is expired, logout immediately
     if (now >= tokenExpiryNumber) {
       commonHelper.logout();
-      throw new Error('Token expired');
+      throw new Error("Token expired");
     }
 
     // If token is about to expire, try to refresh
@@ -91,8 +88,8 @@ const handleResponse = async (response: any) => {
   // console.log("response====================>", response);
 
   if (responseData?.access_token) {
-     localStorageHelper.storeItem("@token", responseData?.access_token);
-     localStorageHelper.storeItem("@token_expires",responseData?.expires_in,);
+    localStorageHelper.storeItem("@token", responseData?.access_token);
+    localStorageHelper.storeItem("@token_expires", responseData?.expires_in);
   }
   return response?.data;
 };
@@ -101,31 +98,33 @@ const handleResponse = async (response: any) => {
 const handleErrorResponse = (errorResponse: any) => {
   if (!errorResponse) {
     // showErrorToast('Network error. Please try again.');
-    return {error: 'Network error'};
+    return { error: "Network error" };
   }
-  const {status, data} = errorResponse.response as {status: number; data: any};
-  const errorMessage = data?.detail || data?.message || 'Api Failed';
-  console.log('dataaaaaa===>', status, data?.detail);
+  const { status, data } = errorResponse.response as {
+    status: number;
+    data: any;
+  };
+  const errorMessage = data?.detail || data?.message || "Api Failed";
   if (status === 401) {
     commonHelper.logout();
-  } 
+  }
 
- if (status == 422 && Array.isArray(data?.detail)) {
+  if (status == 422 && Array.isArray(data?.detail)) {
     const validationErrors = data.detail
       .map((err: any) => {
-        const field = err.loc?.slice(1).join('.') || 'Field'; 
+        const field = err.loc?.slice(1).join(".") || "Field";
         return `${field}: ${err.msg}`;
-      }).join(' | ');
+      })
+      .join(" | ");
 
-    console.log('Validation Errors ===>', validationErrors);
+    // console.log("Validation Errors ===>", validationErrors);
     showErrorToast(validationErrors);
   } else {
-    console.log('errormessagge====>', errorMessage);
+    // console.log("errormessagge====>", errorMessage);
     // showErrorToast(errorMessage);
   }
-  return {...data, error: errorMessage, status};
+  return { ...data, error: errorMessage, status };
 };
-
 
 //******************************************************  apiCall  ****************************************
 
@@ -136,42 +135,40 @@ const apiCall = async (
   tokenNeeded: boolean = true,
   contentType: string = "application/json"
 ) => {
-  console.log("routeeeeee====>",  route);
-  console.log("method===========>", method);
+  // console.log("routeeeeee====>",  route);
+  // console.log("method===========>", method);
   try {
     const headers = await prepareHeaders(tokenNeeded);
     headers["Content-Type"] = contentType;
 
     const config = {
-  method,
-  url: `${base_URL}${route}`,
-  headers,
-  data: method !== "get" ? params : undefined,
-  params: method === "get" ? params : undefined,
+      method,
+      url: `${base_URL}${route}`,
+      headers,
+      data: method !== "get" ? params : undefined,
+      params: method === "get" ? params : undefined,
 
-  paramsSerializer: (params: any) => {
-  return Object.entries(params)
-    .flatMap(([key, value]) => {
-      if (value === undefined || value === null) return []; 
-      return Array.isArray(value)
-        ? value.map((v) => `${key}=${encodeURIComponent(v)}`)
-        : [`${key}=${encodeURIComponent(String(value))}`];
-    })
-    .join("&");
-}
+      paramsSerializer: (params: any) => {
+        return Object.entries(params)
+          .flatMap(([key, value]) => {
+            if (value === undefined || value === null) return [];
+            return Array.isArray(value)
+              ? value.map((v) => `${key}=${encodeURIComponent(v)}`)
+              : [`${key}=${encodeURIComponent(String(value))}`];
+          })
+          .join("&");
+      },
+    };
 
-};
-
-
-    console.log("CONFIG ===> ", config);
+    // console.log("CONFIG ===> ", config);
 
     const response = await axios(config);
-    console.log("response=====>", response);
+    // console.log("response=====>", response);
 
     return await handleResponse(response);
   } catch (err: any) {
-    console.log('apiCallCatchError======>', err);
-    throw handleErrorResponse(err); 
+    // console.log("apiCallCatchError======>", err);
+    throw handleErrorResponse(err);
   }
 };
 

@@ -45,11 +45,9 @@ const statusOptions = [
   { label: "Ended", value: 4 },
 ];
 
-
-
 const allowedTransitions: Record<number, number[]> = {
-  1: [2,3],
-  2: [3,4],
+  1: [2, 3],
+  2: [3, 4],
   3: [2],
   4: [2],
 };
@@ -66,8 +64,6 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
   onCloseDetailCard,
   dutyData,
 }) => {
-  console.log("DutyUpdateForm props:", { dutyId, dutyData });
-
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
   const [currentStatus, setCurrentStatus] = useState<number>(2);
@@ -97,11 +93,6 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
       status: getInitialStatusValue(dutyData.status),
       service_id: dutyData.service_id,
     },
-  });
-  console.log("Initial form values:", {
-    id: dutyData.id,
-    status: getInitialStatusValue(dutyData.status),
-    service_id: dutyData.service_id,
   });
 
   useEffect(() => {
@@ -190,8 +181,6 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
   const handleDutyUpdate: SubmitHandler<DutyFormValues> = async (data) => {
     try {
       setLoading(true);
-      console.log("Data to be updated:", data);
-
       const formData = new FormData();
       formData.append("id", dutyId.toString());
       formData.append("status", data.status.toString());

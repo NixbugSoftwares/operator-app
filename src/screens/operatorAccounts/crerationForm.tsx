@@ -93,9 +93,6 @@ const AccountForm: React.FC<IAccountCreationFormProps> = ({
   ) => {
     try {
       setLoading(true);
-
-      console.log("Data being sent:", data);
-
       const formData = new FormData();
       formData.append("username", data.username);
       formData.append("password", data.password);
@@ -110,8 +107,6 @@ const AccountForm: React.FC<IAccountCreationFormProps> = ({
       if (data.email) {
         formData.append("email_id", data.email);
       }
-
-      console.log("FormData being sent:", formData);
       //  Create account
       const accountResponse = await dispatch(
         operatorCreationApi(formData)

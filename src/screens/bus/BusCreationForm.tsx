@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useForm, SubmitHandler  } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { busCreationSchema } from "../auth/validations/authValidation";
 import {
@@ -41,15 +41,14 @@ const BusCreationForm: React.FC<IOperatorCreationFormProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
-  
+
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<IAccountFormInputs>({
     resolver: yupResolver(busCreationSchema),
-    defaultValues: {
-    },
+    defaultValues: {},
   });
 
   const handleAccountCreation: SubmitHandler<IAccountFormInputs> = async (
@@ -100,8 +99,8 @@ const BusCreationForm: React.FC<IOperatorCreationFormProps> = ({
       } else {
         showErrorToast("Bus creation failed. Please try again.");
       }
-    } catch (error:any) {
-      showErrorToast(error||"Something went wrong. Please try again.");
+    } catch (error: any) {
+      showErrorToast(error || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -127,7 +126,6 @@ const BusCreationForm: React.FC<IOperatorCreationFormProps> = ({
           sx={{ mt: 1 }}
           onSubmit={handleSubmit(handleAccountCreation)}
         >
-          
           <TextField
             margin="normal"
             required

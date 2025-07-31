@@ -91,8 +91,6 @@ const LoginPage: React.FC = () => {
         .unwrap()
         .then((res) => {
           const items = res.data || [];
-          console.log("items", items);
-
           const formattedList = items.map((item: any) => ({
             id: item.id,
             name: item.name ?? "-",
@@ -176,12 +174,6 @@ const LoginPage: React.FC = () => {
         const roleListingResponse = await dispatch(
           loginUserAssignedRoleApi(assignedRole.roleId)
         ).unwrap();
-
-        console.log(
-          "roleDetails=================================",
-          roleListingResponse[0]
-        );
-
         if (roleListingResponse.length > 0) {
           dispatch(setRoleDetails(roleListingResponse[0]));
 
@@ -194,11 +186,6 @@ const LoginPage: React.FC = () => {
 
           localStorage.setItem("@permissions", JSON.stringify(permissions));
           dispatch(setPermissions(permissions));
-          console.log(
-            "Permissions=================================s:",
-            permissions
-          );
-
           if (permissions) {
             localStorage.setItem("@permissions", JSON.stringify(permissions));
             dispatch(setPermissions(permissions));

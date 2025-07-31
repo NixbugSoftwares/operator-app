@@ -30,12 +30,8 @@ const LogoutConfirmationModal: React.FC<LogoutConfirmationModalProps> = ({
   const dispatch = useAppDispatch();
 
   const handleLogout = async () => {
-    console.log("Attempting to logout...");
     try {
-      console.log("Dispatching logoutApi...");
-      const response = await dispatch(logoutApi({})).unwrap();
-      console.log("Logout response:", response);
-
+      await dispatch(logoutApi({})).unwrap();
       localStorageHelper.clearStorage();
       localStorageHelper.removeStoredItem("@user");
       dispatch(clearRoleDetails());

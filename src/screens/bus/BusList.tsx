@@ -55,7 +55,6 @@ const BusListingTable = () => {
         .unwrap()
         .then((res) => {
           const items = res.data || [];
-          console.log("items", items);
           const formattedBusses = items.map((bus: any) => ({
             id: bus.id,
             companyId: bus.company_id,

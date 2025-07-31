@@ -79,7 +79,7 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
     defaultValues: {
       ticket_mode: "1",
       created_mode: "1",
-      starting_at: new Date().toISOString().split("T")[0], 
+      starting_at: new Date().toISOString().split("T")[0],
     },
   });
 
@@ -133,39 +133,38 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
     [dispatch, rowsPerPage]
   );
 
-    const fetchFareList = useCallback(
-  async (pageNumber: number, searchText = "") => {
-    const offset = pageNumber * rowsPerPage;
-    try {
-      const res = await dispatch(
-        fareListApi({
-          limit: rowsPerPage,
-          offset,
-          name: searchText,
-          
-        })
-      ).unwrap();
+  const fetchFareList = useCallback(
+    async (pageNumber: number, searchText = "") => {
+      const offset = pageNumber * rowsPerPage;
+      try {
+        const res = await dispatch(
+          fareListApi({
+            limit: rowsPerPage,
+            offset,
+            name: searchText,
+          })
+        ).unwrap();
 
-      const fares = res.data || [];
+        const fares = res.data || [];
 
-      const formattedFareList = fares.map((fare: any) => ({
-        id: fare.id,
-        name: fare.name ?? "-",
-      }));
+        const formattedFareList = fares.map((fare: any) => ({
+          id: fare.id,
+          name: fare.name ?? "-",
+        }));
 
-      setDropdownData((prev) => ({
-        ...prev,
-        fareList:
-          pageNumber === 0
-            ? formattedFareList
-            : [...prev.fareList, ...formattedFareList],
-      }));
-    } catch (error: any) {
-      showErrorToast(error || "Failed to fetch Fare list");
-    }
-  },
-  [dispatch, rowsPerPage]
-);
+        setDropdownData((prev) => ({
+          ...prev,
+          fareList:
+            pageNumber === 0
+              ? formattedFareList
+              : [...prev.fareList, ...formattedFareList],
+        }));
+      } catch (error: any) {
+        showErrorToast(error || "Failed to fetch Fare list");
+      }
+    },
+    [dispatch, rowsPerPage]
+  );
 
   const fetchRouteList = useCallback(
     (pageNumber: number, searchText = "") => {

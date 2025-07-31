@@ -363,7 +363,7 @@ const FareListingPage = () => {
                               flexWrap="wrap"
                               gap={1}
                               sx={{
-                                maxWidth: "390px", 
+                                maxWidth: "390px",
                               }}
                             >
                               {fare.attributes.ticket_types.map(

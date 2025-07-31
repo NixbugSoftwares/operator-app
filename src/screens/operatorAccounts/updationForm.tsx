@@ -66,7 +66,6 @@ const statusOptions: IOption[] = [
 ];
 
 const loggedInUser = localStorageHelper.getItem("@user");
-console.log("loggedInUser:", loggedInUser);
 
 const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
   accountId,
@@ -76,16 +75,11 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
   onCloseDetailCard,
   canupdateOperator,
 }) => {
-  console.log("accountData:", accountData);
-  
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState<{ id: number; name: string }[]>([]);
   const userId = Number(loggedInUser?.operator_id);
   const isLoggedInUser = Number(accountId) === userId;
-  console.log("accountId:", accountId, typeof accountId);
-  console.log("userId:", userId, typeof userId);
-  console.log("isLoggedInUser:", isLoggedInUser);
   const [roleMappingError, setRoleMappingError] = useState(false);
   const {
     register,
@@ -99,7 +93,6 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
   const handleTogglePassword = () => {
     setShowPassword((prev) => !prev);
   };
-  console.log("accountData>>>>>>>>>>>>>>>>>>>>>>>>>", accountData);
 
   useEffect(() => {
     // Fetch available roles

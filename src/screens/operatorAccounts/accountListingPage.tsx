@@ -31,8 +31,8 @@ import { RootState } from "../../store/Store";
 const getGenderBackendValue = (displayValue: string): string => {
   const genderMap: Record<string, string> = {
     Other: "1",
-     Female : "2",
-     Male: "3",
+    Female: "2",
+    Male: "3",
     Transgender: "4",
   };
   return genderMap[displayValue] || "";
@@ -81,7 +81,7 @@ const AccountListingTable = () => {
           phoneNumber: account.phone_number || account.phoneNumber || "",
           status: account.status === 1 ? "Active" : "Suspended",
           created_on: account.created_on,
-          updated_on: account.updated_on
+          updated_on: account.updated_on,
         }));
 
         setAccountList(formattedAccounts);
@@ -184,28 +184,28 @@ const AccountListingTable = () => {
           }
           placement="top-end"
         >
-            <Button
-              sx={{
-                ml: "auto",
-                mr: 2,
-                mb: 2,
-                backgroundColor: !canCreateOperator
-                  ? "#6c87b7 !important"
-                  : "#00008B",
-                color: "white !important",
-                display: "flex",
-                justifyContent: "flex-end",
-                "&.Mui-disabled": {
-                  color: "#fff !important",
-                },
-              }}
-              variant="contained"
-              onClick={() => setOpenCreateModal(true)}
-              disabled={!canCreateOperator}
-              style={{ cursor: !canCreateOperator ? "not-allowed" : "pointer" }}
-            >
-              Add New operator
-            </Button>
+          <Button
+            sx={{
+              ml: "auto",
+              mr: 2,
+              mb: 2,
+              backgroundColor: !canCreateOperator
+                ? "#6c87b7 !important"
+                : "#00008B",
+              color: "white !important",
+              display: "flex",
+              justifyContent: "flex-end",
+              "&.Mui-disabled": {
+                color: "#fff !important",
+              },
+            }}
+            variant="contained"
+            onClick={() => setOpenCreateModal(true)}
+            disabled={!canCreateOperator}
+            style={{ cursor: !canCreateOperator ? "not-allowed" : "pointer" }}
+          >
+            Add New operator
+          </Button>
         </Tooltip>
         <TableContainer
           sx={{
@@ -217,24 +217,24 @@ const AccountListingTable = () => {
             position: "relative",
           }}
         >
-           {isLoading && (
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          backgroundColor: "rgba(255, 255, 255, 0.7)",
-                          zIndex: 1,
-                        }}
-                      >
-                        <CircularProgress />
-                      </Box>
-                    )}
+          {isLoading && (
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                zIndex: 1,
+              }}
+            >
+              <CircularProgress />
+            </Box>
+          )}
           <Table stickyHeader>
             <TableHead>
               {/* Header Row */}
@@ -386,11 +386,11 @@ const AccountListingTable = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-             {isLoading ? (
-                             <TableRow>
-                               <TableCell colSpan={6} align="center"></TableCell>
-                             </TableRow>
-                           ) :accountList.length > 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center"></TableCell>
+                </TableRow>
+              ) : accountList.length > 0 ? (
                 accountList.map((row) => (
                   <TableRow
                     key={row.id}

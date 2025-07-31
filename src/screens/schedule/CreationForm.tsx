@@ -18,7 +18,10 @@ import {
   fareListApi,
   companyBusListApi,
 } from "../../slices/appSlice";
-import { showErrorToast, showSuccessToast } from "../../common/toastMessageHelper";
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "../../common/toastMessageHelper";
 import { Schedule } from "../../types/type";
 
 interface IOperatorCreationFormProps {
@@ -82,7 +85,11 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
 
   const rowsPerPage = 10;
 
-  const {  handleSubmit, control, formState: { errors } } = useForm<Schedule>({
+  const {
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<Schedule>({
     defaultValues: {
       ticketing_mode: "1",
       triggering_mode: "1",
@@ -90,57 +97,56 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
     },
   });
 
-  
-    const memoizedBusList = useMemo(
-      () => dropdownData.busList,
-      [dropdownData.busList]
-    );
-    const memoizedRouteList = useMemo(
-      () => dropdownData.routeList,
-      [dropdownData.routeList]
-    );
-    const memoizedFareList = useMemo(
-      () => dropdownData.fareList,
-      [dropdownData.fareList]
-    );
-  
-    const fetchBusList = useCallback(
-      (pageNumber: number, searchText = "") => {
-        const offset = pageNumber * rowsPerPage;
-        dispatch(
-          companyBusListApi({
-            limit: rowsPerPage,
-            offset,
-            name: searchText,
-          })
-        )
-          .unwrap()
-          .then((res) => {
-            const items = res.data || [];
-            const formattedBusList = items.map((bus: any) => ({
-              id: bus.id,
-              name: bus.name ?? "-",
-            }));
-            setDropdownData((prev) => ({
-              ...prev,
-              busList:
-                pageNumber === 0
-                  ? formattedBusList
-                  : [...prev.busList, ...formattedBusList],
-            }));
-            setHasMore((prev) => ({
-              ...prev,
-              bus: items.length === rowsPerPage,
-            }));
-          })
-          .catch((error) => {
-            showErrorToast(error.message || "Failed to fetch Bus list");
-          });
-      },
-      [dispatch]
-    );
-  
-    const fetchFareList = useCallback(
+  const memoizedBusList = useMemo(
+    () => dropdownData.busList,
+    [dropdownData.busList]
+  );
+  const memoizedRouteList = useMemo(
+    () => dropdownData.routeList,
+    [dropdownData.routeList]
+  );
+  const memoizedFareList = useMemo(
+    () => dropdownData.fareList,
+    [dropdownData.fareList]
+  );
+
+  const fetchBusList = useCallback(
+    (pageNumber: number, searchText = "") => {
+      const offset = pageNumber * rowsPerPage;
+      dispatch(
+        companyBusListApi({
+          limit: rowsPerPage,
+          offset,
+          name: searchText,
+        })
+      )
+        .unwrap()
+        .then((res) => {
+          const items = res.data || [];
+          const formattedBusList = items.map((bus: any) => ({
+            id: bus.id,
+            name: bus.name ?? "-",
+          }));
+          setDropdownData((prev) => ({
+            ...prev,
+            busList:
+              pageNumber === 0
+                ? formattedBusList
+                : [...prev.busList, ...formattedBusList],
+          }));
+          setHasMore((prev) => ({
+            ...prev,
+            bus: items.length === rowsPerPage,
+          }));
+        })
+        .catch((error) => {
+          showErrorToast(error.message || "Failed to fetch Bus list");
+        });
+    },
+    [dispatch]
+  );
+
+  const fetchFareList = useCallback(
     async (pageNumber: number, searchText = "") => {
       setLoading(true);
       const offset = pageNumber * rowsPerPage;
@@ -152,14 +158,14 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
             name: searchText,
           })
         ).unwrap();
-  
+
         const fares = res.data || [];
-        
+
         const formattedFareList = fares.map((fare: any) => ({
           id: fare.id,
           name: fare.name ?? "-",
         }));
-  
+
         setDropdownData((prev) => ({
           ...prev,
           fareList:
@@ -173,51 +179,50 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
         setLoading(false);
       }
     },
-    [dispatch,  rowsPerPage]
+    [dispatch, rowsPerPage]
   );
-  
-    const fetchRouteList = useCallback(
-      (pageNumber: number, searchText = "") => {
-        const offset = pageNumber * rowsPerPage;
-        dispatch(
-          busRouteListApi({
-            limit: rowsPerPage,
-            offset,
-            name: searchText,
-          })
-        )
-          .unwrap()
-          .then((res) => {
-            const items = res.data || [];
-            const formattedList = items.map((item: any) => ({
-              id: item.id,
-              name: item.name ?? "-",
-            }));
-            setDropdownData((prev) => ({
-              ...prev,
-              routeList:
-                pageNumber === 0
-                  ? formattedList
-                  : [...prev.routeList, ...formattedList],
-            }));
-            setHasMore((prev) => ({
-              ...prev,
-              route: items.length === rowsPerPage,
-            }));
-          })
-          .catch((error: any) => {
-            showErrorToast(error || "Failed to fetch Route list");
-          });
-      },
-      [dispatch, ]
-    );
-  
-    useEffect(() => {
-      fetchBusList(0);
-      fetchFareList(0);
-      fetchRouteList(0);
-    }, [fetchBusList, fetchFareList, fetchRouteList]);
-  
+
+  const fetchRouteList = useCallback(
+    (pageNumber: number, searchText = "") => {
+      const offset = pageNumber * rowsPerPage;
+      dispatch(
+        busRouteListApi({
+          limit: rowsPerPage,
+          offset,
+          name: searchText,
+        })
+      )
+        .unwrap()
+        .then((res) => {
+          const items = res.data || [];
+          const formattedList = items.map((item: any) => ({
+            id: item.id,
+            name: item.name ?? "-",
+          }));
+          setDropdownData((prev) => ({
+            ...prev,
+            routeList:
+              pageNumber === 0
+                ? formattedList
+                : [...prev.routeList, ...formattedList],
+          }));
+          setHasMore((prev) => ({
+            ...prev,
+            route: items.length === rowsPerPage,
+          }));
+        })
+        .catch((error: any) => {
+          showErrorToast(error || "Failed to fetch Route list");
+        });
+    },
+    [dispatch]
+  );
+
+  useEffect(() => {
+    fetchBusList(0);
+    fetchFareList(0);
+    fetchRouteList(0);
+  }, [fetchBusList, fetchFareList, fetchRouteList]);
 
   const handleAccountCreation: SubmitHandler<Schedule> = async (data) => {
     try {
@@ -233,7 +238,9 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
         frequency: data.frequency,
       };
 
-      const response = await dispatch(scheduleCreationApi(scheduleForm)).unwrap();
+      const response = await dispatch(
+        scheduleCreationApi(scheduleForm)
+      ).unwrap();
 
       if (response?.id) {
         showSuccessToast("Schedule created successfully!");
@@ -243,7 +250,9 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
         showErrorToast("Schedule creation failed. Please try again.");
       }
     } catch (error: any) {
-      showErrorToast(error?.message || "Something went wrong. Please try again.");
+      showErrorToast(
+        error?.message || "Something went wrong. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -257,7 +266,7 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
         hasMore[type]
       ) {
         const newPage = page[type] + 1;
-        setPage(prev => ({ ...prev, [type]: newPage }));
+        setPage((prev) => ({ ...prev, [type]: newPage }));
 
         switch (type) {
           case "bus":
@@ -293,12 +302,12 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
           value={options.find((item) => item.id === field.value) || null}
           onChange={(_, newValue) => field.onChange(newValue?.id)}
           onInputChange={(_, newInputValue) => {
-            if (type === 'bus' || type === 'route' || type === 'fare') {
-              setSearchParams(prev => ({ ...prev, [type]: newInputValue }));
-              setPage(prev => ({ ...prev, [type]: 0 }));
-              type === 'bus' 
+            if (type === "bus" || type === "route" || type === "fare") {
+              setSearchParams((prev) => ({ ...prev, [type]: newInputValue }));
+              setPage((prev) => ({ ...prev, [type]: 0 }));
+              type === "bus"
                 ? fetchBusList(0, newInputValue)
-                : type === 'route'
+                : type === "route"
                 ? fetchRouteList(0, newInputValue)
                 : fetchFareList(0, newInputValue);
             }
@@ -330,12 +339,14 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
   return (
     <Container component="main" maxWidth="xs">
       <CssBaseline />
-      <Box sx={{
-        marginTop: 8,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-      }}>
+      <Box
+        sx={{
+          marginTop: 8,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
         <Typography component="h1" variant="h5">
           Schedule Creation
         </Typography>
@@ -345,7 +356,7 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
           sx={{ mt: 1 }}
           onSubmit={handleSubmit(handleAccountCreation)}
         >
-           <Controller
+          <Controller
             name="name"
             control={control}
             rules={{

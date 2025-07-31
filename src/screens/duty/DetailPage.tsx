@@ -21,13 +21,16 @@ import { useAppDispatch } from "../../store/Hooks";
 import { dutyDeleteApi } from "../../slices/appSlice";
 import localStorageHelper from "../../utils/localStorageHelper";
 import DutyUpdateForm from "./UpdationForm";
-import { showErrorToast, showSuccessToast } from "../../common/toastMessageHelper";
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "../../common/toastMessageHelper";
 import { RootState } from "../../store/Store";
 import { useSelector } from "react-redux";
 import moment from "moment";
 import { Duty } from "../../types/type";
 interface DutyCardProps {
-  duty: Duty
+  duty: Duty;
   refreshList: (value: any) => void;
   onUpdate: () => void;
   onDelete: (id: number) => void;
@@ -67,8 +70,7 @@ const DutyDetailsCard: React.FC<DutyCardProps> = ({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [updateFormOpen, setUpdateFormOpen] = useState(false);
   const dispatch = useAppDispatch();
-  console.log("duty()()()()()()(()()", duty);
-const canUpdateDuty = useSelector((state: RootState) =>
+  const canUpdateDuty = useSelector((state: RootState) =>
     state.app.permissions.includes("create_duty")
   );
   const canDeleteDuty = useSelector((state: RootState) =>
@@ -76,7 +78,6 @@ const canUpdateDuty = useSelector((state: RootState) =>
   );
   const deleteDutyPermission =
     canDeleteDuty && (duty.status === "Assigned" || duty.status === "Finished");
-
 
   const handleBusDelete = async () => {
     if (!duty.id) {
@@ -142,7 +143,7 @@ const canUpdateDuty = useSelector((state: RootState) =>
             <Typography variant="body2" color="textSecondary">
               <b>Assigned Operator:</b> {duty.operatorName}
             </Typography>
-            <Typography variant="body2" align="left"  color="textSecondary">
+            <Typography variant="body2" align="left" color="textSecondary">
               <b>Service name:</b> {duty.serviceName}
             </Typography>
             <Typography
@@ -165,25 +166,25 @@ const canUpdateDuty = useSelector((state: RootState) =>
               />
             </Typography>
             <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-            <DateRangeOutlinedIcon color="action" sx={{ mr: 1 }} />
+              <DateRangeOutlinedIcon color="action" sx={{ mr: 1 }} />
 
-            <Typography variant="body2">
-              <b> Created at:</b>
-              {moment(duty.created_on).local().format("DD-MM-YYYY, hh:mm A")}
-            </Typography>
-          </Box>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-            <DateRangeOutlinedIcon color="action" sx={{ mr: 1 }} />
+              <Typography variant="body2">
+                <b> Created at:</b>
+                {moment(duty.created_on).local().format("DD-MM-YYYY, hh:mm A")}
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <DateRangeOutlinedIcon color="action" sx={{ mr: 1 }} />
 
-            <Typography variant="body2">
-              <b> Last updated at:</b>
-              {moment(duty?.updated_on).isValid()
-                ? moment(duty.updated_on)
-                    .local()
-                    .format("DD-MM-YYYY, hh:mm A")
-                : "Not updated yet"}
-            </Typography>
-          </Box>
+              <Typography variant="body2">
+                <b> Last updated at:</b>
+                {moment(duty?.updated_on).isValid()
+                  ? moment(duty.updated_on)
+                      .local()
+                      .format("DD-MM-YYYY, hh:mm A")
+                  : "Not updated yet"}
+              </Typography>
+            </Box>
           </Box>
         </Card>
 
@@ -252,7 +253,9 @@ const canUpdateDuty = useSelector((state: RootState) =>
               placement="top-start"
             >
               <span
-                style={{ cursor: !deleteDutyPermission ? "not-allowed" : "pointer" }}
+                style={{
+                  cursor: !deleteDutyPermission ? "not-allowed" : "pointer",
+                }}
               >
                 <Button
                   variant="contained"
