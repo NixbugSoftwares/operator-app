@@ -19,6 +19,7 @@ import {
   Map as MapIcon,
   ConfirmationNumber as TicketIcon,
 } from "@mui/icons-material";
+import moment from "moment";
 
 interface TicketDetailsCardProps {
   ticket: {
@@ -42,20 +43,6 @@ const TicketDetailsCard: React.FC<TicketDetailsCardProps> = ({
   ticket,
   onBack,
 }) => {
-  const formatUTCDateToLocal = (dateString: string | null): string => {
-    if (!dateString || dateString.trim() === "") return "Not available";
-    const date = new Date(dateString);
-    return isNaN(date.getTime())
-      ? "Not available"
-      : date.toLocaleString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-  };
-
   const getTicketTypeColor = (type: string) => {
     switch (type.toLowerCase()) {
       case "adult":
@@ -183,7 +170,7 @@ const TicketDetailsCard: React.FC<TicketDetailsCardProps> = ({
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <DateIcon color="info" sx={{ mr: 1 }} />
             <Typography variant="body2">
-              {formatUTCDateToLocal(ticket.created_on)}
+              {moment(ticket.created_on).local().format("DD-MM-YYYY, hh:mm A")}
             </Typography>
           </Box>
         </Grid>
