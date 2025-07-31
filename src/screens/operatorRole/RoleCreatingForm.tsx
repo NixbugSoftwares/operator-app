@@ -290,12 +290,15 @@ const RoleCreationForm: React.FC<IRoleCreationFormProps> = ({
                             onChange={(e) => field.onChange(e.target.checked)}
                             color="primary"
                           />
+                          
                         }
                         label={
+                          
                           <Typography variant="caption">
                             {permission.label}
                           </Typography>
                         }
+                        labelPlacement="start"
                         sx={{
                           m: 0,
                           justifyContent: "space-between",
