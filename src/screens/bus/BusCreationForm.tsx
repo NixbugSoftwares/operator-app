@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import { busCreationSchema } from "../auth/validations/authValidation";
 import {
   Box,
   TextField,
@@ -19,15 +17,14 @@ import {
 } from "../../common/toastMessageHelper";
 
 interface IAccountFormInputs {
-  company_id: number;
-  registrationNumber: string;
+  registration_number: string;
   name: string;
   capacity: number;
   manufactured_on: string;
-  insurance_upto?: string | null;
-  pollution_upto?: string | null;
-  fitness_upto?: string | null;
-  road_tax_upto?: string | null;
+  insurance_upto?: string;
+  pollution_upto?: string;
+  fitness_upto?: string;
+  road_tax_upto?: string;
 }
 
 interface IOperatorCreationFormProps {
@@ -46,61 +43,46 @@ const BusCreationForm: React.FC<IOperatorCreationFormProps> = ({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<IAccountFormInputs>({
-    resolver: yupResolver(busCreationSchema),
-    defaultValues: {},
-  });
+  } = useForm<IAccountFormInputs>();
 
   const handleAccountCreation: SubmitHandler<IAccountFormInputs> = async (
     data
   ) => {
     try {
       setLoading(true);
-      const formatDateToUTC = (dateString: string | null): string | null => {
-        if (!dateString) return null;
+
+      const formatDateToUTC = (dateString?: string) => {
+        if (!dateString) return "";
         const date = new Date(dateString);
         return date.toISOString();
       };
 
       const formData = new FormData();
-      formData.append("registration_number", data.registrationNumber);
+      formData.append("registration_number", data.registration_number);
       formData.append("name", data.name);
       formData.append("capacity", data.capacity.toString());
-      formData.append(
-        "manufactured_on",
-        formatDateToUTC(data.manufactured_on) || ""
-      );
+      formData.append("manufactured_on", formatDateToUTC(data.manufactured_on));
+
+      // Append optional dates only if they exist
       if (data.insurance_upto)
-        formData.append(
-          "insurance_upto",
-          formatDateToUTC(data.insurance_upto) || ""
-        );
+        formData.append("insurance_upto", formatDateToUTC(data.insurance_upto));
       if (data.pollution_upto)
-        formData.append(
-          "pollution_upto",
-          formatDateToUTC(data.pollution_upto) || ""
-        );
+        formData.append("pollution_upto", formatDateToUTC(data.pollution_upto));
       if (data.fitness_upto)
-        formData.append(
-          "fitness_upto",
-          formatDateToUTC(data.fitness_upto) || ""
-        );
+        formData.append("fitness_upto", formatDateToUTC(data.fitness_upto));
       if (data.road_tax_upto)
-        formData.append(
-          "road_tax_upto ",
-          formatDateToUTC(data.road_tax_upto) || ""
-        );
+        formData.append("road_tax_upto", formatDateToUTC(data.road_tax_upto));
 
       const response = await dispatch(companyBusCreateApi(formData)).unwrap();
       if (response?.id) {
         showSuccessToast("Bus created successfully!");
         refreshList("refresh");
         onClose();
-      } else {
-        showErrorToast("Bus creation failed. Please try again.");
       }
     } catch (error: any) {
-      showErrorToast(error || "Something went wrong. Please try again.");
+      showErrorToast(
+        error?.message || "Bus creation failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -120,10 +102,11 @@ const BusCreationForm: React.FC<IOperatorCreationFormProps> = ({
         <Typography component="h1" variant="h5">
           Bus Creation
         </Typography>
+
         <Box
           component="form"
           noValidate
-          sx={{ mt: 1 }}
+          sx={{ mt: 1, width: "100%" }}
           onSubmit={handleSubmit(handleAccountCreation)}
         >
           <TextField
@@ -131,31 +114,64 @@ const BusCreationForm: React.FC<IOperatorCreationFormProps> = ({
             required
             fullWidth
             label="Registration Number"
-            {...register("registrationNumber")}
-            error={!!errors.registrationNumber}
-            helperText={errors.registrationNumber?.message}
+            error={!!errors.registration_number}
+            helperText={errors.registration_number?.message}
             size="small"
+            {...register("registration_number", {
+              required: "Registration number is required",
+              pattern: {
+                value: /^[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{1,4}$/,
+                message: "Format: e.g., KA01AB1234",
+              },
+              maxLength: {
+                value: 16,
+                message: "Max 16 characters",
+              },
+            })}
           />
+
           <TextField
             margin="normal"
             required
             fullWidth
             label="Bus Name"
-            {...register("name")}
             error={!!errors.name}
             helperText={errors.name?.message}
             size="small"
+            {...register("name", {
+              required: "Bus name is required",
+              minLength: {
+                value: 4,
+                message: "Minimum 4 characters",
+              },
+              maxLength: {
+                value: 32,
+                message: "Maximum 32 characters",
+              },
+            })}
           />
+
           <TextField
             margin="normal"
             required
             fullWidth
             label="Capacity"
             type="number"
-            {...register("capacity")}
             error={!!errors.capacity}
             helperText={errors.capacity?.message}
             size="small"
+            {...register("capacity", {
+              required: "Capacity is required",
+              min: {
+                value: 1,
+                message: "Minimum capacity is 1",
+              },
+              max: {
+                value: 120,
+                message: "Maximum capacity is 120",
+              },
+              valueAsNumber: true,
+            })}
           />
 
           <TextField
@@ -165,62 +181,56 @@ const BusCreationForm: React.FC<IOperatorCreationFormProps> = ({
             label="Manufactured On"
             type="date"
             InputLabelProps={{ shrink: true }}
-            {...register("manufactured_on")}
             error={!!errors.manufactured_on}
             helperText={errors.manufactured_on?.message}
             size="small"
+            {...register("manufactured_on", {
+              required: "Manufacture date is required",
+              validate: (value) => {
+                const date = new Date(value);
+                return date <= new Date() || "Date cannot be in the future";
+              },
+            })}
           />
-          <TextField
-            margin="normal"
-            fullWidth
-            label="Insurance Upto"
-            type="date"
-            InputLabelProps={{ shrink: true }}
-            {...register("insurance_upto")}
-            error={!!errors.insurance_upto}
-            helperText={errors.insurance_upto?.message}
-            size="small"
-          />
-          <TextField
-            margin="normal"
-            fullWidth
-            label="Pollution Upto"
-            type="date"
-            InputLabelProps={{ shrink: true }}
-            {...register("pollution_upto")}
-            error={!!errors.pollution_upto}
-            helperText={errors.pollution_upto?.message}
-            size="small"
-          />
-          <TextField
-            margin="normal"
-            fullWidth
-            label="Fitness Upto"
-            type="date"
-            InputLabelProps={{ shrink: true }}
-            {...register("fitness_upto")}
-            error={!!errors.fitness_upto}
-            helperText={errors.fitness_upto?.message}
-            size="small"
-          />
-          <TextField
-            margin="normal"
-            fullWidth
-            label="Road Tax Upto"
-            type="date"
-            InputLabelProps={{ shrink: true }}
-            {...register("road_tax_upto")}
-            error={!!errors.road_tax_upto}
-            helperText={errors.road_tax_upto?.message}
-            size="small"
-          />
+
+          {[
+            "insurance_upto",
+            "pollution_upto",
+            "fitness_upto",
+            "road_tax_upto",
+          ].map((field) => (
+            <TextField
+              key={field}
+              margin="normal"
+              fullWidth
+              label={field
+                .replace(/_/g, " ")
+                .replace(/\b\w/g, (l) => l.toUpperCase())}
+              type="date"
+              InputLabelProps={{ shrink: true }}
+              error={!!errors[field as keyof typeof errors]}
+              helperText={errors[field as keyof typeof errors]?.message}
+              size="small"
+              {...register(field as keyof IAccountFormInputs, {
+                validate: (value) => {
+                  if (!value) return true;
+                  const date = new Date(value);
+                  return date >= new Date() || "Date must be in the future";
+                },
+              })}
+            />
+          ))}
 
           <Button
             type="submit"
             fullWidth
-            color="primary"
             variant="contained"
-            sx={{ mt: 3, mb: 2, bgcolor: "darkblue" }}
+            sx={{
+              mt: 3,
+              mb: 2,
+              bgcolor: "darkblue",
+              "&:hover": { bgcolor: "darkblue" },
+            }}
             disabled={loading}
           >
             {loading ? (

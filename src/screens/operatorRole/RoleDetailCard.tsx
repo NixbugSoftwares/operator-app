@@ -15,7 +15,7 @@ import {
   Checkbox,
   FormControlLabel,
   Alert,
-  Grid,
+  Stack ,
   useTheme,
   Divider,
 } from "@mui/material";
@@ -330,24 +330,25 @@ const RoleDetailsCard: React.FC<RoleCardProps> = ({
 
           <Divider sx={{ scale: 5, fill: theme.palette.primary.main, mb: 2 }} />
 
-          <Grid container spacing={1}>
+          <Stack spacing={2}>
             {permissionGroups.map((group) => (
-              <React.Fragment key={group.groupName}>
-                <Grid item xs={12}>
-                  <Typography
-                    variant="subtitle2"
-                    sx={{
-                      fontWeight: "bold",
-                      color: theme.palette.text.primary,
-                    }}
-                  >
-                    {group.groupName}:
-                  </Typography>
-                </Grid>
-                {group.permissions.map((permission) => (
-                  <Grid item xs={6} sm={4} key={permission.key}>
+              <Box key={group.groupName}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    fontWeight: "bold",
+                    color: theme.palette.text.primary,
+                    mb: 1,
+                  }}
+                >
+                  {group.groupName}:
+                </Typography>
+                <Stack direction="row" flexWrap="wrap" gap={1} useFlexGap>
+                  {group.permissions.map((permission) => (
                     <Box
+                      key={permission.key}
                       sx={{
+                        width: { xs: 'calc(50% - 8px)', sm: 'calc(33% - 8px)' },
                         display: "flex",
                         alignItems: "center",
                         gap: 1,
@@ -370,11 +371,11 @@ const RoleDetailsCard: React.FC<RoleCardProps> = ({
                         <CloseIcon fontSize="small" color="error" />
                       )}
                     </Box>
-                  </Grid>
-                ))}
-              </React.Fragment>
+                  ))}
+                </Stack>
+              </Box>
             ))}
-          </Grid>
+          </Stack>
         </CardContent>
 
         {/* Action Buttons */}

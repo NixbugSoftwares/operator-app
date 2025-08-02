@@ -310,15 +310,16 @@ const BusListingTable = () => {
                   >
                     <TableCell sx={{ textAlign: "center" }}>{row.id}</TableCell>
                     <TableCell>
-                      <Typography noWrap>
-                        <Tooltip title={row.name} placement="bottom">
-                          <Typography noWrap>
-                            {row.name.length > 15
-                              ? `${row.name.substring(0, 15)}...`
-                              : row.name}
-                          </Typography>
-                        </Tooltip>
-                      </Typography>
+                      <Tooltip title={row.name} placement="bottom">
+                        <Typography
+                          noWrap
+                          sx={{ display: "inline-block", maxWidth: "100%" }}
+                        >
+                          {row.name.length > 15
+                            ? `${row.name.substring(0, 15)}...`
+                            : row.name}
+                        </Typography>
+                      </Tooltip>
                     </TableCell>
                     <TableCell>
                       <Typography noWrap>{row.registrationNumber}</Typography>

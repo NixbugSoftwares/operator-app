@@ -97,10 +97,7 @@ const AccountForm: React.FC<IAccountCreationFormProps> = ({
       formData.append("username", data.username);
       formData.append("password", data.password);
       formData.append("gender", data.gender?.toString() || "");
-
-      if (data.fullName) {
         formData.append("full_name", data.fullName);
-      }
       if (data.phoneNumber) {
         formData.append("phone_number", `+91${data.phoneNumber}`);
       }

@@ -9,7 +9,7 @@ import {
   CssBaseline,
   CircularProgress,
   Autocomplete,
-  Grid,
+  Stack,
 } from "@mui/material";
 import { useAppDispatch } from "../../store/Hooks";
 import {
@@ -239,41 +239,55 @@ const DutyCreationForm: React.FC<IOperatorCreationFormProps> = ({
           component="form"
           noValidate
           onSubmit={handleSubmit(handleDutyCreation)}
+          sx={{ width: "100%" }}
         >
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              {renderAutocomplete(
-                "operator_id",
-                "Operator",
-                dropdownData.operatorList,
-                "operator"
-              )}
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              {renderAutocomplete(
-                "service_id",
-                "Service",
-                dropdownData.serviceList,
-                "service"
-              )}
-            </Grid>
-          </Grid>
-
-          <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              sx={{ minWidth: 150, bgcolor: "darkblue" }}
-              disabled={loading}
+          <Stack spacing={3}>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={2}
+              sx={{ width: "100%" }}
             >
-              {loading ? (
-                <CircularProgress size={24} sx={{ color: "white" }} />
-              ) : (
-                "Create Duty"
-              )}
-            </Button>
-          </Box>
+              <Box sx={{ flex: 1 }}>
+                {renderAutocomplete(
+                  "operator_id",
+                  "Operator",
+                  dropdownData.operatorList,
+                  "operator"
+                )}
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                {renderAutocomplete(
+                  "service_id",
+                  "Service",
+                  dropdownData.serviceList,
+                  "service"
+                )}
+              </Box>
+            </Stack>
+
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                sx={{
+                  minWidth: 150,
+                  bgcolor: "darkblue",
+                  "&:hover": {
+                    bgcolor: "darkblue",
+                    opacity: 0.9,
+                  },
+                }}
+                disabled={loading}
+              >
+                {loading ? (
+                  <CircularProgress size={24} sx={{ color: "white" }} />
+                ) : (
+                  "Create Duty"
+                )}
+              </Button>
+            </Box>
+          </Stack>
         </Box>
       </Box>
     </Container>

@@ -14,7 +14,7 @@ import {
   Card,
   CardContent,
   Autocomplete,
-  Grid,
+  Stack,
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Visibility from "@mui/icons-material/Visibility";
@@ -215,77 +215,76 @@ const LoginPage: React.FC = () => {
       }
     }
   };
-  return (
-    <Container component="main" maxWidth="xs" sx={{ mb: 10 }}>
-      <CssBaseline />
-      <Box
-        sx={{
-          marginTop: 8,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-        }}
-      >
-        <Card sx={{ width: "100%", p: 3, boxShadow: 3 }}>
-          <CardContent
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-            }}
+ return (
+  <Container component="main" maxWidth="xs" sx={{ mb: 10 }}>
+    <CssBaseline />
+    <Box
+      sx={{
+        marginTop: 8,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      <Card sx={{ width: "100%", p: 3, boxShadow: 3 }}>
+        <CardContent
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          <Avatar sx={{ m: 1, bgcolor: "darkblue" }}>
+            <LockOutlinedIcon />
+          </Avatar>
+          <Typography component="h1" variant="h5">
+            Sign In
+          </Typography>
+          <Box
+            component="form"
+            noValidate
+            sx={{ mt: 1, width: '100%' }}
+            onSubmit={handleSubmit(handleLogin)}
           >
-            <Avatar sx={{ m: 1, bgcolor: "darkblue" }}>
-              <LockOutlinedIcon />
-            </Avatar>
-            <Typography component="h1" variant="h5">
-              Sign In
-            </Typography>
-            <Box
-              component="form"
-              noValidate
-              sx={{ mt: 1 }}
-              onSubmit={handleSubmit(handleLogin)}
-            >
-              <Grid item xs={12} sm={6}>
-                <Controller
-                  name="company_id"
-                  control={control}
-                  rules={{ required: "Company is required" }}
-                  render={({ field }) => (
-                    <Autocomplete
-                      options={dropdownData.companyList}
-                      getOptionLabel={(option) => option.name}
-                      value={
-                        dropdownData.companyList.find(
-                          (item) => item.id === field.value
-                        ) || null
-                      }
-                      onChange={(_, newValue) => field.onChange(newValue?.id)}
-                      onInputChange={(_, newInputValue) => {
-                        setSearchParams((prev) => ({
-                          ...prev,
-                          bus: newInputValue,
-                        }));
-                        fetchCompanyList(0, newInputValue);
-                      }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Select Company"
-                          error={!!errors.company_id}
-                          helperText={errors.company_id?.message}
-                          required
-                          fullWidth
-                        />
-                      )}
-                      ListboxProps={{
-                        onScroll: (event) => handleScroll(event, "company"),
-                        style: { maxHeight: 200, overflow: "auto" },
-                      }}
-                    />
-                  )}
-                />
-              </Grid>
+            <Stack spacing={2} width="100%">
+              <Controller
+                name="company_id"
+                control={control}
+                rules={{ required: "Company is required" }}
+                render={({ field }) => (
+                  <Autocomplete
+                    options={dropdownData.companyList}
+                    getOptionLabel={(option) => option.name}
+                    value={
+                      dropdownData.companyList.find(
+                        (item) => item.id === field.value
+                      ) || null
+                    }
+                    onChange={(_, newValue) => field.onChange(newValue?.id)}
+                    onInputChange={(_, newInputValue) => {
+                      setSearchParams((prev) => ({
+                        ...prev,
+                        bus: newInputValue,
+                      }));
+                      fetchCompanyList(0, newInputValue);
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Select Company"
+                        error={!!errors.company_id}
+                        helperText={errors.company_id?.message}
+                        required
+                        fullWidth
+                      />
+                    )}
+                    ListboxProps={{
+                      onScroll: (event) => handleScroll(event, "company"),
+                      style: { maxHeight: 200, overflow: "auto" },
+                    }}
+                  />
+                )}
+              />
 
               <TextField
                 margin="normal"
@@ -299,6 +298,7 @@ const LoginPage: React.FC = () => {
                 autoComplete="username"
                 autoFocus
               />
+
               <TextField
                 margin="normal"
                 required
@@ -334,12 +334,13 @@ const LoginPage: React.FC = () => {
                   "Sign In"
                 )}
               </Button>
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
-    </Container>
-  );
+            </Stack>
+          </Box>
+        </CardContent>
+      </Card>
+    </Box>
+  </Container>
+);
 };
 
 export default LoginPage;
