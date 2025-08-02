@@ -4,7 +4,6 @@ import {
   Box,
   Chip,
   CircularProgress,
-  Grid,
   Stack,
   Typography,
   TextField,
@@ -376,20 +375,18 @@ const ProfilePage: React.FC = () => {
             mb: 1,
           }}
         >
-          <Grid container alignItems="center" spacing={2}>
-            <Grid item>
-              <Avatar
-                sx={{
-                  bgcolor: "background.paper",
-                  color: "primary.main",
-                  width: 40,
-                  height: 40,
-                }}
-              >
-                {icon}
-              </Avatar>
-            </Grid>
-            <Grid item xs>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Avatar
+              sx={{
+                bgcolor: "background.paper",
+                color: "primary.main",
+                width: 40,
+                height: 40,
+              }}
+            >
+              {icon}
+            </Avatar>
+            <Box sx={{ flex: 1 }}>
               {field === "fullName" && (
                 <TextField
                   fullWidth
@@ -468,22 +465,20 @@ const ProfilePage: React.FC = () => {
                   </Select>
                 </FormControl>
               )}
-            </Grid>
-            <Grid item>
-              <Stack direction="row" spacing={0.5}>
-                <IconButton type="submit" color="primary" size="small">
-                  <Check fontSize="small" />
-                </IconButton>
-                <IconButton
-                  onClick={handleCancelEdit}
-                  color="error"
-                  size="small"
-                >
-                  <Close fontSize="small" />
-                </IconButton>
-              </Stack>
-            </Grid>
-          </Grid>
+            </Box>
+            <Stack direction="row" spacing={0.5}>
+              <IconButton type="submit" color="primary" size="small">
+                <Check fontSize="small" />
+              </IconButton>
+              <IconButton
+                onClick={handleCancelEdit}
+                color="error"
+                size="small"
+              >
+                <Close fontSize="small" />
+              </IconButton>
+            </Stack>
+          </Stack>
         </Box>
       );
     }
@@ -502,7 +497,7 @@ const ProfilePage: React.FC = () => {
           mb: 1,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center" }}>
+        <Stack direction="row" alignItems="center" spacing={1}>
           <Avatar
             sx={{
               bgcolor: "background.paper",
@@ -510,7 +505,6 @@ const ProfilePage: React.FC = () => {
               width: 32,
               height: 32,
               fontSize: 18,
-              mr: 1,
             }}
           >
             {icon}
@@ -545,17 +539,16 @@ const ProfilePage: React.FC = () => {
           >
             <Edit fontSize="small" />
           </IconButton>
-        </Box>
+        </Stack>
       </Box>
     );
   };
 
   return (
     <Box sx={{ width: "100%", px: { xs: 1, sm: 2 }, py: 2 }}>
-      <Box
+      <Stack
+        direction={{ xs: "column", md: "row" }}
         sx={{
-          display: "flex",
-          flexDirection: { xs: "column", md: "row" },
           width: "100%",
           borderRadius: 2,
           boxShadow: 3,
@@ -615,21 +608,21 @@ const ProfilePage: React.FC = () => {
                 <Box sx={{ width: 1, height: 24, bgcolor: "divider" }} />
               }
             >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Stack direction="row" alignItems="center" spacing={1}>
                 <Diversity3Icon fontSize="small" color="primary" />
                 <Typography variant="body1" fontWeight={500}>
                   {roles.find((r) => r.id === role)?.name ?? ""}
                 </Typography>
-              </Box>
+              </Stack>
             </Stack>
 
             {company && (
               <Tooltip title="Click to see the company details" arrow>
-                <Box
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={1}
                   sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
                     mt: 1,
                     cursor: "pointer",
                     color: "primary.main",
@@ -647,38 +640,34 @@ const ProfilePage: React.FC = () => {
                   <Typography variant="body1" fontWeight={600}>
                     {company.name}
                   </Typography>
-                </Box>
+                </Stack>
               </Tooltip>
             )}
           </Stack>
 
           {/* Logout Button at the Bottom */}
-          <Box
-            sx={{
-              mt: 4,
-              width: "100%",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-end",
-            }}
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="flex-end"
+            sx={{ mt: 4, width: "100%" }}
           >
             {/* Account Created Date on the left */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Stack direction="row" alignItems="center" spacing={1}>
               <CalendarToday fontSize="small" color="primary" />
               <Typography variant="body2" fontWeight={500}>
                 Account Created: {formatUTCDateToLocal(profile.created_on)}
               </Typography>
-            </Box>
+            </Stack>
             <Button
               variant="outlined"
               color="error"
-              // startIcon={<LogoutIcon />}
               onClick={handleLogout}
               sx={{ fontWeight: 600 }}
             >
               Logout
             </Button>
-          </Box>
+          </Stack>
         </Box>
 
         {/* Vertical Divider */}
@@ -693,16 +682,14 @@ const ProfilePage: React.FC = () => {
         {/* Right: Editable Fields */}
         <Box sx={{ flex: 2, p: { xs: 2, sm: 3 } }}>
           <Stack spacing={2}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 2,
-                width: "100%",
-              }}
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              spacing={2}
+              sx={{ width: "100%" }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Stack direction="row" alignItems="center" spacing={2}>
                 <Avatar
                   sx={{
                     bgcolor: "background.paper",
@@ -716,11 +703,11 @@ const ProfilePage: React.FC = () => {
                 <Typography variant="body1">
                   <strong>Username:</strong> @{profile.username}
                 </Typography>
-              </Box>
+              </Stack>
               <Typography variant="body1" sx={{ whiteSpace: "nowrap" }}>
                 <strong>User ID:</strong> {profile.id}
               </Typography>
-            </Box>
+            </Stack>
             <Divider />
 
             {/* Editable Fields */}
@@ -758,7 +745,7 @@ const ProfilePage: React.FC = () => {
               )}
           </Stack>
         </Box>
-      </Box>
+      </Stack>
 
       {/* Company Details Below */}
       {company && showCompanyDetails && (

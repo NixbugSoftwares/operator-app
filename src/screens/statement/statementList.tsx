@@ -202,7 +202,7 @@ const StatementsPage = () => {
             </TableBody>
           </Table>
         </TableContainer>
-        <PaginationControls page={0} onPageChange={() => {}} isLoading={false} hasNextPage={2}/>
+        <PaginationControls page={0} onPageChange={() => {}} isLoading={false} hasNextPage={false} />
       </Box>
     </Box>
   );
