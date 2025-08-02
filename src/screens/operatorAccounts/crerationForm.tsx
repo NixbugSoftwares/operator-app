@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import { accountFormSchema } from "../auth/validations/authValidation";
 import {
   Box,
   TextField,
@@ -65,7 +63,6 @@ const AccountForm: React.FC<IAccountCreationFormProps> = ({
     control,
     formState: { errors },
   } = useForm<IAccountFormInputs>({
-    resolver: yupResolver(accountFormSchema),
     defaultValues: {
       gender: 1,
     },
@@ -151,132 +148,178 @@ const AccountForm: React.FC<IAccountCreationFormProps> = ({
           onSubmit={handleSubmit(handleAccountCreation)}
         >
           <TextField
-            margin="normal"
-            required
-            fullWidth
-            label="Username"
-            {...register("username")}
-            error={!!errors.username}
-            helperText={errors.username?.message}
-            autoFocus
-            size="small"
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            label="Password"
-            type={showPassword ? "text" : "password"}
-            {...register("password")}
-            error={!!errors.password}
-            helperText={errors.password?.message}
-            size="small"
-            autoComplete="current-password"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={handleTogglePassword} edge="end">
-                    {showPassword ? <Visibility /> : <VisibilityOff />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-          <Controller
-            name="role"
-            control={control}
-            rules={{ required: "Role is required" }}
-            render={({ field }) => (
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                select
-                label="Role"
-                {...field}
-                error={!!errors.role}
-                helperText={errors.role?.message}
-                size="small"
-              >
-                {roles.map((role) => (
-                  <MenuItem key={role.id} value={role.id}>
-                    {role.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
-          <TextField
-            margin="normal"
-            fullWidth
-            label="Full Name"
-            required
-            {...register("fullName")}
-            error={!!errors.fullName}
-            helperText={errors.fullName?.message}
-            size="small"
-          />
-          <Controller
-            name="phoneNumber"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                margin="normal"
-                fullWidth
-                label="Phone Number"
-                placeholder="+911234567890"
-                size="small"
-                error={!!errors.phoneNumber}
-                helperText={errors.phoneNumber?.message}
-                value={field.value ? `+91${field.value}` : ""}
-                onChange={(e) => {
-                  let value = e.target.value.replace(/^\+91/, "");
-                  value = value.replace(/\D/g, "");
-                  if (value.length > 10) value = value.slice(0, 10);
-                  field.onChange(value || undefined);
-                }}
-                onFocus={() => {
-                  if (!field.value) field.onChange("");
-                }}
-                onBlur={() => {
-                  if (field.value === "") field.onChange(undefined);
-                }}
-              />
-            )}
-          />
+  margin="normal"
+  required
+  fullWidth
+  label="Username"
+  {...register("username", {
+    required: "Username is required",
+    pattern: {
+      value: /^[A-Za-z][A-Za-z0-9@._-]{3,31}$/,
+      message: "Invalid username format",
+    },
+  })}
+  error={!!errors.username}
+  helperText={errors.username?.message}
+  autoFocus
+  size="small"
+/>
 
           <TextField
-            margin="normal"
-            fullWidth
-            label="Email"
-            placeholder="example@gmail.com"
-            {...register("email")}
-            error={!!errors.email}
-            helperText={errors.email?.message}
-            size="small"
-          />
+  margin="normal"
+  required
+  fullWidth
+  label="Password"
+  type={showPassword ? "text" : "password"}
+  {...register("password", {
+    required: "Password is required",
+    pattern: {
+      value: /^[A-Za-z0-9\-+,.@_$%&*#!^=/\?]{8,64}$/,
+      message: "Invalid password format",
+    },
+  })}
+  error={!!errors.password}
+  helperText={errors.password?.message}
+  size="small"
+  InputProps={{
+    endAdornment: (
+      <InputAdornment position="end">
+        <IconButton onClick={handleTogglePassword} edge="end">
+          {showPassword ? <Visibility /> : <VisibilityOff />}
+        </IconButton>
+      </InputAdornment>
+    ),
+  }}
+/>
 
           <Controller
-            name="gender"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                margin="normal"
-                fullWidth
-                select
-                label="Gender"
-                {...field}
-                error={!!errors.gender}
-                size="small"
-              >
-                {genderOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
+  name="role"
+  control={control}
+  rules={{ required: "Role is required" }}
+  render={({ field }) => (
+    <TextField
+      margin="normal"
+      required
+      fullWidth
+      select
+      label="Role"
+      {...field}
+      error={!!errors.role}
+      helperText={errors.role?.message}
+      size="small"
+    >
+      {roles.map((role) => (
+        <MenuItem key={role.id} value={role.id}>
+          {role.name}
+        </MenuItem>
+      ))}
+    </TextField>
+  )}
+/>
+
+          <TextField
+  margin="normal"
+  fullWidth
+  required
+  label="Full Name"
+  {...register("fullName", {
+    required: "Full name is required",
+    minLength: {
+      value: 4,
+      message: "Full name must be at least 4 characters",
+    },
+    maxLength: {
+      value: 32,
+      message: "Full name cannot exceed 32 characters",
+    },
+    pattern: {
+      value: /^[A-Za-z]+(?: [A-Za-z]+)*$/,
+      message: "Invalid full name format",
+    },
+  })}
+  error={!!errors.fullName}
+  helperText={errors.fullName?.message}
+  size="small"
+/>
+
+          <Controller
+  name="phoneNumber"
+  control={control}
+  rules={{
+    pattern: {
+      value: /^[1-9][0-9]{9}$/,
+      message: "Invalid phone number format",
+    },
+  }}
+  render={({ field }) => (
+    <TextField
+      margin="normal"
+      fullWidth
+      label="Phone Number"
+      placeholder="+911234567890"
+      size="small"
+      error={!!errors.phoneNumber}
+      helperText={errors.phoneNumber?.message}
+      value={field.value ? `+91${field.value}` : ""}
+      onChange={(e) => {
+        let value = e.target.value.replace(/^\+91/, "").replace(/\D/g, "");
+        if (value.length > 10) value = value.slice(0, 10);
+        field.onChange(value || undefined);
+      }}
+      onFocus={() => {
+        if (!field.value) field.onChange("");
+      }}
+      onBlur={() => {
+        if (field.value === "") field.onChange(undefined);
+      }}
+    />
+  )}
+/>
+
+
+          <TextField
+  margin="normal"
+  fullWidth
+  label="Email"
+  placeholder="example@gmail.com"
+  {...register("email", {
+    maxLength: {
+      value: 254,
+      message: "Email cannot exceed 254 characters",
+    },
+    pattern: {
+      value: /^(?!.*\.\.)[a-zA-Z0-9!#$%&'*+/=?^_{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_{|}~-]+)*@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$/,
+      message: "Invalid email format",
+    },
+  })}
+  error={!!errors.email}
+  helperText={errors.email?.message}
+  size="small"
+/>
+
+
+          <Controller
+  name="gender"
+  control={control}
+  render={({ field }) => (
+    <TextField
+      margin="normal"
+      fullWidth
+      select
+      label="Gender"
+      {...field}
+      error={!!errors.gender}
+      size="small"
+    >
+      {genderOptions.map((option) => (
+        <MenuItem key={option.value} value={option.value}>
+          {option.label}
+        </MenuItem>
+      ))}
+    </TextField>
+  )}
+/>
+
           <Button
             type="submit"
             fullWidth
