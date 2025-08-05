@@ -7,7 +7,7 @@ import store from "./store/Store";
 import { Provider as ReduxProvider } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import AppInitializer from "./common/AppInitializer";
 
 const App: React.FC = () => {
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
@@ -31,21 +31,19 @@ const App: React.FC = () => {
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
- 
+
   return (
     <ReduxProvider store={store}>
+      <AppInitializer />
       <ToastContainer position="top-center" autoClose={5000} />
-    <Routes>
-    {isOnline ? (
-      <Route path="*" element={<AppRouter />} />
-    ) : (
-      <Route path="*" element={<Nonet />} />
-    )}
-    
-    <Route path="*" element={<AppRouter />} />
-
-  </Routes>
-  </ReduxProvider>  
+      <Routes>
+        {isOnline ? (
+          <Route path="*" element={<AppRouter />} />
+        ) : (
+          <Route path="*" element={<Nonet />} />
+        )}
+      </Routes>
+    </ReduxProvider>
   );
 };
 

@@ -1,26 +1,29 @@
 import axios from "axios";
-import { toast } from "react-toastify";
-import moment from "moment";
 import localStorageHelper from "./localStorageHelper";
-export const base_URL = "http://192.168.0.134:8080/operator"; //base URL
+import { showErrorToast } from "../common/toastMessageHelper";
+import commonHelper from "./commonHelper";
+
+export const base_URL = "https://api.entebus.nixbug.com"; //base URL
 
 //******************************************************Token **************************************** */
 const getAuthToken = async () => {
   try {
     const token = await localStorageHelper.getItem("@token");
-    console.log("token=====================>", token);
+    // console.log("token=====================>", token);
 
-    const response = await axios.post( 
-      `${base_URL}/executive/token`,
-      { refreshToken: token }, 
+    const response = await axios.patch(
+      `${base_URL}/operator/company/account/token`,
+      {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
+    // console.log("getAuthtokenresponse=====>", response.data);
 
-    console.log("getAuthtokenresponse=====>", response);
-
-    localStorageHelper.storeItem("@token", response?.data?.access_token);
-    localStorageHelper.storeItem("@token_expires", response?.data?.expires_in);
-
+    const data = response?.data;
+    const createdOn = new Date(data?.created_on).getTime();
+    const expiresInMs = data?.expires_in * 1000;
+    const expiresAt = createdOn + expiresInMs;
+    localStorageHelper.storeItem("@token", data?.access_token);
+    localStorageHelper.storeItem("@token_expires", expiresAt);
     return response?.data?.access_token;
   } catch (err) {
     console.error("Error in getAuthToken", err);
@@ -29,23 +32,46 @@ const getAuthToken = async () => {
 };
 
 //****************************************************** prepare Headers **************************************** */
-const prepareHeaders = async (tokenNeeded: any) => {
+const prepareHeaders = async (tokenNeeded: boolean) => {
   let headers: any = { "Content-Type": "application/json" };
+
   if (tokenNeeded) {
     let AuthToken = await localStorageHelper.getItem("@token");
-    const tokenExpiry = await localStorageHelper.getItem("@token_expiry");
+    const tokenExpiry = await localStorageHelper.getItem("@token_expires");
 
-    if (tokenExpiry && moment(tokenExpiry).isValid()) {
-      const hourDifference = moment(tokenExpiry).diff(moment(), "hours");
-      if (hourDifference <= 1) {
-        try {
-          AuthToken = await getAuthToken();
-        } catch (err) {
-          console.error("Token refresh failed. Logging out...", err);
-          localStorageHelper.removeStoredItem("@token");
-          localStorageHelper.removeStoredItem("@token_expiry");
-          window.location.href = "/login"; 
-        }
+    if (!AuthToken) {
+      commonHelper.logout();
+      throw new Error("Token not found");
+    }
+
+    if (!tokenExpiry) {
+      commonHelper.logout();
+      throw new Error("Token expiry not found");
+    }
+
+    const tokenExpiryNumber = Number(tokenExpiry);
+    if (isNaN(tokenExpiryNumber)) {
+      commonHelper.logout();
+      throw new Error("Invalid token expiry timestamp");
+    }
+
+    const now = Date.now();
+
+    // If token is expired, logout immediately
+    if (now >= tokenExpiryNumber) {
+      commonHelper.logout();
+      throw new Error("Token expired");
+    }
+
+    // If token is about to expire, try to refresh
+    const oneHourBeforeExpiry = tokenExpiryNumber - 3600 * 1000;
+    if (now >= oneHourBeforeExpiry) {
+      try {
+        await getAuthToken();
+        AuthToken = await localStorageHelper.getItem("@token");
+      } catch (error) {
+        commonHelper.logout();
+        throw error;
       }
     }
 
@@ -58,50 +84,47 @@ const prepareHeaders = async (tokenNeeded: any) => {
 //****************************************************** response handler **************************************** */
 
 const handleResponse = async (response: any) => {
-  console.log("response====================>", response);
-  
-  return response?.data; // Fix for response structure
+  const responseData = response?.data;
+  // console.log("response====================>", response);
+
+  if (responseData?.access_token) {
+    localStorageHelper.storeItem("@token", responseData?.access_token);
+    localStorageHelper.storeItem("@token_expires", responseData?.expires_in);
+  }
+  return response?.data;
 };
 
 //******************************************************  errorResponse handler  **************************************** */
 const handleErrorResponse = (errorResponse: any) => {
   if (!errorResponse) {
-    // Handle network errors (e.g., ERR_CONNECTION_REFUSED)
-    toast.error("Network error. Please check your connection.");
-    throw new Error("Network error");
+    // showErrorToast('Network error. Please try again.');
+    return { error: "Network error" };
   }
-
-  if (!errorResponse.status) {
-    // Handle network errors (e.g., ERR_CONNECTION_REFUSED)
-    toast.error("Network error. Please check your connection.");
-    throw new Error("Network error");
-  }
-
-  const { status, data } = errorResponse;
+  const { status, data } = errorResponse.response as {
+    status: number;
+    data: any;
+  };
   const errorMessage = data?.detail || data?.message || "Api Failed";
-
-  if (status === 400 && Array.isArray(data?.message)) {
-    // Handle validation errors (400 Bad Request)
-    const validationErrors = data.message
-      .map((err: any) => Object.values(err.constraints).join(", "))
-      .join(" | ");
-    toast.error(validationErrors);
-    throw new Error(validationErrors);
-  } else if (status === 401) {
-    toast.error(errorMessage);
-    throw new Error(errorMessage);
-  } else if (status === 409) {
-    toast.error(errorMessage);
-    throw new Error(errorMessage);
-  } else if (status === 500) {
-    toast.error(errorMessage);
-    throw new Error(errorMessage);
-  } else {
-    toast.error(errorMessage);
-    throw new Error(errorMessage);
+  if (status === 401) {
+    commonHelper.logout();
   }
-};
 
+  if (status == 422 && Array.isArray(data?.detail)) {
+    const validationErrors = data.detail
+      .map((err: any) => {
+        const field = err.loc?.slice(1).join(".") || "Field";
+        return `${field}: ${err.msg}`;
+      })
+      .join(" | ");
+
+    // console.log("Validation Errors ===>", validationErrors);
+    showErrorToast(validationErrors);
+  } else {
+    // console.log("errormessagge====>", errorMessage);
+    // showErrorToast(errorMessage);
+  }
+  return { ...data, error: errorMessage, status };
+};
 
 //******************************************************  apiCall  ****************************************
 
@@ -112,8 +135,8 @@ const apiCall = async (
   tokenNeeded: boolean = true,
   contentType: string = "application/json"
 ) => {
-  console.log(route);
-  console.log("method===========>", method);
+  // console.log("routeeeeee====>",  route);
+  // console.log("method===========>", method);
   try {
     const headers = await prepareHeaders(tokenNeeded);
     headers["Content-Type"] = contentType;
@@ -124,22 +147,28 @@ const apiCall = async (
       headers,
       data: method !== "get" ? params : undefined,
       params: method === "get" ? params : undefined,
+
+      paramsSerializer: (params: any) => {
+        return Object.entries(params)
+          .flatMap(([key, value]) => {
+            if (value === undefined || value === null) return [];
+            return Array.isArray(value)
+              ? value.map((v) => `${key}=${encodeURIComponent(v)}`)
+              : [`${key}=${encodeURIComponent(String(value))}`];
+          })
+          .join("&");
+      },
     };
 
-    console.log("CONFIG ===> ", config);
+    // console.log("CONFIG ===> ", config);
 
     const response = await axios(config);
-    console.log("response=====>", response);
+    // console.log("response=====>", response);
 
     return await handleResponse(response);
   } catch (err: any) {
-    console.log("errorrr======>", err);
-    if (err.code === "ERR_NETWORK" || err.message === "Network Error") {
-      toast.error("Network error. Please check your connection.");
-      throw new Error("Network error");
-    }
-
-    return handleErrorResponse(err?.response);
+    // console.log("apiCallCatchError======>", err);
+    throw handleErrorResponse(err);
   }
 };
 

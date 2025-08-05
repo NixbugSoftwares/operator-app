@@ -16,6 +16,12 @@ const initialState: AuthState = {
   error: null,
 };
 
+export interface CompanyListParams {
+  limit?: number;
+  offset?: number;
+  id?: number;
+  name?: string;
+}
 
 export const LoginApi = createAsyncThunk(
   "token",
@@ -23,51 +29,55 @@ export const LoginApi = createAsyncThunk(
     try {
       const response = await commonApi.apiCall(
         "post",
-        "/token",
+        "/operator/company/account/token",
         data,
         false,
         "multipart/form-data"
       );
-      return response; // Ensure response contains `access_token`
+      return response;
     } catch (error: any) {
-      return rejectWithValue(error?.response?.data?.message || "Login failed");
+      return rejectWithValue(error.detail);
     }
   }
 );
 
 
 //listing company
+
+
+
 export const companyListApi = createAsyncThunk(
   "/company",
-  async (_, { rejectWithValue }) => {
+  async (params: CompanyListParams, { rejectWithValue }) => {
+    const { limit, offset, id, name } = params;
+    const queryParams = {
+      limit,
+      offset,
+      ...(id && { id }),
+      ...(name && { name }),
+    };
     try {
       const response = await commonApi.apiCall(
         "get",
-        "/company",
-        {},
+        "/public/company",
+        queryParams,
         false,
         "application/json"
       );
-      console.log("Full API Response==================>", response);
-
-      if (Array.isArray(response)) {
-        return response;
-      }
-
-      if (!response || !response.data) {
-        throw new Error("Invalid response format");
-      }
-
-      return response.data;
+      if (!response) throw new Error("No response received");
+      return {
+        data: response.data || response,
+      };
+      
     } catch (error: any) {
-      console.log("Error fetching company list=====================>", error);
+      console.error("API Error:", error);
       return rejectWithValue(
-        error?.response?.data?.message || "Failed to fetch company list"
+        error.detail ||
+          "Failed to fetch company list"
       );
     }
   }
 );
-
 
 
 
