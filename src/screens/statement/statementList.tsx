@@ -56,8 +56,8 @@ const StatementListingPage = () => {
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>(
     []
   );
-  const [dutyList, setDutyList] = useState<Duty[]>([]);
-  const [operatorList, setOperatorList] = useState<Account[]>([]);
+  const [_dutyList, setDutyList] = useState<Duty[]>([]);
+  const [_operatorList, setOperatorList] = useState<Account[]>([]);
   const [statementData, setStatementData] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"services" | "statement">(
     "services"

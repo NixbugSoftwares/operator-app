@@ -94,7 +94,7 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
       await dispatch(accountDeleteApi(formData)).unwrap();
       setDeleteConfirmOpen(false);
       localStorageHelper.removeStoredItem(`account_${account.id}`);
-      onDelete(account.id);
+      onDelete(Number(account.id));
       onCloseDetailCard();
       refreshList("refresh");
       showSuccessToast("Account deleted successfully!");

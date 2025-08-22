@@ -42,7 +42,7 @@ interface IAccountFormInputs {
 }
 
 interface IAccountUpdateFormProps {
-  accountId: number;
+  accountId: any;
   accountData: IAccountFormInputs;
   onClose: () => void;
   refreshList: (value: any) => void;
