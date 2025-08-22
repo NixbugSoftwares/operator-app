@@ -23,6 +23,10 @@ import {
   showErrorToast,
   showSuccessToast,
 } from "../../common/toastMessageHelper";
+import {operatorCreationSchema } from '../auth/validations/authValidation';
+import { yupResolver } from "@hookform/resolvers/yup";
+import { RootState } from "../../store/Store";
+import { useSelector } from "react-redux";
 
 // Account creation form interface
 interface IAccountFormInputs {
@@ -32,7 +36,8 @@ interface IAccountFormInputs {
   phoneNumber?: string;
   email?: string;
   gender?: number;
-  role: number;
+  role?: number;
+  roleAssignmentId?: number;
 }
 
 interface IAccountCreationFormProps {
@@ -56,13 +61,16 @@ const AccountForm: React.FC<IAccountCreationFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState<{ id: number; name: string }[]>([]);
   const [showPassword, setShowPassword] = useState(false);
-
+ const canAssignRole = useSelector((state: RootState) =>
+    state.app.permissions.includes("update_op_role")
+  );
   const {
     register,
     handleSubmit,
     control,
     formState: { errors },
   } = useForm<IAccountFormInputs>({
+    resolver: yupResolver(operatorCreationSchema) as any,
     defaultValues: {
       gender: 1,
     },
@@ -77,7 +85,7 @@ const AccountForm: React.FC<IAccountCreationFormProps> = ({
       })
 
       .catch((err: any) => {
-        showErrorToast(err);
+        showErrorToast(err.message);
       });
   }, [dispatch]);
 
@@ -94,37 +102,40 @@ const AccountForm: React.FC<IAccountCreationFormProps> = ({
       formData.append("username", data.username);
       formData.append("password", data.password);
       formData.append("gender", data.gender?.toString() || "");
-        formData.append("full_name", data.fullName);
-      if (data.phoneNumber) {
-        formData.append("phone_number", `+91${data.phoneNumber}`);
-      }
-      if (data.email) {
-        formData.append("email_id", data.email);
-      }
-      //  Create account
-      const accountResponse = await dispatch(
-        operatorCreationApi(formData)
-      ).unwrap();
-      if (accountResponse?.id) {
-        const roleResponse = await dispatch(
-          operatorRoleAssignApi({
-            operator_id: accountResponse.id,
-            role_id: data.role,
-          })
-        ).unwrap();
 
-        if (roleResponse?.id && roleResponse?.role_id) {
-          showSuccessToast("Account and role assigned successfully!");
-          refreshList("refresh");
-          onClose();
+      if (data.fullName) formData.append("full_name", data.fullName);
+      if (data.phoneNumber)
+        formData.append("phone_number", `+91${data.phoneNumber}`);
+      if (data.email) formData.append("email_id", data.email);
+
+      const response = await dispatch(operatorCreationApi(formData)).unwrap();
+
+      if (response?.id) {
+        // Only attempt role assignment if role was provided and user has permission
+        if (data.role && canAssignRole) {
+          try {
+            await dispatch(
+              operatorRoleAssignApi({
+                operator_id: response.id,
+                role_id: data.role,
+              })
+            ).unwrap();
+            showSuccessToast("Account created and role assigned successfully!");
+          } catch (roleError:any) {
+            showSuccessToast(roleError.message||"Account created but role assignment failed!");
+            console.error("Role assignment failed:", roleError);
+          }
         } else {
-          throw new Error("Account created, but role assignment failed!");
+          showSuccessToast("Account created without role assignment!");
         }
+
+        refreshList("refresh");
+        onClose();
       } else {
         throw new Error("Account creation failed!");
       }
     } catch (error: any) {
-      showErrorToast(error || "Account creation failed. Please try again.");
+      showErrorToast(error.message || "Operator creation failed");
     } finally {
       setLoading(false);
     }
@@ -148,177 +159,137 @@ const AccountForm: React.FC<IAccountCreationFormProps> = ({
           onSubmit={handleSubmit(handleAccountCreation)}
         >
           <TextField
-  margin="normal"
-  required
-  fullWidth
-  label="Username"
-  {...register("username", {
-    required: "Username is required",
-    pattern: {
-      value: /^[A-Za-z][A-Za-z0-9@._-]{3,31}$/,
-      message: "Invalid username format",
-    },
-  })}
-  error={!!errors.username}
-  helperText={errors.username?.message}
-  autoFocus
-  size="small"
-/>
+            margin="normal"
+            required
+            fullWidth
+            label="Username"
+            {...register("username")}
+            error={!!errors.username}
+            helperText={errors.username?.message}
+            autoFocus
+            size="small"
+          />
 
           <TextField
-  margin="normal"
-  required
-  fullWidth
-  label="Password"
-  type={showPassword ? "text" : "password"}
-  {...register("password", {
-    required: "Password is required",
-    pattern: {
-      value: /^[A-Za-z0-9\-+,.@_$%&*#!^=/\?]{8,64}$/,
-      message: "Invalid password format",
-    },
-  })}
-  error={!!errors.password}
-  helperText={errors.password?.message}
-  size="small"
-  InputProps={{
-    endAdornment: (
-      <InputAdornment position="end">
-        <IconButton onClick={handleTogglePassword} edge="end">
-          {showPassword ? <Visibility /> : <VisibilityOff />}
-        </IconButton>
-      </InputAdornment>
-    ),
-  }}
-/>
-
+            margin="normal"
+            required
+            fullWidth
+            label="Password"
+            type={showPassword ? "text" : "password"}
+            {...register("password")}
+            error={!!errors.password}
+            helperText={errors.password?.message}
+            size="small"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={handleTogglePassword} edge="end">
+                    {showPassword ? <Visibility /> : <VisibilityOff />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+{canAssignRole && (
           <Controller
-  name="role"
-  control={control}
-  rules={{ required: "Role is required" }}
-  render={({ field }) => (
-    <TextField
-      margin="normal"
-      required
-      fullWidth
-      select
-      label="Role"
-      {...field}
-      error={!!errors.role}
-      helperText={errors.role?.message}
-      size="small"
-    >
-      {roles.map((role) => (
-        <MenuItem key={role.id} value={role.id}>
-          {role.name}
-        </MenuItem>
-      ))}
-    </TextField>
-  )}
-/>
+            name="role"
+            control={control}
+            rules={{ required: "Role is required" }}
+            render={({ field }) => (
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                select
+                label="Role"
+                {...field}
+                error={!!errors.role}
+                helperText={errors.role?.message}
+                size="small"
+              >
+                {roles.map((role) => (
+                  <MenuItem key={role.id} value={role.id}>
+                    {role.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+          />
+          
+          )}
 
           <TextField
-  margin="normal"
-  fullWidth
-  required
-  label="Full Name"
-  {...register("fullName", {
-    required: "Full name is required",
-    minLength: {
-      value: 4,
-      message: "Full name must be at least 4 characters",
-    },
-    maxLength: {
-      value: 32,
-      message: "Full name cannot exceed 32 characters",
-    },
-    pattern: {
-      value: /^[A-Za-z]+(?: [A-Za-z]+)*$/,
-      message: "Invalid full name format",
-    },
-  })}
-  error={!!errors.fullName}
-  helperText={errors.fullName?.message}
-  size="small"
-/>
+            margin="normal"
+            fullWidth
+            required
+            label="Full Name"
+            {...register("fullName")}
+            error={!!errors.fullName}
+            helperText={errors.fullName?.message}
+            size="small"
+          />
 
-          <Controller
-  name="phoneNumber"
-  control={control}
-  rules={{
-    pattern: {
-      value: /^[1-9][0-9]{9}$/,
-      message: "Invalid phone number format",
-    },
-  }}
-  render={({ field }) => (
-    <TextField
-      margin="normal"
-      fullWidth
-      label="Phone Number"
-      placeholder="+911234567890"
-      size="small"
-      error={!!errors.phoneNumber}
-      helperText={errors.phoneNumber?.message}
-      value={field.value ? `+91${field.value}` : ""}
-      onChange={(e) => {
-        let value = e.target.value.replace(/^\+91/, "").replace(/\D/g, "");
-        if (value.length > 10) value = value.slice(0, 10);
-        field.onChange(value || undefined);
-      }}
-      onFocus={() => {
-        if (!field.value) field.onChange("");
-      }}
-      onBlur={() => {
-        if (field.value === "") field.onChange(undefined);
-      }}
-    />
-  )}
-/>
-
+         <Controller
+            name="phoneNumber"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                margin="normal"
+                fullWidth
+                label="Phone Number"
+                placeholder="+911234567890"
+                size="small"
+                error={!!errors.phoneNumber}
+                helperText={errors.phoneNumber?.message}
+                value={field.value ? `+91${field.value}` : ""}
+                onChange={(e) => {
+                  let value = e.target.value.replace(/^\+91/, "");
+                  value = value.replace(/\D/g, "");
+                  if (value.length > 10) value = value.slice(0, 10);
+                  field.onChange(value || undefined);
+                }}
+                onFocus={() => {
+                  if (!field.value) field.onChange("");
+                }}
+                onBlur={() => {
+                  if (field.value === "") field.onChange(undefined);
+                }}
+              />
+            )}
+          />
 
           <TextField
-  margin="normal"
-  fullWidth
-  label="Email"
-  placeholder="example@gmail.com"
-  {...register("email", {
-    maxLength: {
-      value: 254,
-      message: "Email cannot exceed 254 characters",
-    },
-    pattern: {
-      value: /^(?!.*\.\.)[a-zA-Z0-9!#$%&'*+/=?^_{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_{|}~-]+)*@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$/,
-      message: "Invalid email format",
-    },
-  })}
-  error={!!errors.email}
-  helperText={errors.email?.message}
-  size="small"
-/>
-
+            margin="normal"
+            fullWidth
+            label="Email"
+            placeholder="example@gmail.com"
+            {...register("email")}
+            error={!!errors.email}
+            helperText={errors.email?.message}
+            size="small"
+          />
 
           <Controller
-  name="gender"
-  control={control}
-  render={({ field }) => (
-    <TextField
-      margin="normal"
-      fullWidth
-      select
-      label="Gender"
-      {...field}
-      error={!!errors.gender}
-      size="small"
-    >
-      {genderOptions.map((option) => (
-        <MenuItem key={option.value} value={option.value}>
-          {option.label}
-        </MenuItem>
-      ))}
-    </TextField>
-  )}
-/>
+            name="gender"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                margin="normal"
+                fullWidth
+                select
+                label="Gender"
+                {...field}
+                error={!!errors.gender}
+                size="small"
+              >
+                {genderOptions.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+          />
 
           <Button
             type="submit"

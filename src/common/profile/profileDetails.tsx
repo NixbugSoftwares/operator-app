@@ -170,7 +170,7 @@ const ProfilePage: React.FC = () => {
         const profileData = {
           id: user.id,
           username: user.username,
-          fullName: user.full_name,
+          full_name: user.full_name,
           gender: getGender(user.gender),
           genderValue: user.gender,
           status: getStatus(user.status),
@@ -193,7 +193,7 @@ const ProfilePage: React.FC = () => {
         });
       }
     } catch (error: any) {
-      showErrorToast(error || "Failed to load profile");
+      showErrorToast(error.message || "Failed to load profile");
     } finally {
       setIsLoading(false);
     }
@@ -236,7 +236,7 @@ const ProfilePage: React.FC = () => {
         setCompany(companyData);
       }
     } catch (error: any) {
-      showErrorToast(error || "Failed to load company profile");
+      showErrorToast(error.message || "Failed to load company profile");
     } finally {
       setIsLoading(false);
     }
@@ -304,9 +304,9 @@ const ProfilePage: React.FC = () => {
           }
         } catch (error: any) {
           showErrorToast(
-            error || "Account updated, but role assignment failed!"
+            error.message || "Account updated, but role assignment failed!"
           );
-          console.error("Role assignment error:", error);
+          console.error("Role assignment error:", error.message);
           return;
         }
       }
@@ -333,7 +333,7 @@ const ProfilePage: React.FC = () => {
       showSuccessToast("Logout successful!");
     } catch (error: any) {
       console.error("Logout Error:", error);
-      showErrorToast(error || "Logout failed. Please try again.");
+      showErrorToast(error.message || "Logout failed. Please try again.");
     }
   };
 
@@ -587,11 +587,11 @@ const ProfilePage: React.FC = () => {
                 border: `4px solid ${theme.palette.primary.light}`,
               }}
             >
-              {profile.fullName.charAt(0)}
+              {profile.full_name.charAt(0)}
             </Avatar>
 
             <Typography variant="h5" fontWeight={700}>
-              {profile.fullName}
+              {profile.full_name}
             </Typography>
 
             <Chip
@@ -714,7 +714,7 @@ const ProfilePage: React.FC = () => {
             {renderEditableField(
               "fullName",
               "Full Name",
-              profile.fullName,
+              profile.full_name,
               <Person />
             )}
             {renderEditableField("email", "Email", profile.email_id, <Email />)}

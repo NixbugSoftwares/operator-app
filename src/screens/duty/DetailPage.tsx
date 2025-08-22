@@ -70,14 +70,13 @@ const DutyDetailsCard: React.FC<DutyCardProps> = ({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [updateFormOpen, setUpdateFormOpen] = useState(false);
   const dispatch = useAppDispatch();
+  console.log("duty()()()()()()(()()", duty);
   const canUpdateDuty = useSelector((state: RootState) =>
-    state.app.permissions.includes("create_duty")
+    state.app.permissions.includes("update_duty")
   );
   const canDeleteDuty = useSelector((state: RootState) =>
-    state.app.permissions.includes("create_duty")
+    state.app.permissions.includes("delete_duty")
   );
-  const deleteDutyPermission =
-    canDeleteDuty && (duty.status === "Assigned" || duty.status === "Finished");
 
   const handleBusDelete = async () => {
     if (!duty.id) {
@@ -98,7 +97,7 @@ const DutyDetailsCard: React.FC<DutyCardProps> = ({
       refreshList("refresh");
     } catch (error: any) {
       console.error("Delete error:", error);
-      showErrorToast(error || "Failed to delete duty. Please try again.");
+      showErrorToast(error.message || "Failed to delete duty. Please try again.");
     }
   };
 
@@ -136,7 +135,7 @@ const DutyDetailsCard: React.FC<DutyCardProps> = ({
             sx={{
               display: "flex",
               flexDirection: "column",
-              gap: 1.5,
+              gap: 1,
               alignItems: "flex-start",
             }}
           >
@@ -207,21 +206,7 @@ const DutyDetailsCard: React.FC<DutyCardProps> = ({
               Back
             </Button>
 
-            {/* Update Button with Tooltip */}
-            <Tooltip
-              title={
-                !canUpdateDuty
-                  ? "You don't have permission, contact the admin"
-                  : ""
-              }
-              arrow
-              placement="top-start"
-            >
-              <span
-                style={{
-                  cursor: !canUpdateDuty ? "not-allowed" : "default",
-                }}
-              >
+           {canUpdateDuty&&(
                 <Button
                   variant="contained"
                   color="success"
@@ -236,25 +221,29 @@ const DutyDetailsCard: React.FC<DutyCardProps> = ({
                   }}
                 >
                   Update
-                </Button>
-              </span>
-            </Tooltip>
+                </Button>)}
 
             {/* Delete Button with Tooltip */}
+            {canDeleteDuty&&(
             <Tooltip
-              title={
-                !deleteDutyPermission
-                  ? duty.status === "Started" || duty.status === "Terminated"
-                    ? "Duty cannot be deleted after it has started or terminated"
-                    : "You don't have permission, contact the admin"
-                  : ""
+              title={ duty.status === "Started"
+                  ? "You can't delete a started duty"
+                  : duty.status === "Ended"
+                  ? "You can't delete an ended duty"
+                  : duty.status === "Terminated"
+                  ? "You can't delete a terminated duty"
+                  : "Click to delete this duty"
               }
               arrow
               placement="top-start"
             >
               <span
                 style={{
-                  cursor: !deleteDutyPermission ? "not-allowed" : "pointer",
+                  cursor:
+                    !canDeleteDuty ||
+                    ["Started", "Ended", "Terminated"].includes(duty.status)
+                      ? "not-allowed"
+                      : "pointer",
                 }}
               >
                 <Button
@@ -263,7 +252,10 @@ const DutyDetailsCard: React.FC<DutyCardProps> = ({
                   size="small"
                   onClick={() => setDeleteConfirmOpen(true)}
                   startIcon={<DeleteIcon />}
-                  disabled={!deleteDutyPermission}
+                  disabled={
+                    !canDeleteDuty ||
+                    ["Started", "Ended", "Terminated"].includes(duty.status)
+                  }
                   sx={{
                     "&.Mui-disabled": {
                       backgroundColor: "#e57373 !important",
@@ -274,7 +266,7 @@ const DutyDetailsCard: React.FC<DutyCardProps> = ({
                   Delete
                 </Button>
               </span>
-            </Tooltip>
+            </Tooltip>)}
           </Box>
         </CardActions>
       </Card>

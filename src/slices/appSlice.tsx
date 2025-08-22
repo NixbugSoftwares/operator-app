@@ -40,10 +40,11 @@ interface OperatorListParams {
   limit: number;
   offset: number;
   id?: string;
-  fullName?: string;
+  full_name?: string;
   gender?: string;
   email_id?: string;
   phoneNumber?: string;
+  status?: number;
 }
 interface RoleListParams {
   limit?: number;
@@ -57,7 +58,8 @@ interface BusListParams {
   id?: number;
   name?: string;
   registration_number?: string;
-  capacity?: number;
+  capacity_le?: number;
+  status?: number;
 
 }
 interface LandmarkListParams {
@@ -77,6 +79,7 @@ interface RouteListParams {
   offset?: number;
   id?: number;
   name?: string;
+  status?: number;
 }
 interface FareListParams {
   limit?: number;
@@ -89,12 +92,17 @@ interface FareListParams {
 interface ServiceListParams {
   limit?: number;
   offset?: number;
+  company_id?: number;
   id?: string;
   name?: string;
   ticket_mode?: number;
-  created_mode?: number;
   status?: number;
   status_list?: number[];
+  bus_id?: number;
+  starting_at_ge?: string;
+  starting_at_le?: string;
+  order_by?: number;
+  order_in?: number;
 }
 
 interface ScheduleListParams {
@@ -114,6 +122,9 @@ interface DutyListParams {
   name?: string;
   status?: number;
   type?: number;
+  company_id?: number;
+  service_id?: number;
+  service_id_list?: number[];
 }
 
 interface paperTicketListParams {
@@ -145,37 +156,47 @@ export const logoutApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.detail || error.message || error || "Logout failed");
+      return rejectWithValue({
+        message: error.error || "Logout failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
 
 //Fetch logged in user Role
-export const loginUserAssignedRoleApi = createAsyncThunk<any[], number | undefined>(
-  "role",
-  async (assignedRoleId, { rejectWithValue }) => {
-    try {
-      const response = await commonApi.apiCall(
-        "get",
-        "/operator/company/role",
-        {},
-        true,
-        "application/json"
-      );
+export const loggedinUserRoleDetails = createAsyncThunk<
+  any[],
+  number | undefined
+>("role", async (assignedRoleId, { rejectWithValue }) => {
+  try {
+    const response = await commonApi.apiCall(
+      "get",
+      "/operator/company/role",
+      {},
+      true,
+      "application/json"
+    );
 
-      if (!assignedRoleId) return response;
+    if (!assignedRoleId) return response;
 
-      const matchedRole = response.find(
-        (role: { id: number }) => role.id === assignedRoleId
-      );
-      return matchedRole ? [matchedRole] : [];
-    } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "Failed to fetch Role"
-      );
-    }
+    const matchedRole = response.find(
+      (role: { id: number }) => role.id === assignedRoleId
+    );
+    return matchedRole ? [matchedRole] : [];
+  } catch (error: any) {
+    return rejectWithValue({
+        message: error.error || "failed to fetch role",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
   }
-);
+});
 
 
 export const userCompanyGetApi = createAsyncThunk(
@@ -202,10 +223,13 @@ export const userCompanyGetApi = createAsyncThunk(
       
     } catch (error: any) {
       console.error("API Error:", error);
-      return rejectWithValue(
-        error.detail ||
-          "Failed to fetch company list"
-      );
+      return rejectWithValue({
+        message: error.error || " company fetch failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -216,18 +240,24 @@ export const companyUpdateApi = createAsyncThunk(
     { formData }: { companyId: number; formData: FormData },
     { rejectWithValue }
   ) => {
-    const response = await commonApi.apiCall(
-      "patch",
-      `/operator/company`,
-      formData,
-      true,
-      "application/x-www-form-urlencoded"
-    );
-    // If response contains an error, reject
-    if (response?.error) {
-      return rejectWithValue(response.error.detail || "company update failed");
+    try {
+      const response = await commonApi.apiCall(
+        "patch",
+        `/operator/company`,
+        formData,
+        true,
+        "application/x-www-form-urlencoded"
+      );
+      return response;
+    } catch (error: any) {
+      return rejectWithValue({
+        message: error.error || " company update failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
-    return response;
   }
 );
 
@@ -238,16 +268,17 @@ export const companyUpdateApi = createAsyncThunk(
 export const operatorListApi = createAsyncThunk(
   "/Account",
   async (params: OperatorListParams, { rejectWithValue }) => {
-    const { limit, offset, id, fullName, gender, email_id, phoneNumber } =
+    const { limit, offset, id, full_name, status, gender, email_id, phoneNumber } =
       params;
     const queryParams = {
       limit,
       offset,
       ...(id && { id }),
-      ...(fullName && { full_name: fullName }),
+      ...(full_name && { full_name: full_name }),
       ...(gender && { gender }),
       ...(email_id && { email_id }),
       ...(phoneNumber && { phone_number: phoneNumber }),
+      ...(status && { status }),
     };
     try {
       const response = await commonApi.apiCall(
@@ -264,10 +295,13 @@ export const operatorListApi = createAsyncThunk(
       };
     } catch (error: any) {
       console.error("API Error:", error);
-      return rejectWithValue(
-        error.detail || error.message || error ||
-          "Failed to fetch operator list"
-      );
+      return rejectWithValue({
+        message: error.error || "operator fetch failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -286,9 +320,13 @@ export const operatorCreationApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "operator creation failed"
-      );
+      return rejectWithValue({
+        message: error.error || "Operator account creation failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -311,9 +349,13 @@ export const operatorUpdationApi = createAsyncThunk(
       return response;
     } catch (error: any) {
       console.error("Backend Error Response:", error); 
-      return rejectWithValue(
-        error.detail || error.msg || error || "Operator account update failed"
-      );
+      return rejectWithValue({
+        message: error.error || " Operator account updation failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -333,9 +375,13 @@ export const accountDeleteApi = createAsyncThunk(
 
       return response;
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "Account deletion failed"
-      );
+      return rejectWithValue({
+        message: error.error || " Operator account deletion failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -369,10 +415,13 @@ export const operatorRoleListApi = createAsyncThunk(
       };
     } catch (error: any) {
       console.error("API Error:", error);
-      return rejectWithValue(
-        error.detail || error.message || error ||
-          "Failed to fetch operator list"
-      );
+      return rejectWithValue({
+        message: error.error || " operator role fetch failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -391,9 +440,13 @@ export const operatorRoleCreationApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "operator creation failed"
-      );
+      return rejectWithValue({
+        message: error.error || " operator role creation failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -416,9 +469,13 @@ export const operatorRoleUpdationApi = createAsyncThunk(
       return response;
     } catch (error: any) {
       console.error("Backend Error Response:", error.response?.data);
-      return rejectWithValue(
-        error.detail || error.message || error || "Role update failed"
-      );
+      return rejectWithValue({
+        message: error.error || " operator role updation failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -438,9 +495,13 @@ export const operatorRoleDeleteApi = createAsyncThunk(
 
       return response;
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "Role deletion failed"
-      );
+      return rejectWithValue({
+        message: error.error || " operator role deletion failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -465,9 +526,13 @@ export const fetchRoleMappingApi = createAsyncThunk(
       }
       return response;
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "Failed to fetch role mapping"
-      );
+      return rejectWithValue({
+        message: error.error ||  "Role mapping fetch failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -490,9 +555,13 @@ export const operatorRoleAssignApi = createAsyncThunk(
 
       return response;
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "Role assign failed"
-      );
+     return rejectWithValue({
+        message: error.error || " Role assign failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -519,9 +588,13 @@ export const roleAssignUpdateApi = createAsyncThunk(
       return response;
     } catch (error: any) {
       console.error("Backend Error Response:", error.response?.data);
-      return rejectWithValue(
-        error.detail || error.message || error || "Role assign failed"
-      );
+      return rejectWithValue({
+        message: error.error ||" Role assign update failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -531,7 +604,7 @@ export const roleAssignUpdateApi = createAsyncThunk(
 export const companyBusListApi = createAsyncThunk(
   "/bus",
   async (params: BusListParams, { rejectWithValue }) => {
-    const { limit, offset, id, name, registration_number, capacity } =
+    const { limit, offset, id, name, registration_number,status, capacity_le } =
       params;
 
     const queryParams = {
@@ -540,7 +613,8 @@ export const companyBusListApi = createAsyncThunk(
       ...(id && { id }),
       ...(name && { name: name }),
       ...(registration_number && { registration_number }),
-      ...(capacity && { capacity }),
+      ...(capacity_le && { capacity_le }),
+      ...(status && { status }),
     };
     try {
       const response = await commonApi.apiCall(
@@ -557,10 +631,13 @@ export const companyBusListApi = createAsyncThunk(
       };
     } catch (error: any) {
       console.error("API Error:", error);
-      return rejectWithValue(
-        error.detail || error.message || error ||
-          "Failed to fetch Bus list"
-      );
+      return rejectWithValue({
+        message: error.error || " Bus list failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -579,7 +656,13 @@ export const companyBusCreateApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.detail || error.message || error  || "Bus creation failed");
+      return rejectWithValue({
+        message: error.error || " Bus create failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -598,7 +681,13 @@ export const companyBusUpdateApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.detail || error.message || error || "Bus update failed");
+      return rejectWithValue({
+        message: error.error || " Bus update failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 )
@@ -617,7 +706,13 @@ export const companyBusDeleteApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.detail || error.message || error || "Bus deletion failed");
+      return rejectWithValue({
+        message: error.error || " Bus delete failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -651,28 +746,29 @@ export const landmarkListApi = createAsyncThunk(
 
       return { data: response || response.data };
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail ||
-          error.message ||
-          error ||
-          "Failed to fetch landmark list"
-      );
+      return rejectWithValue({
+        message: error.error || " Landmark list failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
-
 
 //route list Api
 
 export const busRouteListApi = createAsyncThunk(
   "/company/route",
   async (params: RouteListParams, { rejectWithValue }) => {
-    const{limit,offset,id,name}=params;
+    const{limit,offset,id,name, status}=params;
     const queryParams = {
       limit,
       offset,
       ...(id && { id }),
       ...(name && { name: name }),
+      ...(status && { status }),
     }
     try {
       
@@ -690,17 +786,18 @@ export const busRouteListApi = createAsyncThunk(
       };
     } catch (error: any) {
       console.error("API Error:", error);
-      return rejectWithValue(
-        error.detail || error.message || error ||
-          "Failed to fetch Bus list"
-      );
+      return rejectWithValue({
+        message: error.error || " route fetch failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
 
-
 //route-landmark list api
-
 export const busRouteLandmarkListApi = createAsyncThunk(
   "/company/route/landmark",
   async (routeId: number | null, { rejectWithValue }) => {
@@ -726,9 +823,13 @@ export const busRouteLandmarkListApi = createAsyncThunk(
 
       return response.data; // Ensure correct return
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "Failed to fetch route landmarks"
-      );
+      return rejectWithValue({
+        message: error.error || " route landmark fetch failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -749,9 +850,13 @@ export const routeDeleteApi = createAsyncThunk(
 
       return response;
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "Account deletion failed"
-      );
+      return rejectWithValue({
+        message: error.error || " route delete failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -770,9 +875,13 @@ export const routeCreationApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "route creation failed"
-      );
+      return rejectWithValue({
+        message: error.error || " route creation failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });;
     }
   }
 );
@@ -791,9 +900,13 @@ export const routeLandmarkCreationApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "route-landmark creation failed"
-      );
+      return rejectWithValue({
+        message: error.error || " route landmark creation failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 ); 
@@ -813,9 +926,13 @@ export const routeLandmarkDeleteApi = createAsyncThunk(
 
       return response;
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "Account deletion failed"
-      );
+      return rejectWithValue({
+        message: error.error || " route landmark delete failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -839,9 +956,13 @@ export const routeUpdationApi = createAsyncThunk(
       return response;
     } catch (error: any) {
       console.error("Backend Error Response:", error.response?.data); // Log the full error response
-      return rejectWithValue(
-        error.detail || error.message || error || "route update failed"
-      );
+      return rejectWithValue({
+        message: error.error || " route update failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -864,9 +985,13 @@ export const routeLandmarkUpdationApi = createAsyncThunk(
       return response;
     } catch (error: any) {
       console.error("Backend Error Response:", error.response?.data); // Log the full error response
-      return rejectWithValue(
-        error.detail || error.message || error ||"Route-landmark update failed"
-      );
+      return rejectWithValue({
+        message: error.error || " route landmark update failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -905,12 +1030,13 @@ export const fareListApi = createAsyncThunk(
       return { data: response };
     } catch (error: any) {
       console.error("API Error:", error);
-      return rejectWithValue(
-        error.detail ||
-          error.message ||
-          error ||
-          "Failed to fetch fare list"
-      );
+      return rejectWithValue({
+        message: error.error || " Fare list failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -929,9 +1055,13 @@ export const fareCreationApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "Fare creation failed"
-      );
+      return rejectWithValue({
+        message: error.error || " Fare creation failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -955,9 +1085,13 @@ export const fareupdationApi = createAsyncThunk(
       return response;
     } catch (error: any) {
       console.error("Backend Error Response:", error.response?.data);
-      return rejectWithValue(
-        error.detail || error.message || error || "Fare update failed"
-      );
+      return rejectWithValue({
+        message: error.error || " Fare updation failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -975,9 +1109,13 @@ export const fareDeleteApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "Fare deletion failed"
-      );
+      return rejectWithValue({
+        message: error.error || " Fare deletion failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -988,7 +1126,7 @@ export const fareDeleteApi = createAsyncThunk(
 export const serviceListingApi = createAsyncThunk(
   "/service",
   async (params: ServiceListParams, { rejectWithValue }) => {
-    const { limit, offset, id, name, created_mode, ticket_mode, status, status_list  } =
+    const { limit, offset, id, name,  ticket_mode, status, status_list, bus_id, starting_at_ge, starting_at_le, order_by, order_in  } =
       params;
 
     const queryParams = {
@@ -996,10 +1134,14 @@ export const serviceListingApi = createAsyncThunk(
       offset,
       ...(id && { id }),
       ...(name && { name: name }),
-      ...(created_mode && { created_mode }),
       ...(ticket_mode && { ticket_mode }),
       ...(status && { status }),
       ...(status_list && { status_list }),
+      ...(bus_id && { bus_id }),
+      ...(starting_at_ge && { starting_at_ge }),
+      ...(starting_at_le && { starting_at_le }),
+      ...(order_by && { order_by }),
+      ...(order_in && { order_in }),
     };
     try {
       const response = await commonApi.apiCall(
@@ -1016,10 +1158,13 @@ export const serviceListingApi = createAsyncThunk(
       };
     } catch (error: any) {
       console.error("API Error:", error);
-      return rejectWithValue(
-        error.detail || error.message || error ||
-          "Failed to fetch service list"
-      );
+      return rejectWithValue({
+        message: error.error || " Service list failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 )
@@ -1038,9 +1183,13 @@ export const serviceCreationApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "Service creation failed"
-      );
+      return rejectWithValue({
+        message: error.error || " Service creation failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -1063,9 +1212,13 @@ export const serviceupdationApi = createAsyncThunk(
       return response;
     } catch (error: any) {
       console.error("Backend Error Response:", error.response?.data); 
-      return rejectWithValue(
-        error.detail || error.message || error || "Service update failed"
-      );
+      return rejectWithValue({
+        message: error.error || " Service updation failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -1084,9 +1237,13 @@ export const serviceDeleteApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "Service deletion failed"
-      );
+      return rejectWithValue({
+        message: error.error || " Service deletion failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -1124,10 +1281,13 @@ export const scheduleListingApi = createAsyncThunk(
       };
     } catch (error: any) {
       console.error("API Error:", error);
-      return rejectWithValue(
-        error.detail || error.message || error ||
-          "Failed to fetch schedule list"
-      );
+      return rejectWithValue({
+        message: error.error || " Schedule list failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 )
@@ -1146,9 +1306,13 @@ export const scheduleCreationApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "Schedule creation failed"
-      );
+      return rejectWithValue({
+        message: error.error || " Schedule creation failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -1168,9 +1332,13 @@ export const scheduleUpdationApi = createAsyncThunk(
       return response;
     } catch (error: any) {
       console.error("Backend Error Response:", error.response?.data); // Log the full error response
-      return rejectWithValue(
-        error.detail || error.message || error || "Schedule update failed"
-      );
+      return rejectWithValue({
+        message: error.error || " Schedule updation failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -1189,9 +1357,13 @@ export const scheduleDeleteApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "Schedule deletion failed"
-      );
+      return rejectWithValue({
+        message: error.error || " Schedule deletion failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -1203,7 +1375,7 @@ export const scheduleDeleteApi = createAsyncThunk(
 export const dutyListingApi = createAsyncThunk(
   "/duty",
   async (params: DutyListParams, { rejectWithValue }) => {
-    const { limit, offset, id, name, status, type } = params;
+    const { limit, offset, id, name, status, type, service_id, service_id_list } = params;
     const queryParams = {
       limit,
       offset,
@@ -1211,6 +1383,8 @@ export const dutyListingApi = createAsyncThunk(
       ...(name && { name }),
       ...(status && { status }),
       ...(type && { type }),
+      ...(service_id && { service_id }),
+      ...(service_id_list && { service_id_list }),
     };
     try {
       const response = await commonApi.apiCall(
@@ -1226,10 +1400,13 @@ export const dutyListingApi = createAsyncThunk(
       };
     } catch (error: any) {
       console.error("API Error:", error);
-      return rejectWithValue(
-        error.detail || error.message || error ||
-          "Failed to fetch duty list"
-      );
+      return rejectWithValue({
+        message: error.error || " Duty list failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -1248,9 +1425,13 @@ export const dutyCreationApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "Duty creation failed"
-      );
+      return rejectWithValue({
+        message: error.error || "",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -1273,9 +1454,13 @@ export const dutyupdationApi = createAsyncThunk(
       return response;
     } catch (error: any) {
       console.error("Backend Error Response:", error.response?.data);
-      return rejectWithValue(
-        error.detail || error.message || error || "Duty update failed"
-      );
+      return rejectWithValue({
+        message: error.error || " Duty updation failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -1294,9 +1479,13 @@ export const dutyDeleteApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(
-        error.detail || error.message || error || "Duty deletion failed"
-      );
+      return rejectWithValue({
+        message: error.error || " Duty deletion failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 )
@@ -1332,10 +1521,13 @@ export const paperTicketListingApi = createAsyncThunk(
       };
     } catch (error: any) {
       console.error("API Error:", error);
-      return rejectWithValue(
-        error.detail || error.message || error ||
-          "Failed to fetch paper ticket list"
-      );
+      return rejectWithValue({
+        message: error.error || "",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -1364,10 +1556,13 @@ export const landmarkNameApi = createAsyncThunk(
       };
     } catch (error: any) {
       console.error("API Error:", error);
-      return rejectWithValue(
-        error.detail || error.message || error ||
-          "Failed to fetch landmark list"
-      );
+      return rejectWithValue({
+        message: error.error || " Landmark list failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );

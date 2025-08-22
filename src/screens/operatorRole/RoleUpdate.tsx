@@ -157,7 +157,7 @@ const RoleUpdateForm: React.FC<RoleUpdateFormProps> = ({
         showErrorToast("Role update failed. Please try again.");
       }
     } catch (error: any) {
-      showErrorToast(error || "Failed to update role. Please try again.");
+      showErrorToast(error.message || "Failed to update role. Please try again.");
     } finally {
       setLoading(false);
     }

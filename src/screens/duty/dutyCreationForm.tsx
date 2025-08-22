@@ -17,10 +17,7 @@ import {
   operatorListApi,
   serviceListingApi,
 } from "../../slices/appSlice";
-import {
-  showErrorToast,
-  showSuccessToast,
-} from "../../common/toastMessageHelper";
+import { showErrorToast, showSuccessToast } from "../../common/toastMessageHelper";
 import { Duty } from "../../types/type";
 
 interface IOperatorCreationFormProps {
@@ -39,100 +36,100 @@ const DutyCreationForm: React.FC<IOperatorCreationFormProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
-  const [dropdownData, setDropdownData] = useState({
-    operatorList: [] as DropdownItem[],
-    serviceList: [] as DropdownItem[],
-  });
-  const [searchParams, setSearchParams] = useState({
-    operator: "",
-    service: "",
-  });
-  const [page, setPage] = useState({
-    operator: 0,
-    service: 0,
-  });
-  const [hasMore, setHasMore] = useState({
-    operator: true,
-    service: true,
-  });
+  const [operatorList, setOperatorList] = useState<DropdownItem[]>([]);
+  const [serviceList, setServiceList] = useState<DropdownItem[]>([]);
+  
+  const [operatorSearch, setOperatorSearch] = useState("");
+  const [operatorPage, setOperatorPage] = useState(0);
+  const [hasMoreOperators, setHasMoreOperators] = useState(true);
+  
+  const [servicePage, setServicePage] = useState(0);
+  const [hasMoreServices, setHasMoreServices] = useState(true);
 
   const rowsPerPage = 10;
-  const {
-    handleSubmit,
-    control,
-    formState: { errors },
-  } = useForm<Duty>();
+  const { handleSubmit, control, formState: { errors } } = useForm<Duty>();
 
-  const fetchData = useCallback(
-    async (
-      api: any,
-      type: "operator" | "service",
-      pageNumber: number,
-      searchText = ""
-    ) => {
-      setLoading(true);
-      const offset = pageNumber * rowsPerPage;
+  // Fetch operators with pagination and search
+  const fetchOperators = useCallback(async (pageNumber: number, searchText = "") => {
+    setLoading(true);
+    const offset = pageNumber * rowsPerPage;
+    
+    try {
+      const res = await dispatch(operatorListApi({
+        limit: rowsPerPage,
+        offset,
+        status: 1,
+        full_name: searchText,
+      })).unwrap();
 
-      try {
-        const res = await dispatch(
-          api({
-            limit: rowsPerPage,
-            offset,
-            ...(type === "operator" ? { full_name: searchText } : {}),
-          })
-        ).unwrap();
+      const operators = res.data || [];
+      const formattedOperators = operators.map((operator: any) => ({
+        id: operator.id,
+        name: operator.full_name ?? operator.username,
+      }));
 
-        const items = res.data || [];
-        const formattedList = items.map((item: any) => ({
-          id: item.id,
-          name:
-            type === "operator"
-              ? item.full_name ?? item.username
-              : item.name ?? "-",
-        }));
+      setOperatorList(prev => 
+        pageNumber === 0 ? formattedOperators : [...prev, ...formattedOperators]
+      );
+      setHasMoreOperators(operators.length === rowsPerPage);
+    } catch (error: any) {
+      showErrorToast(error.message || "Failed to fetch operators");
+    } finally {
+      setLoading(false);
+    }
+  }, [dispatch, rowsPerPage]);
 
-        setDropdownData((prev) => ({
-          ...prev,
-          [`${type}List`]:
-            pageNumber === 0
-              ? formattedList
-              : [...prev[`${type}List`], ...formattedList],
-        }));
-        setHasMore((prev) => ({
-          ...prev,
-          [type]: items.length === rowsPerPage,
-        }));
-      } catch (error: any) {
-        showErrorToast(error.message || `Failed to fetch ${type} list`);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [dispatch, rowsPerPage]
-  );
+  // Fetch services with pagination and status filter
+  const fetchServices = useCallback(async (pageNumber: number) => {
+    setLoading(true);
+    const offset = pageNumber * rowsPerPage;
+    
+    try {
+      const res = await dispatch(serviceListingApi({
+        limit: rowsPerPage,
+        offset,
+        status_list: [1, 2], // Only active and pending services
+      })).unwrap();
 
-  const fetchOperatorList = useCallback(
-    (pageNumber: number, searchText = "") =>
-      fetchData(operatorListApi, "operator", pageNumber, searchText),
-    [fetchData]
-  );
+      const services = res.data || [];
+      const formattedServices = services.map((service: any) => ({
+        id: service.id,
+        name: service.name ?? "-",
+      }));
 
-  const fetchServiceList = useCallback(
-    (pageNumber: number) => fetchData(serviceListingApi, "service", pageNumber),
-    [fetchData]
-  );
+      setServiceList(prev => 
+        pageNumber === 0 ? formattedServices : [...prev, ...formattedServices]
+      );
+      setHasMoreServices(services.length === rowsPerPage);
+    } catch (error: any) {
+      showErrorToast(error.message || "Failed to fetch services");
+    } finally {
+      setLoading(false);
+    }
+  }, [dispatch,  rowsPerPage]);
 
+  // Initial data load
   useEffect(() => {
-    fetchOperatorList(0);
-    fetchServiceList(0);
-  }, [fetchOperatorList, fetchServiceList]);
+    fetchOperators(0);
+    fetchServices(0);
+  }, [fetchOperators, fetchServices]);
+
+  // Handle operator search changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setOperatorPage(0);
+      fetchOperators(0, operatorSearch);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [operatorSearch, fetchOperators]);
 
   const handleDutyCreation: SubmitHandler<Duty> = async (data) => {
     try {
       setLoading(true);
       const formData = new FormData();
-      formData.append("operator_id", data.operator_id.toString());
-      formData.append("service_id", data.service_id.toString());
+      formData.append('operator_id', data.operator_id.toString());
+      formData.append('service_id', data.service_id.toString());
 
       const response = await dispatch(dutyCreationApi(formData)).unwrap();
 
@@ -144,72 +141,108 @@ const DutyCreationForm: React.FC<IOperatorCreationFormProps> = ({
         showErrorToast("Duty creation failed. Please try again.");
       }
     } catch (error: any) {
-      showErrorToast(error || "Something went wrong. Please try again.");
-    } finally {
+  if (error.status === 406) {
+    showErrorToast("Duty already exists for this operator and service.");
+  } else {
+    showErrorToast(error.message || "Something went wrong. Please try again.");
+  }
+}finally {
       setLoading(false);
     }
   };
 
-  const handleScroll = (
-    event: React.UIEvent<HTMLElement>,
-    type: "operator" | "service"
-  ) => {
+  const handleOperatorScroll = (event: React.UIEvent<HTMLElement>) => {
     const element = event.currentTarget;
     if (
       element.scrollHeight - element.scrollTop === element.clientHeight &&
-      hasMore[type]
+      hasMoreOperators
     ) {
-      const newPage = page[type] + 1;
-      setPage((prev) => ({ ...prev, [type]: newPage }));
-      type === "operator"
-        ? fetchOperatorList(newPage, searchParams.operator)
-        : fetchServiceList(newPage);
+      const newPage = operatorPage + 1;
+      setOperatorPage(newPage);
+      fetchOperators(newPage, operatorSearch);
     }
   };
 
-  const renderAutocomplete = (
-    name: keyof Duty,
-    label: string,
-    options: DropdownItem[],
-    type: "operator" | "service"
-  ) => (
+  const handleServiceScroll = (event: React.UIEvent<HTMLElement>) => {
+    const element = event.currentTarget;
+    if (
+      element.scrollHeight - element.scrollTop === element.clientHeight &&
+      hasMoreServices
+    ) {
+      const newPage = servicePage + 1;
+      setServicePage(newPage);
+      fetchServices(newPage);
+    }
+  };
+
+  const renderOperatorAutocomplete = () => (
     <Controller
-      name={name}
+      name="operator_id"
       control={control}
-      rules={{ required: `${label} is required` }}
+      rules={{ required: "Operator is required" }}
       render={({ field }) => (
         <Autocomplete
-          options={options}
+          options={operatorList}
           getOptionLabel={(option) => option.name}
-          isOptionEqualToValue={(option, value) => option.id === value.id} // Add this line
-          value={options.find((item) => item.id === field.value) || null}
+          isOptionEqualToValue={(option, value) => option.id === value.id}
+          value={operatorList.find((item) => item.id === field.value) || null}
           onChange={(_, newValue) => field.onChange(newValue?.id)}
           onInputChange={(_, newInputValue) => {
-            if (type === "operator") {
-              setSearchParams((prev) => ({ ...prev, operator: newInputValue }));
-              setPage((prev) => ({ ...prev, operator: 0 }));
-              fetchOperatorList(0, newInputValue);
-            }
+            setOperatorSearch(newInputValue);
           }}
           renderInput={(params) => (
             <TextField
               {...params}
-              label={`Select ${label}`}
-              error={!!errors[name]}
-              helperText={errors[name]?.message}
+              label="Select Operator"
+              error={!!errors.operator_id}
+              helperText={errors.operator_id?.message}
               required
               fullWidth
             />
           )}
           renderOption={(props, option) => (
             <li {...props} key={option.id}>
-              {" "}
-              {/* Use ID as key here */}
-              {option.name} {/* Display the name */}
+              {option.name}
             </li>
           )}
           ListboxProps={{
-            onScroll: (event) => handleScroll(event, type),
+            onScroll: handleOperatorScroll,
+            style: { maxHeight: 200, overflow: "auto" },
+          }}
+        />
+      )}
+    />
+  );
+
+  const renderServiceAutocomplete = () => (
+    <Controller
+      name="service_id"
+      control={control}
+      rules={{ required: "Service is required" }}
+      render={({ field }) => (
+        <Autocomplete
+          options={serviceList}
+          getOptionLabel={(option) => option.name}
+          isOptionEqualToValue={(option, value) => option.id === value.id}
+          value={serviceList.find((item) => item.id === field.value) || null}
+          onChange={(_, newValue) => field.onChange(newValue?.id)}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Select Service"
+              error={!!errors.service_id}
+              helperText={errors.service_id?.message}
+              required
+              fullWidth
+            />
+          )}
+          renderOption={(props, option) => (
+            <li {...props} key={option.id}>
+              {option.name}
+            </li>
+          )}
+          ListboxProps={{
+            onScroll: handleServiceScroll,
             style: { maxHeight: 200, overflow: "auto" },
           }}
         />
@@ -220,75 +253,41 @@ const DutyCreationForm: React.FC<IOperatorCreationFormProps> = ({
   return (
     <Container component="main" maxWidth="md">
       <CssBaseline />
-      <Box
-        sx={{
-          mt: 4,
-          mb: 4,
-          px: 2,
-          py: 3,
-          borderRadius: 2,
-          backgroundColor: "#f9f9f9",
-          boxShadow: 3,
-        }}
-      >
+      <Box sx={{
+        mt: 4, mb: 4, px: 2, py: 3,
+        borderRadius: 2, backgroundColor: "#f9f9f9", boxShadow: 3
+      }}>
         <Typography component="h1" variant="h5" align="center" gutterBottom>
           Duty Creation
         </Typography>
 
-        <Box
-          component="form"
-          noValidate
-          onSubmit={handleSubmit(handleDutyCreation)}
-          sx={{ width: "100%" }}
-        >
-          <Stack spacing={3}>
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={2}
-              sx={{ width: "100%" }}
-            >
-              <Box sx={{ flex: 1 }}>
-                {renderAutocomplete(
-                  "operator_id",
-                  "Operator",
-                  dropdownData.operatorList,
-                  "operator"
-                )}
-              </Box>
-              <Box sx={{ flex: 1 }}>
-                {renderAutocomplete(
-                  "service_id",
-                  "Service",
-                  dropdownData.serviceList,
-                  "service"
-                )}
-              </Box>
-            </Stack>
+        <Box component="form" noValidate onSubmit={handleSubmit(handleDutyCreation)}>
+  <Stack 
+    direction={{ xs: "column", sm: "row" }} 
+    spacing={2} 
+    sx={{ width: "100%" }}
+  >
+    <Box flex={1}>{renderOperatorAutocomplete()}</Box>
+    <Box flex={1}>{renderServiceAutocomplete()}</Box>
+  </Stack>
 
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                sx={{
-                  minWidth: 150,
-                  bgcolor: "darkblue",
-                  "&:hover": {
-                    bgcolor: "darkblue",
-                    opacity: 0.9,
-                  },
-                }}
-                disabled={loading}
-              >
-                {loading ? (
-                  <CircularProgress size={24} sx={{ color: "white" }} />
-                ) : (
-                  "Create Duty"
-                )}
-              </Button>
-            </Box>
-          </Stack>
-        </Box>
+  <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
+    <Button
+      type="submit"
+      variant="contained"
+      color="primary"
+      sx={{ minWidth: 150, bgcolor: "darkblue" }}
+      disabled={loading}
+    >
+      {loading ? (
+        <CircularProgress size={24} sx={{ color: "white" }} />
+      ) : (
+        "Create Duty"
+      )}
+    </Button>
+  </Box>
+</Box>
+
       </Box>
     </Container>
   );

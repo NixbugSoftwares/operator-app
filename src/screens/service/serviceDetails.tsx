@@ -17,9 +17,9 @@ import {
 } from "@mui/material";
 
 import { Delete as DeleteIcon } from "@mui/icons-material";
+import DateRangeOutlinedIcon from "@mui/icons-material/DateRangeOutlined";
 import AssignmentIndRoundedIcon from "@mui/icons-material/AssignmentIndRounded";
 import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
-import DateRangeOutlinedIcon from "@mui/icons-material/DateRangeOutlined";
 import { useAppDispatch } from "../../store/Hooks";
 import { serviceDeleteApi } from "../../slices/appSlice";
 import localStorageHelper from "../../utils/localStorageHelper";
@@ -95,6 +95,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
   onBack,
   onCloseDetailCard,
 }) => {
+  console.log("service>>>>>>>>>>>>>>>>>>>>>>>>>>>>", service);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [updateFormOpen, setUpdateFormOpen] = useState(false);
   const dispatch = useAppDispatch();
@@ -103,7 +104,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
     state.app.permissions.includes("update_service")
   );
   const canDeleteService = useSelector((state: RootState) =>
-    state.app.permissions.includes("update_service")
+    state.app.permissions.includes("delete_service")
   );
 
   const handleServiceDelete = async () => {
@@ -125,7 +126,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
       refreshList("refresh");
     } catch (error: any) {
       console.error("Delete error:", error);
-      showErrorToast(error || "Service deletion failed. Please try again.");
+      showErrorToast(error.message || "Service deletion failed. Please try again.");
     }
   };
   return (
@@ -321,83 +322,68 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
               Back
             </Button>
 
-            {/* Update Button with Tooltip */}
-            <Tooltip
-              title={
-                !canUpdateService
-                  ? "You don't have permission, contact the admin"
-                  : ""
-              }
-              arrow
-              placement="top-start"
-            >
-              <span
-                style={{
-                  cursor: !canUpdateService ? "not-allowed" : "default",
+            {canUpdateService && (
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                onClick={() => setUpdateFormOpen(true)}
+                disabled={!canUpdateService}
+                sx={{
+                  "&.Mui-disabled": {
+                    backgroundColor: "#81c784 !important",
+                    color: "#ffffff99",
+                  },
                 }}
               >
-                <Button
-                  variant="contained"
-                  color="success"
-                  size="small"
-                  onClick={() => setUpdateFormOpen(true)}
-                  disabled={!canUpdateService}
-                  sx={{
-                    "&.Mui-disabled": {
-                      backgroundColor: "#81c784 !important",
-                      color: "#ffffff99",
-                    },
-                  }}
-                >
-                  Update
-                </Button>
-              </span>
-            </Tooltip>
+                Update
+              </Button>
+            )}
 
             {/* Delete Button with Tooltip */}
-            <Tooltip
-              title={
-                !canDeleteService
-                  ? "You don't have permission, contact the admin"
-                  : service.status === "Started"
-                  ? "Cannot delete a service that has Started"
-                  : service.status === "Terminated"
-                  ? "Cannot delete a service that is Terminated"
-                  : service.status === "Ended"
-                  ? "Cannot delete a service that is Ended"
-                  : ""
-              }
-              arrow
-              placement="top-start"
-            >
-              <span
-                style={{
-                  cursor: !canDeleteService ? "not-allowed" : "default",
-                }}
+            {canDeleteService && (
+              <Tooltip
+                title={
+                  service.status === "Started"
+                    ? "Cannot delete a service that has Started"
+                    : service.status === "Terminated"
+                    ? "Cannot delete a service that is Terminated"
+                    : service.status === "Ended"
+                    ? "Cannot delete a service that is Ended"
+                    : ""
+                }
+                arrow
+                placement="top-start"
               >
-                <Button
-                  variant="contained"
-                  color="error"
-                  size="small"
-                  onClick={() => setDeleteConfirmOpen(true)}
-                  startIcon={<DeleteIcon />}
-                  disabled={
-                    !canDeleteService ||
-                    service.status === "Started" ||
-                    service.status === "Terminated" ||
-                    service.status === "Ended"
-                  }
-                  sx={{
-                    "&.Mui-disabled": {
-                      backgroundColor: "#e57373 !important",
-                      color: "#ffffff99",
-                    },
+                <span
+                  style={{
+                    cursor: !canDeleteService ? "not-allowed" : "default",
                   }}
                 >
-                  Delete
-                </Button>
-              </span>
-            </Tooltip>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    size="small"
+                    onClick={() => setDeleteConfirmOpen(true)}
+                    startIcon={<DeleteIcon />}
+                    disabled={
+                      !canDeleteService ||
+                      service.status === "Started" ||
+                      service.status === "Terminated" ||
+                      service.status === "Ended"
+                    }
+                    sx={{
+                      "&.Mui-disabled": {
+                        backgroundColor: "#e57373 !important",
+                        color: "#ffffff99",
+                      },
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </span>
+              </Tooltip>
+            )}
           </Box>
         </CardActions>
       </Card>

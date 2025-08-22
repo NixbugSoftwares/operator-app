@@ -122,11 +122,13 @@ const DutyListingTable = () => {
                 created_on: duty.created_on,
                 updated_on: duty.updated_on,
               };
-            } catch (error) {
+            } catch (error:any) {
               console.error(
                 `Error fetching details for duty ${duty.id}:`,
                 error
               );
+              
+                showErrorToast(error.message||"Failed fetch duty list");
               return {
                 ...duty,
                 serviceName: `Service ${duty.service_id}`,
@@ -142,7 +144,7 @@ const DutyListingTable = () => {
         setHasNextPage(items.length === rowsPerPage);
       } catch (error: any) {
         console.error("Fetch Error:", error);
-        showErrorToast(error || "Failed to fetch Duty list");
+        showErrorToast(error.message || "Failed to fetch Duty list");
       } finally {
         setIsLoading(false);
       }
@@ -227,15 +229,8 @@ const DutyListingTable = () => {
           overflow: "hidden",
         }}
       >
-        <Tooltip
-          title={
-            !canCreateDuty
-              ? "You don't have permission, contact the admin"
-              : "Click to open the Bus creation form"
-          }
-          placement="top-end"
-        >
-          <Button
+        {canCreateDuty&&(
+         <Button
             sx={{
               ml: "auto",
               mr: 2,
@@ -253,8 +248,7 @@ const DutyListingTable = () => {
             style={{ cursor: !canCreateDuty ? "not-allowed" : "pointer" }}
           >
             Add New Duty
-          </Button>
-        </Tooltip>
+          </Button>)}
 
         <TableContainer
           sx={{
@@ -366,7 +360,7 @@ const DutyListingTable = () => {
                   >
                     <TableCell sx={{ textAlign: "center" }}>{row.id}</TableCell>
 
-                    <TableCell>
+                    <TableCell sx={{ textAlign: "center" }}>
                       <Chip
                         label={row.status}
                         size="small"
@@ -464,8 +458,7 @@ const DutyListingTable = () => {
       <FormModal
         open={openCreateModal}
         onClose={() => setOpenCreateModal(false)}
-        title="Create Duty"
-        showCancel
+
       >
         <DutyCreationForm
           refreshList={refreshList}

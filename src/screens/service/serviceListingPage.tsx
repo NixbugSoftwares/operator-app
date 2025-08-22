@@ -74,6 +74,8 @@ const ServiceListingTable = () => {
   );
   const [openCreateModal, setOpenCreateModal] = useState(false);
 
+ 
+
   const fetchServiceList = useCallback(
     async (pageNumber: number, searchParams: Partial<SearchFilter> = {}) => {
       setIsLoading(true);
@@ -99,6 +101,8 @@ const ServiceListingTable = () => {
         ).unwrap();
 
         const items = res?.data || [];
+        console.log("API Response:", items);
+
         const formattedServices = items.map((service: any) => ({
           id: service.id,
           name: service.name ?? "",
@@ -130,12 +134,11 @@ const ServiceListingTable = () => {
           created_on: service.created_on ?? "",
           updated_on: service.updated_on ?? "",
         }));
-
         setServiceList(formattedServices);
         setHasNextPage(items.length === rowsPerPage);
       } catch (error: any) {
         console.error("Fetch Error:", error);
-        showErrorToast(error || "Failed to fetch Service list");
+        showErrorToast(error.message || "Failed to fetch Service list");
         setServiceList([]);
       } finally {
         setIsLoading(false);
@@ -228,18 +231,17 @@ const ServiceListingTable = () => {
               ml: "auto",
               mr: 2,
               mb: 2,
-              backgroundColor: "#00008B",
+              backgroundColor: !canCreateService
+                ? "#6c87b7 !important"
+                : "#00008B",
               color: "white",
               display: "flex",
               justifyContent: "flex-end",
-              "&:disabled": {
-                backgroundColor: "#6c87b7",
-                cursor: "not-allowed",
-              },
             }}
             variant="contained"
             onClick={() => setOpenCreateModal(true)}
             disabled={!canCreateService}
+            style={{ cursor: !canCreateService ? "not-allowed" : "pointer" }}
           >
             Add New Service
           </Button>
@@ -278,9 +280,9 @@ const ServiceListingTable = () => {
               <TableRow>
                 {[
                   { label: "ID", width: 80, key: "id" },
-                  { label: "Name", width: 200, key: "name" },
-                  { label: "Status", width: 160, key: "status" },
-                  { label: "Ticket Mode", width: 160, key: "ticket_mode" },
+                  { label: "Name", width: 250, key: "name" },
+                  { label: "Status", width: 100, key: "status" },
+                  { label: "Ticket Mode", width: 100, key: "ticket_mode" },
                 ].map((col) => (
                   <TableCell
                     key={col.key}
@@ -382,13 +384,13 @@ const ServiceListingTable = () => {
                     <TableCell>
                       <Tooltip title={row.name} placement="bottom">
                         <Typography noWrap>
-                          {row.name.length > 15
-                            ? `${row.name.substring(0, 15)}...`
+                          {row.name.length > 60
+                            ? `${row.name.substring(0, 60)}...`
                             : row.name}
                         </Typography>
                       </Tooltip>
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell sx={{ textAlign: "center" }}>
                       <Chip
                         label={row.status}
                         size="small"
@@ -416,7 +418,7 @@ const ServiceListingTable = () => {
                         }}
                       />
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell sx={{ textAlign: "center" }}>
                       <Chip
                         label={row.ticket_mode}
                         size="small"

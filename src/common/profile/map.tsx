@@ -46,7 +46,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const mapInstance = useRef<Map | null>(null);
   const [mapType, setMapType] = useState<"osm" | "satellite" | "hybrid">("osm");
   const [mousePosition, setMousePosition] = useState<string>("");
-  const [isMarkingEnabled, setIsMarkingEnabled] = useState<boolean>(false);
   const [markerLayer, setMarkerLayer] = useState<VectorLayer<
     VectorSource<Feature<Point>>
   > | null>(null);
@@ -78,7 +77,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
           center: initialCoordinates
             ? fromLonLat([initialCoordinates.lng, initialCoordinates.lat])
             : fromLonLat([76.9366, 8.5241]),
-          zoom: 10,
+          zoom: 13,
           minZoom: 3,
           maxZoom: 18,
         }),
@@ -144,8 +143,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     const map = mapInstance.current;
 
     const handleMapClick = async (event: any) => {
-      if (!isMarkingEnabled) return;
-
+      if (!canUpdateCompany) return;
       const coords = toLonLat(event.coordinate);
       const name = await fetchLocationName(coords[1], coords[0]);
       setLocationName(name);
@@ -182,8 +180,10 @@ const MapComponent: React.FC<MapComponentProps> = ({
     return () => {
       map.un("click", handleMapClick);
     };
-  }, [isMarkingEnabled, markerLayer, onSelectLocation]);
+  }, [ markerLayer, onSelectLocation]);
 
+
+  
   // Handle location search
   const handleSearch = async () => {
     const response = await fetch(
@@ -302,16 +302,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
             <MenuItem value="hybrid">Hybrid</MenuItem>
           </Select>
         </FormControl>
-        {canUpdateCompany && (
-          <Button
-            onClick={() => setIsMarkingEnabled(!isMarkingEnabled)}
-            variant="contained"
-            size="small"
-            color={isMarkingEnabled ? "secondary" : "primary"}
-          >
-            {isMarkingEnabled ? "Disable Marking" : "Update Location"}
-          </Button>
-        )}
+        
       </Box>
 
       <Typography variant="body2">
@@ -333,7 +324,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     </Box>
 
     {/* Map Container */}
-    <Box ref={mapRef} width="100%" height="500px" flex={1} />
+    <Box ref={mapRef} width="100%" height="400px" flex={1} />
   </Box>
 );
 };

@@ -85,14 +85,15 @@ const MapModal: React.FC<MapModalProps> = ({
         <Typography variant="h6" component="h2">
           Select Location
         </Typography>
-        <Box sx={{ height: 450, overflow: "hidden" }}>
+        <Box sx={{ height: 480, overflow: "hidden" }}>
           <MapComponent
             onSelectLocation={handleLocationSelect}
             isOpen={open}
             initialCoordinates={initialCoordinates}
           />
         </Box>
-        {canUpdateCompany && (
+        <Box display={"flex"} justifyContent={"flex-end"}>
+          {canUpdateCompany && (
           <Button
             onClick={handleConfirm}
             disabled={!selectedLocation}
@@ -105,6 +106,9 @@ const MapModal: React.FC<MapModalProps> = ({
         <Button onClick={onClose} sx={{ mt: 2, ml: 2 }} variant="outlined">
           Back
         </Button>
+
+        </Box>
+        
       </Box>
     </Modal>
   );

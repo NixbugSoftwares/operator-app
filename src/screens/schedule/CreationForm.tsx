@@ -10,6 +10,7 @@ import {
   CircularProgress,
   MenuItem,
   Autocomplete,
+  Checkbox,
 } from "@mui/material";
 import { useAppDispatch } from "../../store/Hooks";
 import {
@@ -91,8 +92,8 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
     formState: { errors },
   } = useForm<Schedule>({
     defaultValues: {
-      ticketing_mode: "1",
-      triggering_mode: "1",
+      ticketing_mode: 1,
+      triggering_mode: 1,
       frequency: [],
     },
   });
@@ -118,6 +119,7 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
           limit: rowsPerPage,
           offset,
           name: searchText,
+          status:1
         })
       )
         .unwrap()
@@ -139,16 +141,15 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
             bus: items.length === rowsPerPage,
           }));
         })
-        .catch((error) => {
+        .catch((error: any) => {
           showErrorToast(error.message || "Failed to fetch Bus list");
         });
     },
-    [dispatch]
+    [dispatch ]
   );
 
   const fetchFareList = useCallback(
     async (pageNumber: number, searchText = "") => {
-      setLoading(true);
       const offset = pageNumber * rowsPerPage;
       try {
         const res = await dispatch(
@@ -174,12 +175,10 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
               : [...prev.fareList, ...formattedFareList],
         }));
       } catch (error: any) {
-        showErrorToast(error?.message || "Failed to fetch Fare list");
-      } finally {
-        setLoading(false);
+        showErrorToast(error.message || "Failed to fetch Fare list");
       }
     },
-    [dispatch, rowsPerPage]
+    [dispatch, rowsPerPage ]
   );
 
   const fetchRouteList = useCallback(
@@ -190,6 +189,7 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
           limit: rowsPerPage,
           offset,
           name: searchText,
+          status:1
         })
       )
         .unwrap()
@@ -212,7 +212,7 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
           }));
         })
         .catch((error: any) => {
-          showErrorToast(error || "Failed to fetch Route list");
+          showErrorToast(error.message || "Failed to fetch Route list");
         });
     },
     [dispatch]
@@ -251,7 +251,7 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
       }
     } catch (error: any) {
       showErrorToast(
-        error?.message || "Something went wrong. Please try again."
+        error.message || "Something went wrong. Please try again."
       );
     } finally {
       setLoading(false);
@@ -369,6 +369,14 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
                 value: 32,
                 message: "Schedule name must be at most 32 characters",
               },
+              validate: (value) => {
+                if (value.trim() === "") return "Schedule name is required";
+                if (/^\s|\s$/.test(value))
+                  return "No leading or trailing spaces allowed";
+                if (/\s{2,}/.test(value))
+                  return "Consecutive spaces are not allowed";
+                return true;
+              },
             }}
             render={({ field }) => (
               <TextField
@@ -394,11 +402,18 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
               <Autocomplete
                 multiple
                 options={days}
+                disableCloseOnSelect
                 getOptionLabel={(option) => option.label}
                 value={days.filter((day) => field.value?.includes(day.value))}
                 onChange={(_, newValue) => {
                   field.onChange(newValue.map((day) => day.value));
                 }}
+                renderOption={(props, option, { selected }) => (
+                  <li {...props}>
+                    <Checkbox style={{ marginRight: 8 }} checked={selected} />
+                    {option.label}
+                  </li>
+                )}
                 renderInput={(params) => (
                   <TextField
                     {...params}

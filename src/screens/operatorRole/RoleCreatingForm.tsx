@@ -5,14 +5,12 @@ import {
   Box,
   Typography,
   Switch,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   FormControlLabel,
   Divider,
   useTheme,
+  Stack,
+  Checkbox,
 } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useAppDispatch } from "../../store/Hooks";
 import { operatorRoleCreationApi } from "../../slices/appSlice";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
@@ -55,20 +53,19 @@ type RoleFormValues = {
 interface IRoleCreationFormProps {
   onClose: () => void;
   refreshList: (value: any) => void;
-  defaultCompanyId?: number;
 }
 
 const permissionGroups = [
   {
-    groupName: "Token Management",
+    groupName: "Account Management",
     permissions: [{ label: "Operator Token", key: "manage_token" }],
   },
   {
-    groupName: "Company",
+    groupName: "Company Management",
     permissions: [{ label: "Update", key: "update_company" }],
   },
   {
-    groupName: "Operator",
+    groupName: "Operator Management",
     permissions: [
       { label: "Create", key: "create_operator" },
       { label: "Update", key: "update_operator" },
@@ -76,7 +73,15 @@ const permissionGroups = [
     ],
   },
   {
-    groupName: "Route",
+    groupName: "Operator Role",
+    permissions: [
+      { label: "Create", key: "create_role" },
+      { label: "Update", key: "update_role" },
+      { label: "Delete", key: "delete_role" },
+    ],
+  },
+  {
+    groupName: "Route ",
     permissions: [
       { label: "Create", key: "create_route" },
       { label: "Update", key: "update_route" },
@@ -123,20 +128,11 @@ const permissionGroups = [
       { label: "Delete", key: "delete_duty" },
     ],
   },
-  {
-    groupName: "Operator Role",
-    permissions: [
-      { label: "Create", key: "create_role" },
-      { label: "Update", key: "update_role" },
-      { label: "Delete", key: "delete_role" },
-    ],
-  },
 ];
 
 const RoleCreationForm: React.FC<IRoleCreationFormProps> = ({
   onClose,
   refreshList,
-  defaultCompanyId,
 }) => {
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
@@ -155,17 +151,56 @@ const RoleCreationForm: React.FC<IRoleCreationFormProps> = ({
     register,
     handleSubmit,
     control,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<RoleFormValues>({
     defaultValues: defaultValues as RoleFormValues,
   });
 
+  const handleGroupToggle = (groupName: string, checked: boolean) => {
+    const group = permissionGroups.find((g) => g.groupName === groupName);
+    if (group) {
+      group.permissions.forEach((permission) => {
+        setValue(permission.key as keyof RoleFormValues, checked);
+      });
+    }
+  };
+
+  // Check if all permissions in a group are selected
+  const isGroupAllSelected = (groupName: string) => {
+    const group = permissionGroups.find((g) => g.groupName === groupName);
+    if (!group) return false;
+
+    return group.permissions.every((permission) =>
+      watch(permission.key as keyof RoleFormValues)
+    );
+  };
+
+  const handleAllPermissionsToggle = (checked: boolean) => {
+    permissionGroups.forEach((group) => {
+      group.permissions.forEach((permission) => {
+        setValue(permission.key as keyof RoleFormValues, checked);
+      });
+    });
+  };
+
+  // helper to check if all permissions are currently selected
+  const isAllPermissionsSelected = () => {
+    return permissionGroups.every((group) =>
+      group.permissions.every((permission) =>
+        watch(permission.key as keyof RoleFormValues)
+      )
+    );
+  };
+
   const handleRoleCreation: SubmitHandler<RoleFormValues> = async (data) => {
     setLoading(true);
     try {
       const formData = new FormData();
-      formData.append("company_id", String(defaultCompanyId));
       formData.append("name", data.name);
+
+      // Append all permissions to formData
       permissionGroups.forEach((group) => {
         group.permissions.forEach((permission) => {
           formData.append(
@@ -186,12 +221,11 @@ const RoleCreationForm: React.FC<IRoleCreationFormProps> = ({
         showErrorToast("Role creation failed. Please try again.");
       }
     } catch (error: any) {
-      showErrorToast(error || "Failed to create role. Please try again.");
+      showErrorToast(error.message || "Failed to create role. Please try again.");
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <Box
       component="form"
@@ -199,7 +233,7 @@ const RoleCreationForm: React.FC<IRoleCreationFormProps> = ({
       sx={{
         display: "flex",
         flexDirection: "column",
-        gap: 1,
+        gap: 2,
         width: "100%",
         maxHeight: "70vh",
         overflowY: "auto",
@@ -215,12 +249,21 @@ const RoleCreationForm: React.FC<IRoleCreationFormProps> = ({
         {...register("name", {
           required: "Role name is required",
           minLength: {
-            value: 4,
-            message: "Minimum 4 characters required",
+            value: 3,
+            message: "Role name must be at least 3 characters",
           },
           maxLength: {
             value: 32,
-            message: "Maximum 32 characters allowed",
+            message: "Role name cannot exceed 32 characters",
+          },
+          validate: {
+            noEmptyString: (value) =>
+              value.trim().length > 0 ||
+              "Role name cannot be empty or just spaces",
+            noStartOrEndSpace: (value) =>
+              /^\S.*\S$|^\S$/.test(value) || "Cannot start or end with space",
+            noConsecutiveSpaces: (value) =>
+              !/ {2,}/.test(value) || "Cannot contain consecutive spaces",
           },
         })}
         error={!!errors.name}
@@ -228,97 +271,117 @@ const RoleCreationForm: React.FC<IRoleCreationFormProps> = ({
         variant="outlined"
         size="small"
         fullWidth
-        sx={{ mb: 2 }}
       />
 
-      <Divider sx={{ my: 1 }} />
+      <Divider />
+      <Box display={"flex"} justifyContent={"space-between"} sx={{ mb: 1 }}>
+        <Typography variant="subtitle1" gutterBottom>
+          Permissions
+        </Typography>
+        <FormControlLabel
+          control={
+            <Checkbox
+              size="small"
+              checked={isAllPermissionsSelected()}
+              indeterminate={
+                !isAllPermissionsSelected() &&
+                permissionGroups.some((group) =>
+                  group.permissions.some((permission) =>
+                    watch(permission.key as keyof RoleFormValues)
+                  )
+                )
+              }
+              onChange={(e) => handleAllPermissionsToggle(e.target.checked)}
+            />
+          }
+          label="Select All Permissions"
+          labelPlacement="start"
+          sx={{ m: 0, mb: 1 }}
+        />
+      </Box>
 
-      <Typography variant="subtitle2" gutterBottom>
-        Permissions
-      </Typography>
-
+      {/* GRID for permission groups */}
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-          gap: 1,
-          mb: 2,
+          gridTemplateColumns: "repeat(2, 1fr)",
+          gap: 2,
         }}
       >
         {permissionGroups.map((group) => (
-          <Accordion
+          <Box
             key={group.groupName}
-            defaultExpanded={false}
             sx={{
-              boxShadow: "none",
+              p: 2,
               border: `1px solid ${theme.palette.divider}`,
-              "&:before": { display: "none" },
+              borderRadius: 1,
             }}
           >
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon fontSize="small" />}
-              sx={{
-                minHeight: "40px !important",
-                "& .MuiAccordionSummary-content": {
-                  my: 0.5,
-                },
-              }}
+            <Box
+              sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
             >
-              <Typography variant="body2" fontWeight="medium">
+              <Typography variant="subtitle2" fontWeight="medium">
                 {group.groupName}
               </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ pt: 0, pb: 1 }}>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                {group.permissions.map((permission) => (
-                  <Controller
-                    key={permission.key}
-                    name={permission.key as keyof RoleFormValues}
-                    control={control}
-                    render={({ field }) => (
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            size="small"
-                            checked={!!field.value}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                            color="primary"
-                          />
-                        }
-                        label={
-                          <Typography variant="caption">
-                            {permission.label}
-                          </Typography>
-                        }
-                        labelPlacement="start"
-                        sx={{
-                          m: 0,
-                          justifyContent: "space-between",
-                          "& .MuiFormControlLabel-label": {
-                            flex: 1,
-                          },
-                        }}
-                      />
-                    )}
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={isGroupAllSelected(group.groupName)}
+                    indeterminate={
+                      !isGroupAllSelected(group.groupName) &&
+                      group.permissions.some((permission) =>
+                        watch(permission.key as keyof RoleFormValues)
+                      )
+                    }
+                    onChange={(e) =>
+                      handleGroupToggle(group.groupName, e.target.checked)
+                    }
                   />
-                ))}
-              </Box>
-            </AccordionDetails>
-          </Accordion>
+                }
+                label=""
+                labelPlacement="start"
+                sx={{ m: 0 }}
+              />
+            </Box>
+
+            <Stack spacing={1}>
+              {group.permissions.map((permission) => (
+                <Controller
+                  key={permission.key}
+                  name={permission.key as keyof RoleFormValues}
+                  control={control}
+                  render={({ field }) => (
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          size="small"
+                          checked={!!field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                          color="primary"
+                        />
+                      }
+                      label={
+                        <Typography variant="body2">
+                          {permission.label}
+                        </Typography>
+                      }
+                      labelPlacement="start"
+                      sx={{
+                        m: 0,
+                        justifyContent: "space-between",
+                        width: "100%",
+                      }}
+                    />
+                  )}
+                />
+              ))}
+            </Stack>
+          </Box>
         ))}
       </Box>
 
-      <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
-        <Button
-          type="button"
-          variant="outlined"
-          size="small"
-          fullWidth
-          onClick={onClose}
-          disabled={loading}
-        >
-          Cancel
-        </Button>
+      <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
         <Button
           type="submit"
           variant="contained"

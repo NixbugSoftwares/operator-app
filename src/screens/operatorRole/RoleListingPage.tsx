@@ -12,6 +12,12 @@ import {
   Tooltip,
   Typography,
   CircularProgress,
+  SelectChangeEvent,
+  ListItemText,
+  Select,
+  Checkbox,
+  MenuItem,
+  Stack,
 } from "@mui/material";
 import RoleDetailsCard from "./RoleDetailCard";
 import RoleCreatingForm from "./RoleCreatingForm";
@@ -31,6 +37,13 @@ interface Role {
   updated_on: string;
   roleDetails: any;
 }
+interface ColumnConfig {
+  id: string;
+  label: string;
+  width: string;
+  minWidth: string;
+  fixed?: boolean;
+}
 
 const RoleListingTable = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -47,6 +60,49 @@ const RoleListingTable = () => {
   const canCreateRole = useSelector((state: RootState) =>
     state.app.permissions.includes("create_role")
   );
+  
+  const columnConfig: ColumnConfig[] = [
+    { id: "id", label: "ID", width: "80px", minWidth: "80px", fixed: true },
+    {
+      id: "name",
+      label: "Role Name",
+      width: "200px",
+      minWidth: "200px",
+      fixed: true,
+    },
+    {
+      id: "created_on",
+      label: "Created Date",
+      width: "150px",
+      minWidth: "150px",
+      fixed: true,
+    },
+    {
+      id: "updated_on",
+      label: "Updated Date",
+      width: "150px",
+      minWidth: "150px",
+      fixed:true
+    },
+  ];
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
+    columnConfig.reduce((acc, column) => {
+      acc[column.id] = column.fixed ? true : false;
+      return acc;
+    }, {} as Record<string, boolean>)
+  );
+    const handleColumnChange = (event: SelectChangeEvent<string[]>) => {
+      const value = event.target.value;
+      setVisibleColumns(prev => {
+        const newVisibleColumns = {...prev};
+        // Update all columns based on selection
+        Object.keys(newVisibleColumns).forEach(key => {
+          newVisibleColumns[key] = value.includes(key);
+        });
+        return newVisibleColumns;
+      });
+    };
+
   const fetchRoleList = useCallback(
     (pageNumber: number, searchParams = {}) => {
       setIsLoading(true);
@@ -61,6 +117,8 @@ const RoleListingTable = () => {
         .unwrap()
         .then((res) => {
           const items = res.data || [];
+          console.log("items", items);
+
           const formattedRoleList = items.map((role: any) => ({
             id: role.id,
             name: role.name,
@@ -73,8 +131,8 @@ const RoleListingTable = () => {
           setRoleList(formattedRoleList);
           setHasNextPage(items.length === rowsPerPage);
         })
-        .catch((errorMessage) => {
-          showErrorToast(errorMessage);
+        .catch((error) => {
+          showErrorToast(error.message||"Error fetching role list");
         })
         .finally(() => {
           setIsLoading(false);
@@ -117,16 +175,13 @@ const RoleListingTable = () => {
     fetchRoleList(page, searchParams);
   }, [page, debouncedSearch, fetchRoleList]);
 
-  const tableHeaders = [
-    { key: "id", label: "ID" },
-    { key: "Rolename", label: "Name" },
-  ];
 
   const refreshList = (value: string) => {
     if (value === "refresh") {
       fetchRoleList(page, debouncedSearch);
     }
   };
+  const selectedColumns = columnConfig.filter(col => visibleColumns[col.id]);
 
   return (
     <Box
@@ -150,264 +205,179 @@ const RoleListingTable = () => {
           overflow: "hidden",
         }}
       >
-        <Tooltip
-          title={
-            !canCreateRole
-              ? "You don't have permission, contact the admin"
-              : "Click to open the role creation form"
-          }
-          placement="top-end"
-        >
-          <Button
-            sx={{
-              ml: "auto",
-              mr: 2,
-              mb: 2,
-              display: "block",
-              backgroundColor: !canCreateRole
-                ? "#6c87b7 !important"
-                : "#00008B",
-              color: "white",
-              "&.Mui-disabled": {
-                backgroundColor: "#6c87b7 !important",
-                color: "#ffffff99",
-              },
-            }}
-            variant="contained"
-            disabled={!canCreateRole}
-            onClick={() => setOpenCreateModal(true)}
-            style={{ cursor: !canCreateRole ? "not-allowed" : "default" }}
+        <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ p: 2 }}>
+          <Select
+            multiple
+            value={Object.keys(visibleColumns).filter(key => visibleColumns[key])}
+            onChange={handleColumnChange}
+            renderValue={(selected) => ` Selected Columns (${selected.length})`}
+            sx={{ minWidth: 200, height: 40 }}
           >
-            Add New Role
-          </Button>
-        </Tooltip>
+            {columnConfig.map((column) => (
+              <MenuItem
+                key={column.id}
+                value={column.id}
+                disabled={column.fixed}
+              >
+                <Checkbox
+                  checked={visibleColumns[column.id]}
+                  disabled={column.fixed}
+                />
+                <ListItemText
+                  primary={column.label}
+                  secondary={column.fixed ? "(Always visible)" : undefined}
+                />
+              </MenuItem>
+            ))}
+          </Select>
 
-        <TableContainer
-          sx={{
-            flex: 1,
-            maxHeight: "calc(100vh - 100px)",
-            overflowY: "auto",
-            borderRadius: 2,
-            border: "1px solid #e0e0e0",
-            position: "relative",
-          }}
-        >
-          {isLoading && (
-            <Box
+          {canCreateRole && (
+            <Button
+              variant="contained"
+              onClick={() => setOpenCreateModal(true)}
               sx={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                backgroundColor: "rgba(255, 255, 255, 0.7)",
-                zIndex: 1,
+                backgroundColor: "#00008B",
+                color: "white",
+                height: 40,
               }}
             >
-              <CircularProgress />
-            </Box>
+              Add New Role
+            </Button>
           )}
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                {tableHeaders.map(({ key, label }) => (
-                  <TableCell
-                    key={key}
-                    sx={
-                      key === "id"
-                        ? {
-                            width: 100,
-                            maxWidth: 100,
-                            p: 1,
-                            textAlign: "center",
-                          } // slightly wider
-                        : { minWidth: 150, textAlign: "center" }
-                    }
-                  >
-                    <b style={{ display: "block", fontSize: "0.85rem" }}>
-                      {label}
-                    </b>
-                    <TextField
-                      variant="outlined"
-                      size="small"
-                      placeholder="Search"
-                      value={search[key as keyof typeof search]}
-                      onChange={(e) =>
-                        handleSearchChange(e, key as keyof typeof search)
-                      }
-                      type={key === "id" ? "number" : "text"}
-                      fullWidth
+        </Stack>
+
+        <TableContainer
+                  sx={{
+                    flex: 1,
+                    maxHeight: "calc(100vh - 180px)",
+                    overflowY: "auto",
+                    borderRadius: 2,
+                    border: "1px solid #e0e0e0",
+                    position: "relative",
+                  }}
+                >
+                  {isLoading && (
+                    <Box
                       sx={{
-                        "& .MuiInputBase-root": {
-                          height: 36,
-                          fontSize: "0.85rem",
-                        },
-                        "& .MuiInputBase-input": {
-                          textAlign: "center",
-                          px: 1,
-                        },
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        backgroundColor: "rgba(255, 255, 255, 0.7)",
+                        zIndex: 1,
                       }}
-                      inputProps={
-                        key === "id"
-                          ? { style: { textAlign: "center" } }
-                          : undefined
-                      }
-                    />
-                  </TableCell>
-                ))}
-
-                {/* Created Date Column */}
-                <TableCell sx={{ minWidth: 160, textAlign: "center" }}>
-                  <b style={{ fontSize: "0.85rem" }}>Created On</b>
-                </TableCell>
-                <TableCell sx={{ minWidth: 160, textAlign: "center" }}>
-                  <b style={{ fontSize: "0.85rem" }}>Last Updated at</b>
-                </TableCell>
-              </TableRow>
-            </TableHead>
-
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center"></TableCell>
-                </TableRow>
-              ) : roleList.length > 0 ? (
-                roleList.map((row) => {
-                  const isSelected = selectedRole?.id === row.id;
-                  return (
-                    <React.Fragment key={row.id}>
-                      <TableRow
-                        hover
-                        onClick={() => handleRowClick(row)}
-                        sx={{
-                          cursor: "pointer",
-                          backgroundColor: isSelected ? "#E3F2FD" : "inherit",
-                        }}
-                      >
-                        <TableCell align="center">{row.id}</TableCell>
-                        <TableCell>
-                          <Tooltip title={row.name} placement="bottom">
-                            <Typography noWrap>
-                              {row.name.length > 30
-                                ? `${row.name.substring(0, 30)}...`
-                                : row.name}
-                            </Typography>
-                          </Tooltip>
-                        </TableCell>
-                        <TableCell align="center">
-                          {moment(row.created_on)
-                            .local()
-                            .format("DD-MM-YYYY, hh:mm A")}
-                        </TableCell>
-                        <TableCell align="center">
-                          {moment(row?.updated_on).isValid()
-                            ? moment(row.updated_on)
-                                .local()
-                                .format("DD-MM-YYYY, hh:mm A")
-                            : "Not updated yet"}
-                        </TableCell>
+                    >
+                      <CircularProgress />
+                    </Box>
+                  )}
+                  <Table stickyHeader>
+                    <TableHead>
+                      <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                        {selectedColumns.map((column) => (
+                          <TableCell
+                            key={column.id}
+                            sx={{
+                              width: column.width,
+                              minWidth: column.minWidth,
+                              p: 1,
+                              textAlign: "center",
+                            }}
+                          >
+                            <b style={{ display: "block", fontSize: "0.85rem" }}>
+                              {column.label}
+                            </b>
+                          </TableCell>
+                        ))}
                       </TableRow>
                       <TableRow>
-                        {/* <TableCell
-                          style={{ paddingBottom: 0, paddingTop: 0 }}
-                          colSpan={3}
-                        >
-                          <Collapse
-                            in={expandedGroups[row.id.toString()]}
-                            timeout="auto"
-                            unmountOnExit
-                          >
-                            <Box sx={{ margin: 1 }}>
-                              <Typography
-                                variant="subtitle2"
-                                gutterBottom
-                                component="div"
-                              >
-                                Permissions
-                              </Typography>
-                              <Box
+                        {selectedColumns.map((column) => (
+                          <TableCell key={`search-${column.id}`}>
+                            {column.id === "id" || column.id === "name" ? (
+                              <TextField
+                                type={column.id === "id" ? "number" : "text"}
+                                variant="outlined"
+                                size="small"
+                                placeholder="Search"
+                                value={search[column.id === "id" ? "id" : "Rolename"]}
+                                onChange={(e) => 
+                                  handleSearchChange(e, column.id === "id" ? "id" : "Rolename")
+                                }
+                                fullWidth
                                 sx={{
-                                  display: "flex",
-                                  flexWrap: "wrap",
-                                  gap: 1,
+                                  "& .MuiInputBase-root": { height: 40 },
+                                  "& .MuiInputBase-input": { textAlign: "center" },
                                 }}
-                              >
-                                {permissionGroups.map((group) => (
-                                  <Box
-                                    key={group.groupName}
-                                    sx={{
-                                      border: "1px solid #e0e0e0",
-                                      borderRadius: 1,
-                                      p: 1,
-                                      minWidth: "120px",
-                                    }}
-                                  >
-                                    <Typography
-                                      variant="caption"
-                                      fontWeight="bold"
-                                    >
-                                      {group.groupName}
-                                    </Typography>
-                                    <Box
-                                      sx={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        mt: 0.5,
-                                      }}
-                                    >
-                                      {group.permissions.map((permission) => (
-                                        <Box
-                                          key={permission.key}
-                                          sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 0.5,
-                                          }}
-                                        >
-                                          <Typography variant="caption">
-                                            {permission.label}:
-                                          </Typography>
-                                          {row.roleDetails[permission.key] ? (
-                                            <CheckCircleIcon
-                                              sx={{
-                                                color: "#228B22",
-                                                fontSize: "14px",
-                                              }}
-                                            />
-                                          ) : (
-                                            <CancelIcon
-                                              sx={{
-                                                color: "#DE3163",
-                                                fontSize: "14px",
-                                              }}
-                                            />
-                                          )}
-                                        </Box>
-                                      ))}
-                                    </Box>
-                                  </Box>
-                                ))}
-                              </Box>
-                            </Box>
-                          </Collapse>
-                        </TableCell> */}
+                              />
+                            ) : (
+                              <Box sx={{ height: 40 }} /> // Placeholder for non-searchable columns
+                            )}
+                          </TableCell>
+                        ))}
                       </TableRow>
-                    </React.Fragment>
-                  );
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={3} align="center">
-                    No roles found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                    </TableHead>
+        
+                    <TableBody>
+                      {isLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={selectedColumns.length} align="center">
+                            Loading...
+                          </TableCell>
+                        </TableRow>
+                      ) : roleList.length > 0 ? (
+                        roleList.map((row) => {
+                          const isSelected = selectedRole?.id === row.id;
+                          return (
+                            <TableRow
+                              key={row.id}
+                              hover
+                              onClick={() => handleRowClick(row)}
+                              sx={{
+                                cursor: "pointer",
+                                backgroundColor: isSelected ? "#E3F2FD" : "inherit",
+                              }}
+                            >
+                              {selectedColumns.map((column) => (
+                                <TableCell key={`${row.id}-${column.id}`} align="center">
+                                  {column.id === "id" ? (
+                                    row.id
+                                  ) : column.id === "name" ? (
+                                    <Tooltip title={row.name} placement="bottom">
+                                      <Typography noWrap>
+                                        {row.name.length > 30
+                                          ? `${row.name.substring(0, 30)}...`
+                                          : row.name}
+                                      </Typography>
+                                    </Tooltip>
+                                  ) : column.id === "created_on" ? (
+                                    moment(row.created_on)
+                                      .local()
+                                      .format("DD-MM-YYYY, hh:mm A")
+                                  ) : column.id === "updated_on" ? (
+                                    moment(row?.updated_on).isValid()
+                                      ? moment(row.updated_on)
+                                          .local()
+                                          .format("DD-MM-YYYY, hh:mm A")
+                                      : "Not updated yet"
+                                  ) : null}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          );
+                        })
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={selectedColumns.length} align="center">
+                            No roles found.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
 
         <PaginationControls
           page={page}

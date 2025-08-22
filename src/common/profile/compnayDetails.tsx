@@ -199,7 +199,7 @@ const CompanyDetailsPage: React.FC<CompanyCardProps> = ({ companyId }) => {
         fetchCompanyData();
       })
       .catch((error: any) => {
-        showErrorToast(`Error updating location: ${error}`);
+        showErrorToast(`Error updating location: ${error.message}`);
       });
   };
   const getStatusChip = () => {

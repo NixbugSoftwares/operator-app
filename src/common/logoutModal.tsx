@@ -38,9 +38,9 @@ const LogoutConfirmationModal: React.FC<LogoutConfirmationModalProps> = ({
       commonHelper.logout();
       dispatch(userLoggedOut());
       showSuccessToast("Logout successful!");
-    } catch (error) {
+    } catch (error:any) {
       console.error("Logout Error:", error);
-      showErrorToast("Logout failed. Please try again.");
+      showErrorToast(error.message||"Logout failed. Please try again.");
     }
   };
 

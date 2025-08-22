@@ -11,7 +11,6 @@ import {
   DialogContent,
   DialogTitle,
   DialogContentText,
-  Tooltip,
 } from "@mui/material";
 
 import VerifiedIcon from "@mui/icons-material/Verified";
@@ -88,7 +87,7 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
       refreshList("refresh");
     } catch (error: any) {
       console.error("Delete error:", error);
-      showErrorToast(error || "Failed to delete bus. Please try again.");
+      showErrorToast(error.message || "Failed to delete bus. Please try again.");
     }
   };
 
@@ -216,26 +215,12 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
             </Button>
 
             {/* Update Button with Tooltip */}
-            <Tooltip
-              title={
-                !canUpdateBus
-                  ? "You don't have permission, contact the admin"
-                  : ""
-              }
-              arrow
-              placement="top-start"
-            >
-              <span
-                style={{
-                  cursor: !canUpdateBus ? "not-allowed" : "default",
-                }}
-              >
+            {canUpdateBus && (
                 <Button
                   variant="contained"
                   color="success"
                   size="small"
                   onClick={() => setUpdateFormOpen(true)}
-                  disabled={!canUpdateBus}
                   sx={{
                     "&.Mui-disabled": {
                       backgroundColor: "#81c784 !important",
@@ -244,25 +229,10 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
                   }}
                 >
                   Update
-                </Button>
-              </span>
-            </Tooltip>
+                </Button>)}
 
             {/* Delete Button with Tooltip */}
-            <Tooltip
-              title={
-                !canDeleteBus
-                  ? "You don't have permission, contact the admin"
-                  : ""
-              }
-              arrow
-              placement="top-start"
-            >
-              <span
-                style={{
-                  cursor: !canDeleteBus ? "not-allowed" : "default",
-                }}
-              >
+            {canDeleteBus && (
                 <Button
                   variant="contained"
                   color="error"
@@ -278,9 +248,7 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
                   }}
                 >
                   Delete
-                </Button>
-              </span>
-            </Tooltip>
+                </Button>)}
           </Box>
         </CardActions>
       </Card>
@@ -314,7 +282,7 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
       <Dialog
         open={updateFormOpen}
         onClose={() => setUpdateFormOpen(false)}
-        maxWidth="xs"
+        maxWidth="sm"
         fullWidth
       >
         <DialogContent>

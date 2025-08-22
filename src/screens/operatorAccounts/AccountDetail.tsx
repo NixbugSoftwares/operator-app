@@ -6,7 +6,6 @@ import {
   Button,
   Box,
   Avatar,
-  Tooltip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -57,9 +56,6 @@ const statusOptions = [
   { label: "Active", value: 1 },
   { label: "Suspended", value: 2 },
 ];
-const loggedInUser = localStorageHelper.getItem("@user");
-const userId = loggedInUser?.operator_id;
-
 const AccountDetailsCard: React.FC<AccountCardProps> = ({
   account,
   refreshList,
@@ -69,7 +65,10 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
 }) => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const dispatch = useAppDispatch();
-  const isLoggedInUser = account.id === userId;
+
+  const loggedInUserId = localStorageHelper.getItem("@user")?.operator_id;
+  const isLoggedInUser = account.id === loggedInUserId;
+
   const [updateFormOpen, setUpdateFormOpen] = useState(false);
 
   const canUpdateOperator = useSelector((state: RootState) =>
@@ -100,7 +99,7 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
       refreshList("refresh");
       showSuccessToast("Account deleted successfully!");
     } catch (error: any) {
-      showErrorToast(error || "Account deletion failed. Please try again.");
+      showErrorToast(error.message || "Account deletion failed. Please try again.");
     }
   };
 
@@ -128,7 +127,7 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
             <UserIcon fontSize="large" />
           </Avatar>
           <Typography variant="h6" sx={{ mt: 1 }}>
-            {account.fullName}
+            {account.full_name}
           </Typography>
           <Typography variant="body2" color="textSecondary">
             ID: {account.id} | @{account.username}
@@ -231,7 +230,7 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
         {/* Action Buttons */}
         <CardActions
           sx={{
-            justifyContent: isLoggedInUser ? "center" : "space-between",
+            justifyContent: isLoggedInUser ? "left" : "left",
             alignItems: "center",
             mt: 2,
           }}
@@ -247,78 +246,42 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
               Back
             </Button>
 
-            {/* Update Button with Tooltip */}
-            <Tooltip
-              title={
-                !canUpdateOperator && !isLoggedInUser
-                  ? "You don't have permission, contact the admin"
-                  : ""
-              }
-              arrow
-              placement="top-start"
-            >
-              <span
-                style={{
-                  cursor:
-                    !canUpdateOperator && !isLoggedInUser
-                      ? "not-allowed"
-                      : "default",
+            {(canUpdateOperator || isLoggedInUser) && (
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                onClick={() => setUpdateFormOpen(true)}
+                startIcon={<EditIcon />}
+                sx={{
+                  minWidth: 100,
+                  "&:disabled": {
+                    backgroundColor: "#81c784 !important",
+                    color: "#ffffff99",
+                  },
                 }}
               >
-                <Button
-                  variant="contained"
-                  color="success"
-                  size="small"
-                  onClick={() => {
-                    setUpdateFormOpen(true);
-                  }}
-                  startIcon={<EditIcon />}
-                  disabled={!canUpdateOperator && !isLoggedInUser}
-                  sx={{
-                    "&.Mui-disabled": {
-                      backgroundColor: "#81c784 !important",
-                      color: "#ffffff99",
-                    },
-                  }}
-                >
-                  Update
-                </Button>
-              </span>
-            </Tooltip>
+                Update
+              </Button>
+            )}
 
-            {!isLoggedInUser && (
-              <Tooltip
-                title={
-                  !canDeleteOperator
-                    ? "You don't have permission, contact the admin"
-                    : ""
-                }
-                arrow
-                placement="top-start"
+            {canDeleteOperator && !isLoggedInUser && (
+              <Button
+                variant="contained"
+                color="error"
+                size="small"
+                onClick={() => setDeleteConfirmOpen(true)}
+                startIcon={<DeleteIcon />}
+                sx={{
+                  minWidth: 100,
+                  "&:disabled": {
+                    backgroundColor: "#e57373 !important",
+                    color: "#ffffff99",
+                  },
+                }}
               >
-                <span
-                  style={{
-                    cursor: !canDeleteOperator ? "not-allowed" : "default",
-                  }}
-                >
-                  <Button
-                    variant="contained"
-                    color="error"
-                    size="small"
-                    onClick={() => setDeleteConfirmOpen(true)}
-                    startIcon={<DeleteIcon />}
-                    disabled={!canDeleteOperator}
-                    sx={{
-                      "&.Mui-disabled": {
-                        backgroundColor: "#e57373 !important",
-                        color: "#ffffff99",
-                      },
-                    }}
-                  >
-                    Delete
-                  </Button>
-                </span>
-              </Tooltip>
+                Delete
+              </Button>
             )}
           </Box>
         </CardActions>
@@ -327,7 +290,7 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
         <AccountUpdateForm
           accountId={account.id}
           accountData={{
-            fullName: account.fullName,
+            fullName: account.full_name,
             phoneNumber: account.phoneNumber
               .replace(/\D/g, "")
               .replace(/^91/, ""),
@@ -354,7 +317,7 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
           </DialogContentText>
           <Typography>
             <b>ID:</b> {account.id}, <b>Username:</b> {account.username},{" "}
-            <b>Full Name:</b> {account.fullName}
+            <b>Full Name:</b> {account.full_name}
           </Typography>
         </DialogContent>
         <DialogActions>

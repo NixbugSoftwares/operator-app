@@ -27,6 +27,8 @@ import {
   showErrorToast,
 } from "../../common/toastMessageHelper";
 import localStorageHelper from "../../utils/localStorageHelper";
+import { useSelector } from "react-redux";
+import { RootState } from "../../store/Store";
 
 interface IAccountFormInputs {
   password?: string;
@@ -89,7 +91,9 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
     formState: { errors },
   } = useForm<IAccountFormInputs>();
   const [showPassword, setShowPassword] = useState(false);
-
+  const canAssignRole = useSelector((state: RootState) =>
+    state.app.permissions.includes("update_role")
+  );
   const handleTogglePassword = () => {
     setShowPassword((prev) => !prev);
   };
@@ -125,7 +129,7 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
         }
       })
       .catch((error: any) => {
-        showErrorToast(error || "Error fetching role mapping");
+        showErrorToast(error.message || "Error fetching role mapping");
         reset(accountData);
         setRoleMappingError(true); // Show error if API call fails
       });
@@ -180,7 +184,7 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
           }
         } catch (error: any) {
           showErrorToast(
-            error || "Account updated, but role assignment failed!"
+            error.message || "Account updated, but role assignment failed!"
           );
         }
       }
@@ -190,7 +194,7 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
       refreshList("refresh");
       onClose();
     } catch (error: any) {
-      showErrorToast(error || "Something went wrong. Please try again.");
+      showErrorToast(error.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -225,8 +229,27 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
             margin="normal"
             fullWidth
             label="Full Name"
-            {...register("fullName")}
             defaultValue={accountData.fullName || ""}
+            {...register("fullName", {
+              required: "Full name is required",
+              maxLength: {
+                value: 32,
+                message: "Full name cannot exceed 32 characters",
+              },
+              validate: {
+                noNumbers: (value: any) =>
+                  !/[0-9]/.test(value) ||
+                  "Numbers are not allowed in the full name",
+                noSpecialChars: (value: any) =>
+                  !/[^A-Za-z ]/.test(value) ||
+                  "Special characters are not allowed",
+                endsWithLetter: (value: any) =>
+                  /[A-Za-z]$/.test(value) || "Full name must end with a letter",
+                validPattern: (value: any) =>
+                  /^[A-Za-z]+(?: [A-Za-z]+)*$/.test(value) ||
+                  "Full name should consist of letters separated by single spaces",
+              },
+            })}
             error={!!errors.fullName}
             helperText={errors.fullName?.message}
             size="small"
@@ -244,7 +267,7 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
                 size="small"
                 error={!!errors.phoneNumber}
                 helperText={errors.phoneNumber?.message}
-                value={field.value ? `+91${field.value}` : ""}
+                value={field.value ? `+91 ${field.value}` : ""}
                 onChange={(e) => {
                   let value = e.target.value.replace(/\D/g, "");
                   if (value.startsWith("91")) value = value.slice(2);
@@ -273,7 +296,7 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
             size="small"
           />
 
-          {canupdateOperator && (
+          {canupdateOperator && canAssignRole && (
             <Controller
               name="role"
               control={control}
@@ -355,9 +378,10 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
             label="Reset Password"
             type={showPassword ? "text" : "password"}
             {...register("password", {
-              minLength: {
-                value: 6,
-                message: "Password must be at least 6 characters",
+              pattern: {
+                value: /^[A-Za-z0-9\-+,.@_$%&*#!^=/?^]{8,32}$/,
+                message:
+                  "Password must be 8–32 characters and can only contain letters, numbers, and allowed symbols (-+,.@_$%&*#!^=/?^). No spaces allowed.",
               },
             })}
             error={!!errors.password}

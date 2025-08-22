@@ -13,6 +13,7 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Tooltip,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import IconButton from "@mui/material/IconButton";
@@ -64,7 +65,6 @@ const BusRouteCreation = ({
   const [localHour, setLocalHour] = useState<number>(6);
   const [localMinute, setLocalMinute] = useState<number>(0);
   const [amPm, setAmPm] = useState<string>("AM");
-  const [isAddingLandmark, setIsAddingLandmark] = useState(false);
   const [startingDayOffset] = useState(0);
   const {
     register,
@@ -91,7 +91,6 @@ const BusRouteCreation = ({
     const istDate = new Date(
       Date.UTC(1970, 0, 1 + dayOffset, istHour, minute, 0)
     );
-    // Subtract 5 hours 30 minutes to get UTC
     istDate.setUTCHours(
       istDate.getUTCHours() - 5,
       istDate.getUTCMinutes() - 30
@@ -105,26 +104,22 @@ const BusRouteCreation = ({
     };
   };
 
-  const calculateTimeDeltas = (
-    startingTime: string,
-    landmarks: SelectedLandmark[],
-    timeType: "arrival" | "departure"
-  ) => {
-    // Parse starting time as UTC (with day offset 0)
-    const startDate = new Date(`1970-01-01T${startingTime.replace("Z", "")}Z`);
-
-    return landmarks.map((landmark) => {
-      const timeObj =
-        timeType === "arrival" ? landmark.arrivalTime : landmark.departureTime;
-      // Parse landmark time as UTC (with its day offset)
-      const landmarkDate = new Date(timeObj.fullTime);
-      // Delta in seconds
-      const deltaSeconds = Math.floor(
-        (landmarkDate.getTime() - startDate.getTime()) / 1000
-      );
-      return Math.max(0, deltaSeconds);
-    });
-  };
+const calculateTimeDeltas = (
+  startingTime: string,
+  landmarks: SelectedLandmark[],
+  timeType: "arrival" | "departure"
+) => {
+  const startDate = new Date(`1970-01-01T${startingTime.replace("Z", "")}Z`);
+  return landmarks.map((landmark) => {
+    const timeObj =
+      timeType === "arrival" ? landmark.arrivalTime : landmark.departureTime;
+    const landmarkDate = new Date(timeObj.fullTime);
+    const deltaSeconds = Math.floor(
+      (landmarkDate.getTime() - startDate.getTime()) / 1000
+    );
+    return deltaSeconds;
+  });
+};
 
   useEffect(() => {
     const { displayTime } = convertLocalToUTC(
@@ -144,46 +139,77 @@ const BusRouteCreation = ({
     setValue,
     onStartingTimeChange,
   ]);
+const handleRouteCreation: SubmitHandler<BusRouteFormInputs> = async (data) => {
+  setIsSubmitting(true);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (mapRef.current?.isAddingLandmark !== undefined) {
-        setIsAddingLandmark(mapRef.current.isAddingLandmark);
+  try {
+    // 1. First create the route
+    const routeFormData = new FormData();
+    routeFormData.append("name", data.name);
+    routeFormData.append("start_time", data.starting_time);;
+
+    const routeResponse = await dispatch(
+      routeCreationApi(routeFormData)
+    ).unwrap();
+    const routeId = routeResponse.id;
+
+    // 2. Sort landmarks by distance
+    const sortedLandmarks = [...landmarks].sort(
+      (a, b) => (a.distance_from_start || 0) - (b.distance_from_start || 0)
+    );
+
+    // 3. Calculate time deltas
+    const arrivalDeltas = calculateTimeDeltas(
+      data.starting_time,
+      sortedLandmarks,
+      "arrival"
+    );
+    const departureDeltas = calculateTimeDeltas(
+      data.starting_time,
+      sortedLandmarks,
+      "departure"
+    );
+
+    // 4. Validate landmarks and collect errors
+    const invalidLandmarks: {
+      index: number;
+      name: string;
+      error: string;
+    }[] = [];
+
+    sortedLandmarks.forEach((landmark, index) => {
+      // Skip validation for first landmark (it's the starting point)
+      if (index > 0) {
+        // Check arrival time is after starting time
+        if (arrivalDeltas[index] < 0) {
+          invalidLandmarks.push({
+            index,
+            name: landmark.name,
+            error: "Arrival time cannot be before route start time"
+          });
+          return;
+        }
+
+        // Check departure is after arrival (except last landmark)
+        if (index < sortedLandmarks.length - 1 && 
+            departureDeltas[index] < arrivalDeltas[index]) {
+          invalidLandmarks.push({
+            index,
+            name: landmark.name,
+            error: "Departure time must be after arrival time"
+          });
+        }
       }
-    }, 200);
-    return () => clearInterval(interval);
-  }, [mapRef]);
+    });
 
-  const handleRouteCreation: SubmitHandler<BusRouteFormInputs> = async (
-    data
-  ) => {
-    setIsSubmitting(true);
+    // 5. Process valid landmarks only
+    const validLandmarkPromises = sortedLandmarks
+      .map((landmark, index) => {
+        // Skip invalid landmarks
+        if (invalidLandmarks.some(lm => lm.index === index)) {
+          return null;
+        }
 
-    try {
-      const routeFormData = new FormData();
-      routeFormData.append("name", data.name);
-      routeFormData.append("start_time", data.starting_time);
-
-      const routeResponse = await dispatch(
-        routeCreationApi(routeFormData)
-      ).unwrap();
-      const routeId = routeResponse.id;
-
-      const sortedLandmarks = [...landmarks].sort(
-        (a, b) => (a.distance_from_start || 0) - (b.distance_from_start || 0)
-      );
-      const arrivalDeltas = calculateTimeDeltas(
-        data.starting_time,
-        sortedLandmarks,
-        "arrival"
-      );
-      const departureDeltas = calculateTimeDeltas(
-        data.starting_time,
-        sortedLandmarks,
-        "departure"
-      );
-
-      const landmarkPromises = sortedLandmarks.map((landmark, index) => {
         const landmarkFormData = new FormData();
         landmarkFormData.append("route_id", routeId.toString());
         landmarkFormData.append("landmark_id", landmark.id.toString());
@@ -191,7 +217,6 @@ const BusRouteCreation = ({
           "distance_from_start",
           landmark.distance_from_start?.toString() || "0"
         );
-
         landmarkFormData.append(
           "arrival_delta",
           arrivalDeltas[index].toString()
@@ -202,27 +227,48 @@ const BusRouteCreation = ({
         );
 
         return dispatch(routeLandmarkCreationApi(landmarkFormData)).unwrap();
-      });
+      })
+      .filter(Boolean); // Remove null entries
 
-      await Promise.all(landmarkPromises);
-      showSuccessToast("Route and landmarks created successfully");
+    // 6. Save all valid landmarks
+    await Promise.all(validLandmarkPromises);
+
+    // 7. Show appropriate success message
+    if (invalidLandmarks.length > 0) {
+      const invalidNames = invalidLandmarks.map(lm => lm.name).join(", ");
+      showSuccessToast(
+        `Route created successfully, but some landmarks couldn't be added: ${invalidNames}`,
+         // Show for longer
+      );
+    } else {
+      showSuccessToast("Route and all landmarks created successfully");
+    }
+
+    // 8. Clean up and close form
+    refreshList("refresh");
+    onSuccess();
+    if (onClearRoute) onClearRoute();
+    if (mapRef.current?.toggleAddLandmarkMode && mapRef.current.isAddingLandmark) {
+      mapRef.current.toggleAddLandmarkMode();
+    }
+    if (onClose) onClose();
+
+  } catch (error: any) {
+    console.error("Error in route creation process:", error);
+    
+    // Handle specific DB conflict error
+    if (error.message.includes("conflict")) {
+      showErrorToast("Route was created but there was an issue adding landmarks. Please check the route details.");
       refreshList("refresh");
       onSuccess();
-      if (onClearRoute) onClearRoute();
-      if (
-        mapRef.current?.toggleAddLandmarkMode &&
-        mapRef.current.isAddingLandmark
-      ) {
-        mapRef.current.toggleAddLandmarkMode();
-      }
       if (onClose) onClose();
-    } catch (error: any) {
-      console.error("Error in route creation process:", error);
-      showErrorToast(error || "Failed to create route and landmarks");
-    } finally {
-      setIsSubmitting(false);
+    } else {
+      showErrorToast(error.message || "Failed to create route and landmarks");
     }
-  };
+  } finally {
+    setIsSubmitting(false);
+  }
+};
   function formatTimeForDisplayIST(isoString: string, showDayLabel = true) {
     const date = new Date(isoString);
     date.setTime(date.getTime() + (5 * 60 + 30) * 60 * 1000);
@@ -288,7 +334,17 @@ const BusRouteCreation = ({
           margin="normal"
           fullWidth
           label="Route Name"
-          {...register("name", { required: "Route name is required" })}
+          {...register("name", {
+            required: "Route name is required",
+            validate: (value) => {
+              if (value.trim() === "") return "Route name is required";
+              if (/^\s|\s$/.test(value))
+                return "No leading or trailing spaces allowed";
+              if (/\s{2,}/.test(value))
+                return "Consecutive spaces are not allowed";
+              return true;
+            },
+          })}
           error={!!errors.name}
           helperText={errors.name?.message}
           autoFocus
@@ -299,18 +355,6 @@ const BusRouteCreation = ({
           Starting Time (IST)
         </Typography>
         <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-          {/* Starting Day Offset - fixed to Day 0 */}
-          <FormControl fullWidth size="small">
-            <InputLabel>Starting Day Offset</InputLabel>
-            <Select
-              value={0} // hardcoded to Day 0
-              label="Starting Day Offset"
-              disabled // disables dropdown interaction
-            >
-              <MenuItem value={0}>Day 1</MenuItem>
-            </Select>
-          </FormControl>
-
           {/* Hour */}
           <FormControl fullWidth size="small">
             <InputLabel>Hour</InputLabel>
@@ -356,22 +400,8 @@ const BusRouteCreation = ({
             </Select>
           </FormControl>
         </Box>
-
-        <Button
-          variant={isAddingLandmark ? "outlined" : "contained"}
-          color={isAddingLandmark ? "error" : "primary"}
-          sx={{ mt: 2, mb: 2 }}
-          disabled={!localHour && !localMinute}
-          onClick={() => {
-            mapRef.current?.toggleAddLandmarkMode();
-            setIsAddingLandmark((prev) => !prev);
-          }}
-        >
-          {isAddingLandmark ? "Cancel" : "Add Landmark"}
-        </Button>
-
         <Typography variant="subtitle1" sx={{ mt: 3, mb: 1 }}>
-          Route Landmarks
+          Route Landmark List
         </Typography>
 
         {landmarks.length === 0 ? (
@@ -401,14 +431,6 @@ const BusRouteCreation = ({
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               Please select landmarks from the map to create your route
             </Typography>
-            <Typography
-              variant="caption"
-              color="info"
-              fontSize="0.75rem"
-              fontWeight="bold"
-            >
-              Only verified landmarks will be displayed
-            </Typography>
           </Box>
         ) : (
           <List
@@ -420,135 +442,180 @@ const BusRouteCreation = ({
                 (a, b) =>
                   (a.distance_from_start || 0) - (b.distance_from_start || 0)
               )
-              .map((landmark, index) => (
-                <Box key={`${landmark.id}-${index}`}>
-                  <ListItem
-                    sx={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      py: 2,
-                      px: 2,
-                      backgroundColor:
-                        index % 2 === 0 ? "action.hover" : "background.paper",
-                      borderRadius: 1,
-                      gap: 2,
-                    }}
-                  >
-                    <Chip
-                      label={index + 1}
-                      color="primary"
+              .map((landmark, index) => {
+                const isFirstLandmark = index === 0;
+                const isLastLandmark = index === landmarks.length - 1;
+
+                return (
+                  <Box key={`${landmark.id}-${index}`}>
+                    <ListItem
                       sx={{
-                        mr: 1,
-                        minWidth: 32,
-                        height: 32,
-                        fontSize: "0.875rem",
-                        fontWeight: 600,
+                        display: "flex",
+                        alignItems: "flex-start",
+                        py: 1,
+                        px: 1,
+                        backgroundColor: isFirstLandmark
+                          ? "#dbf1d9ff"
+                          : isLastLandmark
+                          ? "#ebcacaff"
+                          : index % 2 === 0
+                          ? "action.hover"
+                          : "background.paper",
+                        borderRadius: 1,
+                        gap: 1,
                       }}
-                    />
-
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="subtitle1" fontWeight={600}>
-                        {landmark.name}
-                      </Typography>
-
-                      <Box
+                    >
+                      <Chip
+                        label={index + 1}
+                        color="primary"
+                        size="small"
                         sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 2,
+                          minWidth: 28,
+                          height: 28,
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
                           mt: 0.5,
-                          flexWrap: "wrap",
                         }}
-                      >
-                        {landmark.distance_from_start !== undefined && (
+                      />
+
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                          }}
+                        >
+                          <Box>
+                            <Typography
+                              variant="subtitle2"
+                              fontWeight={600}
+                              sx={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {landmark.name}
+                            </Typography>
+
+                            {landmark.distance_from_start !== undefined && (
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  mt: 0.5,
+                                  fontSize: "0.7rem",
+                                  color: "text.secondary",
+                                }}
+                              >
+                                <DirectionsIcon
+                                  sx={{ fontSize: "0.8rem", mr: 0.5 }}
+                                />
+                                {landmark.distance_from_start}m
+                              </Box>
+                            )}
+                          </Box>
+
                           <Box
                             sx={{
                               display: "flex",
                               alignItems: "center",
-                              backgroundColor: "primary.light",
-                              color: "primary.contrastText",
-                              px: 1.5,
-                              py: 0.5,
-                              borderRadius: 1,
-                              fontSize: "0.75rem",
+                              gap: 1,
+                              ml: 2,
                             }}
                           >
-                            <DirectionsIcon
-                              sx={{ fontSize: "1rem", mr: 0.5 }}
-                            />
-                            {landmark.distance_from_start}m
-                          </Box>
-                        )}
+                            <Box
+                              sx={{
+                                display: "flex",
+                                gap: 1,
+                                minWidth: 200,
+                                justifyContent: "flex-end",
+                              }}
+                            >
+                              {/* Arrival Time - show for all except first */}
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  minWidth: 100,
+                                  visibility: isFirstLandmark
+                                    ? "hidden"
+                                    : "visible",
+                                }}
+                              >
+                                <ArrowDownwardIcon
+                                  sx={{
+                                    fontSize: "0.8rem",
+                                    mr: 0.5,
+                                    color: "error.main",
+                                  }}
+                                />
+                                <span>
+                                  Arr:{" "}
+                                  {formatTimeForDisplayIST(
+                                    landmark.arrivalTime.fullTime
+                                  )}
+                                </span>
+                              </Box>
 
-                        <Box
-                          sx={{
-                            display: "flex",
-                            gap: 1.5,
-                            fontSize: "0.8rem",
-                            color: "text.secondary",
-                          }}
-                        >
-                          <Box sx={{ display: "flex", alignItems: "center" }}>
-                            <ArrowDownwardIcon
-                              sx={{
-                                fontSize: "1rem",
-                                mr: 0.5,
-                                color: "error.main",
-                              }}
-                            />
-                            <span>
-                              Arrive:{" "}
-                              {formatTimeForDisplayIST(
-                                landmark.arrivalTime.fullTime,
-                                index !== 0 // false for first, true for others
-                              )}
-                            </span>
-                          </Box>
-                          <Box sx={{ display: "flex", alignItems: "center" }}>
-                            <ArrowUpwardIcon
-                              sx={{
-                                fontSize: "1rem",
-                                mr: 0.5,
-                                color: "success.main",
-                              }}
-                            />
-                            <span>
-                              Depart:{" "}
-                              {formatTimeForDisplayIST(
-                                landmark.departureTime.fullTime,
-                                index !== 0 // false for first, true for others
-                              )}
-                            </span>
+                              {/* Departure Time - show for all except last */}
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  minWidth: 100,
+                                  visibility: isLastLandmark
+                                    ? "hidden"
+                                    : "visible",
+                                }}
+                              >
+                                <ArrowUpwardIcon
+                                  sx={{
+                                    fontSize: "0.8rem",
+                                    mr: 0.5,
+                                    color: "success.main",
+                                  }}
+                                />
+                                <span>
+                                  Dep:{" "}
+                                  {formatTimeForDisplayIST(
+                                    landmark.departureTime.fullTime
+                                  )}
+                                </span>
+                              </Box>
+                            </Box>
+
+                            <IconButton
+                              onClick={() => onLandmarkRemove(landmark.id)}
+                              aria-label="delete"
+                              color="error"
+                              size="small"
+                              sx={{ width: 24, height: 24 }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
                           </Box>
                         </Box>
                       </Box>
-                    </Box>
+                    </ListItem>
 
-                    <IconButton
-                      onClick={() => onLandmarkRemove(landmark.id)}
-                      aria-label="delete"
-                      color="error"
-                      size="small"
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </ListItem>
-
-                  {index < landmarks.length - 1 && (
-                    <Divider
-                      component="li"
-                      sx={{
-                        borderLeftWidth: 2,
-                        borderLeftStyle: "dashed",
-                        borderColor: "divider",
-                        height: 20,
-                        ml: 4.5,
-                        listStyle: "none",
-                      }}
-                    />
-                  )}
-                </Box>
-              ))}
+                    {index < landmarks.length - 1 && (
+                      <Divider
+                        component="li"
+                        sx={{
+                          borderLeftWidth: 2,
+                          borderLeftStyle: "dashed",
+                          borderColor: "divider",
+                          height: 16,
+                          ml: 3.5,
+                          listStyle: "none",
+                        }}
+                      />
+                    )}
+                  </Box>
+                );
+              })}
           </List>
         )}
 
@@ -557,14 +624,26 @@ const BusRouteCreation = ({
             <Button variant="outlined" onClick={onCancel}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              disabled={landmarks.length === 0 || isSubmitting}
+
+            <Tooltip
+              title={
+                landmarks.length < 2
+                  ? "At least 2 landmarks are required to create a route"
+                  : ""
+              }
+              arrow
             >
-              {isSubmitting ? "Saving..." : "Save Route"}
-            </Button>
+              <span>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  disabled={landmarks.length < 2 || isSubmitting}
+                >
+                  {isSubmitting ? "Saving..." : "Save Route"}
+                </Button>
+              </span>
+            </Tooltip>
           </Stack>
         </Box>
       </Box>
