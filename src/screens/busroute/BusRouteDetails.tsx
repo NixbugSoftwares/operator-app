@@ -464,9 +464,18 @@ const BusRouteDetailsPage = ({
       fetchRouteLandmarks();
       setEditingLandmark(null);
     } catch (error: any) {
-      console.error("Update error:", error);
-      showErrorToast(error.message || "Failed to update landmark");
-    }
+            if (error?.status === 422) {
+              showErrorToast(
+                "Arrival and departure times must be after the starting time ."
+              );
+            } if (error?.status === 409) {
+              showErrorToast(
+                "Different landmrks cannot have same distance ."
+              );
+            } else {
+              showErrorToast(error.message || "Failed to add landmark");
+            }
+          }
   };
 
   const handleDeleteClick = (landmark: RouteLandmark) => {
@@ -815,7 +824,7 @@ const BusRouteDetailsPage = ({
                 </Box>
 
                 {/* Action buttons - show for all except first */}
-                {!(index === 0) && (
+                {/* {!(index === 0) && ( */}
                   <Stack direction="row" spacing={0.5} sx={{ ml: 1 }}>
                     {(canUpdateRoutes || canCreateRoutes) && (
                       <>
@@ -827,6 +836,7 @@ const BusRouteDetailsPage = ({
                           color="primary"
                           size="small"
                           sx={{ width: 24, height: 24 }}
+                          disabled={isFirstLandmark}
                         >
                           <Edit fontSize="small" />
                         </IconButton>
@@ -836,13 +846,14 @@ const BusRouteDetailsPage = ({
                           color="error"
                           size="small"
                           sx={{ width: 24, height: 24 }}
+                          disabled={isFirstLandmark}
                         >
                           <Delete fontSize="small" />
                         </IconButton>
                       </>
                     )}
                   </Stack>
-                )}
+                {/* )} */}
               </Box>
             </Box>
           </Box>

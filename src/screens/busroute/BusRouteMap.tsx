@@ -242,7 +242,7 @@ const MapComponent = React.forwardRef(
           setLandmarks(formattedLandmarks);
         }
       } catch (err: any) {
-        showErrorToast(err.message || "Failed to fetch landmarks");
+        showErrorToast(err || "Failed to fetch landmarks");
       }
     };
 

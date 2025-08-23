@@ -158,12 +158,12 @@ const BusRouteListing = () => {
 
     fetchRouteLandmarks();
   }, [selectedRoute]);
-useEffect(() => {
-  if (newLandmarkTrigger) {
-    const timer = setTimeout(() => setNewLandmarkTrigger(false), 100);
-    return () => clearTimeout(timer);
-  }
-}, [newLandmarkTrigger]);
+  useEffect(() => {
+    if (newLandmarkTrigger) {
+      const timer = setTimeout(() => setNewLandmarkTrigger(false), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [newLandmarkTrigger]);
   useEffect(() => {
     return () => {
       setMapLandmarks([]);

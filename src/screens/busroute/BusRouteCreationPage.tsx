@@ -146,7 +146,7 @@ const handleRouteCreation: SubmitHandler<BusRouteFormInputs> = async (data) => {
     // 1. First create the route
     const routeFormData = new FormData();
     routeFormData.append("name", data.name);
-    routeFormData.append("start_time", data.starting_time);;
+    routeFormData.append("start_time", data.starting_time);
 
     const routeResponse = await dispatch(
       routeCreationApi(routeFormData)
