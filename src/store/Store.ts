@@ -4,6 +4,7 @@ import logger from 'redux-logger'
 import RootReducer from './RootReducer';
 
 
+
 const configureStore = (initialState: object) => {
     const enhance = compose(applyMiddleware(thunk.thunk, logger))
     return createStore(RootReducer, initialState, enhance);

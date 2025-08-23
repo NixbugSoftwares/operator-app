@@ -36,7 +36,13 @@ export const LoginApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.detail);
+      return rejectWithValue({
+        message: error.error || "Login failed",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );
@@ -71,10 +77,13 @@ export const companyListApi = createAsyncThunk(
       
     } catch (error: any) {
       console.error("API Error:", error);
-      return rejectWithValue(
-        error.detail ||
-          "Failed to fetch company list"
-      );
+      return rejectWithValue({
+        message: error.error || "Failed to fetch company list",
+        status: error.status,
+        type: error.type,
+        details: error.details,
+        rawError: error
+      });
     }
   }
 );

@@ -2,7 +2,12 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
+  Checkbox,
   CircularProgress,
+  ListItemText,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
   Table,
   TableBody,
   TableCell,
@@ -23,7 +28,26 @@ import FormModal from "../../common/formModal";
 import BusCreationForm from "./BusCreationForm";
 import { Bus } from "../../types/type";
 import BusDetailsCard from "./BusDetail";
+import moment from "moment";
 
+import { Chip } from "@mui/material";
+
+const getStatusBackendValue = (displayValue: string): string => {
+  const statusMap: Record<string, string> = {
+    Active: "1",
+    Maintenance: "2",
+    Suspended: "3",
+  };
+  return statusMap[displayValue] || "";
+};
+
+interface ColumnConfig {
+  id: string;
+  label: string;
+  width: string;
+  minWidth: string;
+  fixed?: boolean;
+}
 const BusListingTable = () => {
   const dispatch = useDispatch<AppDispatch>();
   const [busList, setBusList] = useState<Bus[]>([]);
@@ -32,7 +56,8 @@ const BusListingTable = () => {
     id: "",
     registrationNumber: "",
     name: "",
-    capacity: "",
+    capacity_le: "",
+    status: "",
   });
   const [debouncedSearch, setDebouncedSearch] = useState(search);
   const debounceRef = useRef<number | null>(null);
@@ -44,13 +69,91 @@ const BusListingTable = () => {
     state.app.permissions.includes("create_bus")
   );
   const [openCreateModal, setOpenCreateModal] = useState(false);
-
+  const columnConfig: ColumnConfig[] = [
+    { id: "id", label: "ID", width: "80px", minWidth: "80px", fixed: true },
+    {
+      id: "name",
+      label: "Full Name",
+      width: "200px",
+      minWidth: "200px",
+      fixed: true,
+    },
+    {
+      id: "registrationNumber",
+      label: "Registration Number",
+      width: "160px",
+      minWidth: "160px",
+      fixed: true,
+    },
+    {
+      id: "capacity",
+      label: "Capacity Up To",
+      width: "120px",
+      minWidth: "120px",
+      fixed: true,
+    },
+    {
+      id: "status",
+      label: "Status",
+      width: "150px",
+      minWidth: "150px",
+    },
+    {
+      id: "manufactured_on",
+      label: "Manufactured On",
+      width: "150px",
+      minWidth: "150px",
+    },
+    {
+      id: "insurance_upto",
+      label: "Insurance Upto",
+      width: "150px",
+      minWidth: "150px",
+    },
+    {
+      id: "pollution_upto",
+      label: "Pollution Upto",
+      width: "150px",
+      minWidth: "150px",
+    },
+    {
+      id: "fitness_upto",
+      label: "Fitness Upto",
+      width: "150px",
+      minWidth: "150px",
+    },
+    {
+      id: "road_tax_upto",
+      label: "Road Tax Upto",
+      width: "150px",
+      minWidth: "150px",
+    },
+  ];
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
+    columnConfig.reduce((acc, column) => {
+      acc[column.id] = column.fixed ? true : false;
+      return acc;
+    }, {} as Record<string, boolean>)
+  );
+  const handleColumnChange = (event: SelectChangeEvent<string[]>) => {
+    const value = event.target.value;
+    // Convert array of selected values to new visibility state
+    const newVisibleColumns = Object.keys(visibleColumns).reduce((acc, key) => {
+      acc[key] = value.includes(key);
+      return acc;
+    }, {} as Record<string, boolean>);
+    setVisibleColumns(newVisibleColumns);
+  };
   const fetchBusList = useCallback(
     (pageNumber: number, searchParams = {}) => {
       setIsLoading(true);
       const offset = pageNumber * rowsPerPage;
       dispatch(
-        companyBusListApi({ limit: rowsPerPage, offset, ...searchParams })
+        companyBusListApi({
+          limit: rowsPerPage,
+          offset,
+          ...searchParams,
+        })
       )
         .unwrap()
         .then((res) => {
@@ -74,7 +177,7 @@ const BusListingTable = () => {
         })
         .catch((error: any) => {
           console.error("Fetch Error:", error);
-          showErrorToast(error || "Failed to fetch Bus list");
+          showErrorToast(error.message || "Failed to fetch Bus list");
         })
         .finally(() => setIsLoading(false));
     },
@@ -101,7 +204,15 @@ const BusListingTable = () => {
     },
     []
   );
-
+  const handleSelectChange = useCallback((e: SelectChangeEvent<string>) => {
+    const value = e.target.value;
+    setSearch((prev) => ({ ...prev, status: value }));
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = window.setTimeout(() => {
+      setDebouncedSearch((prev) => ({ ...prev, status: value }));
+      setPage(0);
+    }, 700);
+  }, []);
   const handleChangePage = useCallback(
     (_event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
       setPage(newPage);
@@ -110,13 +221,17 @@ const BusListingTable = () => {
   );
 
   useEffect(() => {
+    const statusBackendValue=getStatusBackendValue(debouncedSearch.status);
     const searchParams: any = {
       ...(debouncedSearch.id && { id: debouncedSearch.id }),
       ...(debouncedSearch.registrationNumber && {
         registration_number: debouncedSearch.registrationNumber,
       }),
+      ...(debouncedSearch.status && { status: statusBackendValue }),
       ...(debouncedSearch.name && { name: debouncedSearch.name }),
-      ...(debouncedSearch.capacity && { capacity: debouncedSearch.capacity }),
+      ...(debouncedSearch.capacity_le && {
+        capacity_le: debouncedSearch.capacity_le,
+      }),
     };
 
     fetchBusList(page, searchParams);
@@ -147,32 +262,62 @@ const BusListingTable = () => {
           overflow: "hidden",
         }}
       >
-        <Tooltip
-          title={
-            !canCreateBus
-              ? "You don't have permission, contact the admin"
-              : "Click to open the Bus creation form"
-          }
-          placement="top-end"
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "right",
+            alignItems: "center",
+            mb: 2,
+            gap: 2,
+          }}
         >
-          <Button
-            sx={{
-              ml: "auto",
-              mr: 2,
-              mb: 2,
-              backgroundColor: !canCreateBus ? "#6c87b7 !important" : "#00008B",
-              color: "white",
-              display: "flex",
-              justifyContent: "flex-end",
-            }}
-            variant="contained"
-            onClick={() => setOpenCreateModal(true)}
-            disabled={!canCreateBus}
-            style={{ cursor: !canCreateBus ? "not-allowed" : "pointer" }}
-          >
-            Add New Bus
-          </Button>
-        </Tooltip>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Select
+              multiple
+              value={Object.keys(visibleColumns).filter(
+                (key) => visibleColumns[key]
+              )}
+              onChange={handleColumnChange}
+              renderValue={(selected) =>
+                `Selected Columns (${selected.length})`
+              }
+              sx={{ minWidth: 200, height: 40 }}
+            >
+              {columnConfig.map((column) => (
+                <MenuItem
+                  key={column.id}
+                  value={column.id}
+                  disabled={column.fixed}
+                >
+                  <Checkbox
+                    checked={visibleColumns[column.id]}
+                    disabled={column.fixed}
+                  />
+                  <ListItemText
+                    primary={column.label}
+                    secondary={column.fixed ? "(Always visible)" : undefined}
+                  />
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+
+          {canCreateBus && (
+            <Button
+              sx={{
+                backgroundColor: "#00008B",
+                color: "white !important",
+                "&.Mui-disabled": {
+                  color: "#fff !important",
+                },
+              }}
+              variant="contained"
+              onClick={() => setOpenCreateModal(true)}
+            >
+              Add New Bus
+            </Button>
+          )}
+        </Box>
 
         <TableContainer
           sx={{
@@ -205,17 +350,11 @@ const BusListingTable = () => {
           <Table stickyHeader>
             <TableHead>
               <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                {[
-                  { label: "ID", width: "80px" },
-                  { label: "Name", width: "180px" },
-                  { label: "Registration Number", width: "180px" },
-                  { label: "Capacity", width: "120px" },
-                ].map((col) => (
+                {visibleColumns.id && (
                   <TableCell
-                    key={col.label}
                     sx={{
-                      width: col.width,
-                      minWidth: col.width,
+                      width: "80px",
+                      minWidth: "80px",
                       textAlign: "center",
                       backgroundColor: "#fafafa",
                       fontWeight: 600,
@@ -223,10 +362,148 @@ const BusListingTable = () => {
                       borderBottom: "1px solid #ddd",
                     }}
                   >
-                    {col.label}
+                    ID
                   </TableCell>
-                ))}
+                )}
+                {visibleColumns.name && (
+                  <TableCell
+                    sx={{
+                      width: "180px",
+                      minWidth: "180px",
+                      textAlign: "center",
+                      backgroundColor: "#fafafa",
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                      borderBottom: "1px solid #ddd",
+                    }}
+                  >
+                    Name
+                  </TableCell>
+                )}
+                {visibleColumns.registrationNumber && (
+                  <TableCell
+                    sx={{
+                      width: "180px",
+                      minWidth: "180px",
+                      textAlign: "center",
+                      backgroundColor: "#fafafa",
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                      borderBottom: "1px solid #ddd",
+                    }}
+                  >
+                    Registration Number
+                  </TableCell>
+                )}
+                {visibleColumns.capacity && (
+                  <TableCell
+                    sx={{
+                      width: "120px",
+                      minWidth: "120px",
+                      textAlign: "center",
+                      backgroundColor: "#fafafa",
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                      borderBottom: "1px solid #ddd",
+                    }}
+                  >
+                    Capacity Up To
+                  </TableCell>
+                )}
+                {visibleColumns.status && (
+                  <TableCell
+                    sx={{
+                      width: "120px",
+                      minWidth: "120px",
+                      textAlign: "center",
+                      backgroundColor: "#fafafa",
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                      borderBottom: "1px solid #ddd",
+                    }}
+                  >
+                    Status
+                  </TableCell>
+                )}
+
+                {visibleColumns.manufactured_on && (
+                  <TableCell
+                    sx={{
+                      width: "120px",
+                      minWidth: "120px",
+                      textAlign: "center",
+                      backgroundColor: "#fafafa",
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                      borderBottom: "1px solid #ddd",
+                    }}
+                  >
+                    Manufactured On
+                  </TableCell>
+                )}
+
+                {visibleColumns.insurance_upto && (
+                  <TableCell
+                    sx={{
+                      width: "120px",
+                      minWidth: "120px",
+                      textAlign: "center",
+                      backgroundColor: "#fafafa",
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                      borderBottom: "1px solid #ddd",
+                    }}
+                  >
+                    Insurance Upto
+                  </TableCell>
+                )}
+                {visibleColumns.pollution_upto && (
+                  <TableCell
+                    sx={{
+                      width: "120px",
+                      minWidth: "120px",
+                      textAlign: "center",
+                      backgroundColor: "#fafafa",
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                      borderBottom: "1px solid #ddd",
+                    }}
+                  >
+                    Pollution Upto
+                  </TableCell>
+                )}
+                {visibleColumns.fitness_upto && (
+                  <TableCell
+                    sx={{
+                      width: "120px",
+                      minWidth: "120px",
+                      textAlign: "center",
+                      backgroundColor: "#fafafa",
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                      borderBottom: "1px solid #ddd",
+                    }}
+                  >
+                    Fitness Upto
+                  </TableCell>
+                )}
+                {visibleColumns.road_tax_upto && (
+                  <TableCell
+                    sx={{
+                      width: "120px",
+                      minWidth: "120px",
+                      textAlign: "center",
+                      backgroundColor: "#fafafa",
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                      borderBottom: "1px solid #ddd",
+                    }}
+                  >
+                    Road Tax Upto
+                  </TableCell>
+                )}
               </TableRow>
+
               <TableRow>
                 <TableCell>
                   <TextField
@@ -278,8 +555,8 @@ const BusListingTable = () => {
                     variant="outlined"
                     size="small"
                     placeholder="Search"
-                    value={search.capacity}
-                    onChange={(e) => handleSearchChange(e, "capacity")}
+                    value={search.capacity_le}
+                    onChange={(e) => handleSearchChange(e, "capacity_le")}
                     fullWidth
                     type="number"
                     sx={{
@@ -288,6 +565,28 @@ const BusListingTable = () => {
                     }}
                   />
                 </TableCell>
+                {visibleColumns.status && (
+                  <TableCell width="10%">
+                    <Select
+                      value={search.status}
+                      onChange={handleSelectChange}
+                      displayEmpty
+                      size="small"
+                      fullWidth
+                      sx={{ height: 40 }}
+                    >
+                      <MenuItem value="">All</MenuItem>
+                      <MenuItem value="Active">Active</MenuItem>
+                      <MenuItem value="Maintenance">Maintenance</MenuItem>
+                      <MenuItem value="Suspended">Suspended</MenuItem>
+                    </Select>
+                  </TableCell>
+                )}
+                {visibleColumns.manufactured_on && <TableCell></TableCell>}
+                {visibleColumns.insurance_upto && <TableCell></TableCell>}
+                {visibleColumns.pollution_upto && <TableCell></TableCell>}
+                {visibleColumns.fitness_upto && <TableCell></TableCell>}
+                {visibleColumns.road_tax_upto && <TableCell></TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -308,30 +607,117 @@ const BusListingTable = () => {
                       "&:hover": { backgroundColor: "#E3F2FD" },
                     }}
                   >
-                    <TableCell sx={{ textAlign: "center" }}>{row.id}</TableCell>
-                    <TableCell>
-                      <Tooltip title={row.name} placement="bottom">
-                        <Typography
-                          noWrap
-                          sx={{ display: "inline-block", maxWidth: "100%" }}
-                        >
-                          {row.name.length > 15
-                            ? `${row.name.substring(0, 15)}...`
-                            : row.name}
+                    {visibleColumns.id && (
+                      <TableCell sx={{ textAlign: "center" }}>
+                        {row.id}
+                      </TableCell>
+                    )}
+                    {visibleColumns.name && (
+                      <TableCell>
+                        <Typography noWrap>
+                          <Tooltip title={row.name} placement="bottom">
+                            <Typography noWrap>
+                              {row.name.length > 15
+                                ? `${row.name.substring(0, 15)}...`
+                                : row.name}
+                            </Typography>
+                          </Tooltip>
                         </Typography>
-                      </Tooltip>
-                    </TableCell>
-                    <TableCell>
-                      <Typography noWrap>{row.registrationNumber}</Typography>
-                    </TableCell>
-                    <TableCell sx={{ textAlign: "center" }}>
-                      {row.capacity}
-                    </TableCell>
+                      </TableCell>
+                    )}
+                    {visibleColumns.registrationNumber && (
+                      <TableCell>
+                        <Typography noWrap>{row.registrationNumber}</Typography>
+                      </TableCell>
+                    )}
+                    {visibleColumns.capacity && (
+                      <TableCell sx={{ textAlign: "center" }}>
+                        {row.capacity}
+                      </TableCell>
+                    )}
+                    {visibleColumns.status && (
+                      <TableCell sx={{ textAlign: "center" }}>
+                        {row.status === 1 ? (
+                          <Chip
+                            label="Active"
+                            size="small"
+                            sx={{
+                              backgroundColor: "rgba(0, 128, 0, 0.1)", // transparent green
+                              color: "green",
+                              fontWeight: 500,
+                            }}
+                          />
+                        ) : row.status === 2 ? (
+                          <Chip
+                            label="Maintenance"
+                            size="small"
+                            sx={{
+                              backgroundColor: "rgba(255, 215, 0, 0.1)", // transparent yellow
+                              color: "#b8860b", // dark goldenrod text
+                              fontWeight: 500,
+                            }}
+                          />
+                        ) : row.status === 3 ? (
+                          <Chip
+                            label="Suspended"
+                            size="small"
+                            sx={{
+                              backgroundColor: "rgba(255, 0, 0, 0.1)", // transparent red
+                              color: "red",
+                              fontWeight: 500,
+                            }}
+                          />
+                        ) : null}
+                      </TableCell>
+                    )}
+                    {visibleColumns.manufactured_on && (
+                      <TableCell sx={{ textAlign: "center" }}>
+                        {moment(row.manufactured_on)
+                          .local()
+                          .format("DD-MM-YYYY")}
+                      </TableCell>
+                    )}
+                    {visibleColumns.insurance_upto && (
+                      <TableCell sx={{ textAlign: "center" }}>
+                        {moment(row.insurance_upto).isValid()
+                          ? moment(row.insurance_upto)
+                              .local()
+                              .format("DD-MM-YYYY")
+                          : "Not added yet"}
+                      </TableCell>
+                    )}
+                    {visibleColumns.pollution_upto && (
+                      <TableCell sx={{ textAlign: "center" }}>
+                        {moment(row.pollution_upto).isValid()
+                          ? moment(row.pollution_upto)
+                              .local()
+                              .format("DD-MM-YYYY")
+                          : "Not added yet"}
+                      </TableCell>
+                    )}
+                    {visibleColumns.fitness_upto && (
+                      <TableCell sx={{ textAlign: "center" }}>
+                        {moment(row.fitness_upto).isValid()
+                          ? moment(row.fitness_upto)
+                              .local()
+                              .format("DD-MM-YYYY")
+                          : "Not added yet"}
+                      </TableCell>
+                    )}
+                    {visibleColumns.road_tax_upto && (
+                      <TableCell sx={{ textAlign: "center" }}>
+                        {moment(row.road_tax_upto).isValid()
+                          ? moment(row.road_tax_upto)
+                              .local()
+                              .format("DD-MM-YYYY")
+                          : "Not added yet"}
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} align="center">
+                  <TableCell colSpan={10} align="center">
                     No Bus found.
                   </TableCell>
                 </TableRow>

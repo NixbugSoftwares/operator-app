@@ -26,7 +26,7 @@ import { loginSchema } from "./validations/authValidation";
 import {
   userLoggedIn,
   fetchRoleMappingApi,
-  loginUserAssignedRoleApi,
+  loggedinUserRoleDetails,
   setRoleDetails,
 } from "../../slices/appSlice";
 import {
@@ -108,7 +108,7 @@ const LoginPage: React.FC = () => {
           }));
         })
         .catch((error) => {
-          showErrorToast(error || "Failed to fetch Company list");
+          showErrorToast(error.message || "Failed to fetch Company list");
         })
         .finally(() => setLoading(false));
     },
@@ -118,87 +118,111 @@ const LoginPage: React.FC = () => {
   useEffect(() => {
     fetchCompanyList(0);
   }, [fetchCompanyList]);
-  const handleLogin: SubmitHandler<ILoginFormInputs> = async (data) => {
-    try {
-      if (!data.company_id) {
-        showErrorToast("Please select a company");
+const handleLogin: SubmitHandler<ILoginFormInputs> = async (data) => {
+  try {
+    if (!data.company_id) {
+      showErrorToast("Please select a company");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("company_id", data.company_id.toString());
+    formData.append("username", data.username);
+    formData.append("password", data.password);
+
+    const response = await dispatch(LoginApi(formData)).unwrap();
+
+    if (response?.access_token) {
+      // Store basic user info
+      const user = {
+        username: data?.username,
+        operator_id: response?.operator_id,
+        company_id: data?.company_id,
+      };
+      const access_token = response?.access_token;
+      const expiresAt = Date.now() + response?.expires_in * 1000;
+
+      // Store company name
+      const selectedCompany = dropdownData.companyList.find(
+        (company) => company.id === data.company_id
+      );
+      if (selectedCompany) {
+        localStorageHelper.storeItem("@companyName", selectedCompany.name);
+      }
+
+      // Store auth tokens
+      localStorageHelper.storeItem("@token", access_token);
+      localStorageHelper.storeItem("@token_expires", expiresAt);
+      localStorageHelper.storeItem("@user", user);
+      dispatch(userLoggedIn(user));
+      showSuccessToast("Login successful");
+
+      // Fetch role mapping
+      const roleResponse = await dispatch(
+        fetchRoleMappingApi(response.operator_id)
+      ).unwrap();
+
+      if (!roleResponse || !roleResponse.role_id) {
+        // Clear any existing permissions if no role found
+        localStorage.removeItem("@permissions");
+        localStorage.removeItem("@assignedRole");
+        dispatch(setPermissions([]));
+        dispatch(setRoleDetails(null));
+        showErrorToast("No role assigned to this user");
         return;
       }
 
-      const formData = new FormData();
-      formData.append("company_id", data.company_id.toString());
-      formData.append("username", data.username);
-      formData.append("password", data.password);
+      // Store assigned role
+      const assignedRole = {
+        id: roleResponse?.id,
+        userId: roleResponse?.operator_id,
+        roleId: roleResponse?.role_id,
+      };
+      localStorage.setItem("@assignedRole", JSON.stringify(assignedRole));
 
-      const response = await dispatch(LoginApi(formData)).unwrap();
+      // Fetch role details
+      const roleListingResponse = await dispatch(
+        loggedinUserRoleDetails(assignedRole.roleId)
+      ).unwrap();
 
-      if (response?.access_token) {
-        const user = {
-          username: data?.username,
-          operator_id: response?.operator_id,
-          company_id: data?.company_id,
-        };
-        const access_token = response?.access_token;
-        const expiresAt = Date.now() + response?.expires_in * 1000;
-
-        const selectedCompany = dropdownData.companyList.find(
-          (company) => company.id === data.company_id
-        );
-        if (selectedCompany) {
-          localStorageHelper.storeItem("@companyName", selectedCompany.name);
-        }
-
-        localStorageHelper.storeItem("@token", access_token);
-        localStorageHelper.storeItem("@token_expires", expiresAt);
-        localStorageHelper.storeItem("@user", user);
-
-        dispatch(userLoggedIn(user));
-        showSuccessToast("Login successful");
-
-        const roleResponse = await dispatch(
-          fetchRoleMappingApi(response.operator_id)
-        ).unwrap();
-
-        if (!roleResponse) {
-          throw new Error("No role mapping found for this user");
-        }
-
-        const assignedRole = {
-          id: roleResponse?.id,
-          userId: roleResponse?.operator_id,
-          roleId: roleResponse?.role_id,
-        };
-
-        localStorage.setItem("@assignedRole", JSON.stringify(assignedRole));
-
-        const roleListingResponse = await dispatch(
-          loginUserAssignedRoleApi(assignedRole.roleId)
-        ).unwrap();
-        if (roleListingResponse.length > 0) {
-          dispatch(setRoleDetails(roleListingResponse[0]));
-
-          const roleDetails = roleListingResponse[0];
-          dispatch(setRoleDetails(roleDetails));
-
-          const permissions = Object.entries(roleDetails)
-            .filter(([_, value]) => value === true)
-            .map(([key]) => key);
-
-          localStorage.setItem("@permissions", JSON.stringify(permissions));
-          dispatch(setPermissions(permissions));
-          if (permissions) {
-            localStorage.setItem("@permissions", JSON.stringify(permissions));
-            dispatch(setPermissions(permissions));
-          }
-        } else {
-          showErrorToast("Role details not found");
-        }
+      if (!roleListingResponse || roleListingResponse.length === 0) {
+        // Clear permissions if role details not found
+        localStorage.removeItem("@permissions");
+        dispatch(setPermissions([]));
+        dispatch(setRoleDetails(null));
+        showErrorToast("Role details not found");
+        return;
       }
-    } catch (error: any) {
-      console.error("Login Error:", error);
-      showErrorToast(error?.detail || error || "Login failed");
+
+      // Process permissions
+      const roleDetails = roleListingResponse[0];
+      dispatch(setRoleDetails(roleDetails));
+
+      // Extract only true permissions
+      const permissions = Object.entries(roleDetails)
+        .filter(([_, value]) => value === true)
+        .map(([key]) => key);
+
+      if (permissions.length > 0) {
+        localStorage.setItem("@permissions", JSON.stringify(permissions));
+        dispatch(setPermissions(permissions));
+      } else {
+        // No permissions found for this role
+        localStorage.removeItem("@permissions");
+        dispatch(setPermissions([]));
+        // showErrorToast("No permissions assigned for this role");
+      }
     }
-  };
+  } catch (error: any) {
+    console.error("Login Error:", error);
+    // Clear permissions on error
+    localStorage.removeItem("@permissions");
+    localStorage.removeItem("@assignedRole");
+    dispatch(setPermissions([]));
+    dispatch(setRoleDetails(null));
+    showErrorToast(error.message || "Login failed");
+  }
+};
   const handleScroll = (event: React.UIEvent<HTMLElement>, type: "company") => {
     const element = event.currentTarget;
     if (

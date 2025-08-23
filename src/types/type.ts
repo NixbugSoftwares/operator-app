@@ -5,8 +5,8 @@
 
 
 export  interface Account {
-  id: number;
-  fullName: string;
+  id: string;
+  full_name: string;
   username: string;
   password?: string;
   gender: string;
@@ -110,7 +110,6 @@ export interface RouteLandmark {
 export interface Fare {
   id: number;
   name: string;
-  company_id: number | null;
   version: number;
   function: string;
   scope: number;
@@ -143,19 +142,20 @@ export interface Service{
 }
 
 
-export interface Schedule{
-  id:number
-  service_id:number
-  name:string
-  permit_no:string
-  triggering_mode:string
-  ticketing_mode:string
-  frequency:number[] 
-  bus_id:number
-  route_id:number
-  fare_id:number
-  created_on:string
-  updated_on:string
+export interface Schedule {
+  id: number;
+  service_id: number;
+  name: string;
+  permit_no: string;
+  triggering_mode: number;
+  ticketing_mode: number;
+  frequency: number[];
+  bus_id: number;
+  route_id: number;
+  fare_id: number;
+  created_on: string;
+  updated_on: string;
+  routeName: string;
 }
 
 export interface Duty{

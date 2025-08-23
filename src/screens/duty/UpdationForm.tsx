@@ -45,9 +45,11 @@ const statusOptions = [
   { label: "Ended", value: 4 },
 ];
 
+
+
 const allowedTransitions: Record<number, number[]> = {
-  1: [2, 3],
-  2: [3, 4],
+  1: [],
+  2: [3],
   3: [2],
   4: [2],
 };
@@ -64,6 +66,8 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
   onCloseDetailCard,
   dutyData,
 }) => {
+  console.log("DutyUpdateForm props:", { dutyId, dutyData });
+
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
   const [currentStatus, setCurrentStatus] = useState<number>(2);
@@ -94,6 +98,11 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
       service_id: dutyData.service_id,
     },
   });
+  console.log("Initial form values:", {
+    id: dutyData.id,
+    status: getInitialStatusValue(dutyData.status),
+    service_id: dutyData.service_id,
+  });
 
   useEffect(() => {
     const initialStatus = getInitialStatusValue(dutyData.status);
@@ -120,6 +129,7 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
           limit: rowsPerPage,
           offset,
           name: searchText,
+          // status_list: [1, 2],
         })
       )
         .unwrap()
@@ -154,7 +164,7 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
           }
         })
         .catch((error) => {
-          showErrorToast(error || "Failed to fetch Service list");
+          showErrorToast(error.message || "Failed to fetch Service list");
         })
         .finally(() => setLoading(false));
     },
@@ -181,6 +191,8 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
   const handleDutyUpdate: SubmitHandler<DutyFormValues> = async (data) => {
     try {
       setLoading(true);
+      console.log("Data to be updated:", data);
+
       const formData = new FormData();
       formData.append("id", dutyId.toString());
       formData.append("status", data.status.toString());
@@ -196,7 +208,7 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
       onClose();
     } catch (error: any) {
       console.error("Error updating duty:", error);
-      showErrorToast(error || "Failed to update duty. Please try again.");
+      showErrorToast(error.message || "Failed to update duty. Please try again.");
     } finally {
       setLoading(false);
     }

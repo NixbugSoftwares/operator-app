@@ -9,6 +9,7 @@ import {
   CssBaseline,
   MenuItem,
   Autocomplete,
+  Checkbox,
 } from "@mui/material";
 import { useAppDispatch } from "../../store/Hooks";
 import {
@@ -31,8 +32,8 @@ interface DropdownItem {
 type ScheduleFormValues = {
   id: number;
   name: string;
-  ticketing_mode?: string;
-  triggering_mode?: string;
+  ticket_mode: number;
+  trigger_mode: number;
   bus_id: number;
   fare_id?: number;
   route_id?: number;
@@ -114,11 +115,11 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
   } = useForm<ScheduleFormValues>({
     defaultValues: {
       ...scheduleData,
-      ticketing_mode: String(
-        getTicketModeValue(scheduleData.ticketing_mode ?? "")
+      ticket_mode: getTicketModeValue(
+        scheduleData.ticket_mode as unknown as string
       ),
-      triggering_mode: String(
-        getTriggerModeValue(scheduleData.triggering_mode as unknown as string)
+      trigger_mode: getTriggerModeValue(
+        scheduleData.trigger_mode as unknown as string
       ),
     },
   });
@@ -162,6 +163,7 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
               limit: rowsPerPage,
               offset,
               name: searchText,
+              status: 1,
             })
           ).unwrap();
           items = response.data || [];
@@ -208,7 +210,7 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
             } else {
               try {
                 const singleItemResponse = await dispatch(
-                  apiMap[type]({ id: idMap[type] })
+                  apiMap[type]({ id: idMap[type]  })
                 ).unwrap();
 
                 const item = singleItemResponse?.data?.[0];
@@ -233,13 +235,13 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
           }
         }
       } catch (error: any) {
-        showErrorToast(error || `Failed to fetch ${type} list`);
+        showErrorToast(error.message || `Failed to fetch ${type} list`);
       } finally {
         if (type === "fare") isFirstLoad.current = false;
         setLoading(false);
       }
     },
-    [dispatch, scheduleData]
+    [dispatch, scheduleData,]
   );
 
   useEffect(() => {
@@ -324,13 +326,15 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
       const updationData = {
         id: scheduleId,
         name: data.name,
-        ticketing_mode: data.ticketing_mode,
-        triggering_mode: data.triggering_mode,
+        ticketing_mode: data.ticket_mode,
+        triggering_mode: data.trigger_mode,
         bus_id: data.bus_id,
         fare_id: data.fare_id,
         route_id: data.route_id,
         frequency: data.frequency,
       };
+      console.log("Updation Data:", updationData);
+
       await dispatch(scheduleUpdationApi(updationData)).unwrap();
 
       showSuccessToast("Schedule updated successfully!");
@@ -339,7 +343,7 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
       onClose();
     } catch (error: any) {
       console.error("Error updating schedule:", error);
-      showErrorToast(error || "Failed to update schedule. Please try again.");
+      showErrorToast(error.message || "Failed to update schedule. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -379,7 +383,17 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
           <Controller
             name="name"
             control={control}
-            rules={{ required: "Name is required" }}
+            rules={{
+              required: "Name is required",
+              validate: (value) => {
+                if (value.trim() === "") return "Name is required";
+                if (/^\s|\s$/.test(value))
+                  return "No leading or trailing spaces allowed";
+                if (/\s{2,}/.test(value))
+                  return "Consecutive spaces are not allowed";
+                return true;
+              },
+            }}
             render={({ field }) => (
               <TextField
                 {...field}
@@ -510,7 +524,7 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
           />
 
           <Controller
-            name="ticketing_mode"
+            name="ticket_mode"
             control={control}
             render={({ field }) => (
               <TextField
@@ -519,7 +533,7 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
                 label="Ticket Mode"
                 value={field.value}
                 onChange={field.onChange}
-                error={!!errors.ticketing_mode}
+                error={!!errors.ticket_mode}
                 size="small"
                 margin="normal"
               >
@@ -533,16 +547,16 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
           />
 
           <Controller
-            name="triggering_mode"
+            name="trigger_mode"
             control={control}
             render={({ field }) => (
               <TextField
                 select
                 fullWidth
-                label="Triggering Mode"
+                label="Trigger Mode"
                 value={field.value}
                 onChange={field.onChange}
-                error={!!errors.triggering_mode}
+                error={!!errors.trigger_mode}
                 size="small"
                 margin="normal"
               >
@@ -562,6 +576,7 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
               <Autocomplete
                 multiple
                 options={daysFrequency}
+                disableCloseOnSelect
                 getOptionLabel={(option) => option.label}
                 value={daysFrequency.filter((day) =>
                   field.value?.includes(day.value)
@@ -569,6 +584,12 @@ const ScheduleUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
                 onChange={(_, newValue) => {
                   field.onChange(newValue.map((day) => day.value));
                 }}
+                renderOption={(props, option, { selected }) => (
+                  <li {...props}>
+                    <Checkbox style={{ marginRight: 8 }} checked={selected} />
+                    {option.label}
+                  </li>
+                )}
                 renderInput={(params) => (
                   <TextField
                     {...params}
