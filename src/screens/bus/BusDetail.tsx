@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardActions,
@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogTitle,
   DialogContentText,
+  Tooltip,
 } from "@mui/material";
 
 import VerifiedIcon from "@mui/icons-material/Verified";
@@ -19,7 +20,7 @@ import BlockIcon from "@mui/icons-material/Block";
 import { Delete as DeleteIcon } from "@mui/icons-material";
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import { useAppDispatch } from "../../store/Hooks";
-import { companyBusDeleteApi } from "../../slices/appSlice";
+import { companyBusDeleteApi, serviceListingApi } from "../../slices/appSlice";
 import localStorageHelper from "../../utils/localStorageHelper";
 import BusUpdateForm from "./BusUpdation";
 import {
@@ -67,7 +68,7 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
   const canDeleteBus = useSelector((state: RootState) =>
     state.app.permissions.includes("delete_bus")
   );
-
+  const [isBusInService, setIsBusInService] = useState<boolean>(false);
   const handleBusDelete = async () => {
     if (!bus.id) {
       console.error("Error: Bus ID is missing");
@@ -87,10 +88,36 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
       refreshList("refresh");
     } catch (error: any) {
       console.error("Delete error:", error);
-      showErrorToast(error.message || "Failed to delete bus. Please try again.");
+
+      if (error.status === 422) {
+        // Custom message for 422
+        showErrorToast("Cannot delete: Bus is assigned to a service/schedule.");
+      } else {
+        // Default error handling
+        showErrorToast(
+          error.message || "Failed to delete bus. Please try again."
+        );
+      }
     }
   };
+  const fetchServiceList = async () => {
+    try {
+      const response = await dispatch(
+        serviceListingApi({ limit: 100, offset: 0, bus_id: bus.id })
+      ).unwrap();
 
+      if (response.data) {
+        setIsBusInService(response.data.length > 0);
+      }
+    } catch (error) {
+      console.error("Error fetching service list:", error);
+    }
+  };
+  useEffect(() => {
+    fetchServiceList();
+  }, [bus.id]);
+  console.log(isBusInService);
+  
   return (
     <>
       <Card
@@ -216,39 +243,51 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
 
             {/* Update Button with Tooltip */}
             {canUpdateBus && (
-                <Button
-                  variant="contained"
-                  color="success"
-                  size="small"
-                  onClick={() => setUpdateFormOpen(true)}
-                  sx={{
-                    "&.Mui-disabled": {
-                      backgroundColor: "#81c784 !important",
-                      color: "#ffffff99",
-                    },
-                  }}
-                >
-                  Update
-                </Button>)}
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                onClick={() => setUpdateFormOpen(true)}
+                sx={{
+                  "&.Mui-disabled": {
+                    backgroundColor: "#81c784 !important",
+                    color: "#ffffff99",
+                  },
+                }}
+              >
+                Update
+              </Button>
+            )}
 
             {/* Delete Button with Tooltip */}
             {canDeleteBus && (
-                <Button
-                  variant="contained"
-                  color="error"
-                  size="small"
-                  onClick={() => setDeleteConfirmOpen(true)}
-                  startIcon={<DeleteIcon />}
-                  disabled={!canDeleteBus}
-                  sx={{
-                    "&.Mui-disabled": {
-                      backgroundColor: "#e57373 !important",
-                      color: "#ffffff99",
-                    },
-                  }}
-                >
-                  Delete
-                </Button>)}
+              <Tooltip
+                title={
+                  isBusInService
+                    ? "Bus is assigned to a service, cannot be deleted"
+                    : "Click to delete the bus"
+                }
+              >
+                <span>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    size="small"
+                    onClick={() => setDeleteConfirmOpen(true)}
+                    startIcon={<DeleteIcon />}
+                    disabled={isBusInService}
+                    sx={{
+                      "&.Mui-disabled": {
+                        backgroundColor: "#e57373 !important",
+                        color: "#ffffff99",
+                      },
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </span>
+              </Tooltip>
+            )}
           </Box>
         </CardActions>
       </Card>

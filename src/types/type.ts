@@ -74,9 +74,10 @@ export interface SelectedLandmark {
   sequenceId?: number;
   starting_time: string;
 
-  arrivalTime: { fullTime: string };
-  departureTime: { fullTime: string };
-
+  arrivalTime: { fullTime: string, timestamp: number };
+  departureTime: { fullTime: string, timestamp: number };
+  arrival_delta:number;
+  departure_delta:number;
   arrivalDayOffset: number; 
   departureDayOffset: number;
   arrivalDelta: number;

@@ -2,7 +2,7 @@ import axios from "axios";
 import localStorageHelper from "./localStorageHelper";
 import commonHelper from "./commonHelper";
 
-export const base_URL = (window as any).__ENV__?.API_BASE_URL //base URL
+export const base_URL = "https://api.entebus.com" //base URL
 
 //******************************************************Token **************************************** */
 const getAuthToken = async () => {
