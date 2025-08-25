@@ -225,81 +225,116 @@ const BusUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
           />
 
           <TextField
-            margin="normal"
-            required
-            fullWidth
-            label="Manufactured On"
-            type="date"
-            defaultValue={extractDateOnly(busData.manufactured_on)}
-            InputLabelProps={{ shrink: true }}
-            {...register("manufactured_on")}
-            error={!!errors.manufactured_on}
-            helperText={errors.manufactured_on?.message}
-            size="small"
-            inputProps={{
-              max: new Date().toISOString().split("T")[0],
-            }}
-          />
-          <TextField
-            margin="normal"
-            fullWidth
-            label="Insurance Upto"
-            type="date"
-            defaultValue={extractDateOnly(busData.insurance_upto)}
-            InputLabelProps={{ shrink: true }}
-            {...register("insurance_upto")}
-            error={!!errors.insurance_upto}
-            helperText={errors.insurance_upto?.message}
-            size="small"
-            inputProps={{
-              min: new Date().toISOString().split("T")[0], // Set min date to today
-            }}
-          />
-          <TextField
-            margin="normal"
-            fullWidth
-            label="Pollution Upto"
-            type="date"
-            defaultValue={extractDateOnly(busData.pollution_upto)}
-            InputLabelProps={{ shrink: true }}
-            {...register("pollution_upto")}
-            error={!!errors.pollution_upto}
-            helperText={errors.pollution_upto?.message}
-            size="small"
-            inputProps={{
-              min: new Date().toISOString().split("T")[0], // Set min date to today
-            }}
-          />
-          <TextField
-            margin="normal"
-            fullWidth
-            label="Fitness Upto"
-            type="date"
-            defaultValue={extractDateOnly(busData.fitness_upto)}
-            InputLabelProps={{ shrink: true }}
-            {...register("fitness_upto")}
-            error={!!errors.fitness_upto}
-            helperText={errors.fitness_upto?.message}
-            size="small"
-            inputProps={{
-              min: new Date().toISOString().split("T")[0], // Set min date to today
-            }}
-          />
-          <TextField
-            margin="normal"
-            fullWidth
-            label=" Road Tax Upto"
-            type="date"
-            defaultValue={extractDateOnly(busData.road_tax_upto)}
-            InputLabelProps={{ shrink: true }}
-            {...register("road_tax_upto")}
-            error={!!errors.road_tax_upto}
-            helperText={errors.road_tax_upto?.message}
-            size="small"
-            inputProps={{
-              min: new Date().toISOString().split("T")[0], // Set min date to today
-            }}
-          />
+  margin="normal"
+  required
+  fullWidth
+  label="Manufactured On"
+  type="date"
+  defaultValue={extractDateOnly(busData.manufactured_on)}
+  InputLabelProps={{ shrink: true }}
+  {...register("manufactured_on")}
+  error={!!errors.manufactured_on}
+  helperText={errors.manufactured_on?.message}
+  size="small"
+  inputProps={{
+    max: new Date().toISOString().split("T")[0],
+  }}
+  onInput={(e) => {
+    const target = e.target as HTMLInputElement;
+    // Prevent typing more than 4 digits in year
+    if (target.value.length > 10) {
+      target.value = target.value.slice(0, 10);
+    }
+  }}
+/>
+<TextField
+  margin="normal"
+  fullWidth
+  label="Insurance Upto"
+  type="date"
+  defaultValue={extractDateOnly(busData.insurance_upto)}
+  InputLabelProps={{ shrink: true }}
+  {...register("insurance_upto")}
+  error={!!errors.insurance_upto}
+  helperText={errors.insurance_upto?.message}
+  size="small"
+  inputProps={{
+    min: new Date().toISOString().split("T")[0],
+  }}
+  onInput={(e) => {
+    const target = e.target as HTMLInputElement;
+    // Prevent typing more than 4 digits in year
+    if (target.value.length > 10) {
+      target.value = target.value.slice(0, 10);
+    }
+  }}
+/>
+<TextField
+  margin="normal"
+  fullWidth
+  label="Pollution Upto"
+  type="date"
+  defaultValue={extractDateOnly(busData.pollution_upto)}
+  InputLabelProps={{ shrink: true }}
+  {...register("pollution_upto")}
+  error={!!errors.pollution_upto}
+  helperText={errors.pollution_upto?.message}
+  size="small"
+  inputProps={{
+    min: new Date().toISOString().split("T")[0],
+  }}
+  onInput={(e) => {
+    const target = e.target as HTMLInputElement;
+    // Prevent typing more than 4 digits in year
+    if (target.value.length > 10) {
+      target.value = target.value.slice(0, 10);
+    }
+  }}
+/>
+<TextField
+  margin="normal"
+  fullWidth
+  label="Fitness Upto"
+  type="date"
+  defaultValue={extractDateOnly(busData.fitness_upto)}
+  InputLabelProps={{ shrink: true }}
+  {...register("fitness_upto")}
+  error={!!errors.fitness_upto}
+  helperText={errors.fitness_upto?.message}
+  size="small"
+  inputProps={{
+    min: new Date().toISOString().split("T")[0],
+  }}
+  onInput={(e) => {
+    const target = e.target as HTMLInputElement;
+    // Prevent typing more than 4 digits in year
+    if (target.value.length > 10) {
+      target.value = target.value.slice(0, 10);
+    }
+  }}
+/>
+<TextField
+  margin="normal"
+  fullWidth
+  label=" Road Tax Upto"
+  type="date"
+  defaultValue={extractDateOnly(busData.road_tax_upto)}
+  InputLabelProps={{ shrink: true }}
+  {...register("road_tax_upto")}
+  error={!!errors.road_tax_upto}
+  helperText={errors.road_tax_upto?.message}
+  size="small"
+  inputProps={{
+    min: new Date().toISOString().split("T")[0],
+  }}
+  onInput={(e) => {
+    const target = e.target as HTMLInputElement;
+    // Prevent typing more than 4 digits in year
+    if (target.value.length > 10) {
+      target.value = target.value.slice(0, 10);
+    }
+  }}
+/>
           <Button
             type="submit"
             fullWidth

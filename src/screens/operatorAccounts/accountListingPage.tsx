@@ -32,6 +32,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "../../store/Store";
 import moment from "moment";
 import localStorageHelper from "../../utils/localStorageHelper";
+
 const getGenderBackendValue = (displayValue: string): string => {
   const genderMap: Record<string, string> = {
     Other: "1",
@@ -49,6 +50,7 @@ interface ColumnConfig {
   minWidth: string;
   fixed?: boolean;
 }
+
 const AccountListingTable = () => {
   const dispatch = useDispatch<AppDispatch>();
   const [accountList, setAccountList] = useState<Account[]>([]);
@@ -73,7 +75,9 @@ const AccountListingTable = () => {
   const canCreateOperator = useSelector((state: RootState) =>
     state.app.permissions.includes("create_operator")
   );
-    const columnConfig: ColumnConfig[] = [
+  
+  const [isSearching, setIsSearching] = useState(false);
+  const columnConfig: ColumnConfig[] = [
     { id: "id", label: "ID", width: "80px", minWidth: "80px", fixed: true },
     {
       id: "fullName",
@@ -97,7 +101,6 @@ const AccountListingTable = () => {
       fixed: true,
     },
     { id: "email", label: "Email", width: "220px", minWidth: "220px" },
-
     {
       id: "CreatedAt",
       label: "Created Date",
@@ -105,15 +108,16 @@ const AccountListingTable = () => {
       minWidth: "150px",
     },
   ];
+  
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
     columnConfig.reduce((acc, column) => {
       acc[column.id] = column.fixed ? true : false;
       return acc;
     }, {} as Record<string, boolean>)
   );
+
   const handleColumnChange = (event: SelectChangeEvent<string[]>) => {
     const value = event.target.value;
-    // Convert array of selected values to new visibility state
     const newVisibleColumns = Object.keys(visibleColumns).reduce((acc, key) => {
       acc[key] = value.includes(key);
       return acc;
@@ -123,6 +127,12 @@ const AccountListingTable = () => {
 
   const fetchAccounts = useCallback((pageNumber: number, searchParams = {}) => {
     const offset = pageNumber * rowsPerPage;
+    setIsLoading(true);
+    
+    // Check if we're searching (any search parameter is present)
+    const hasSearchParams = Object.values(searchParams).some(param => param !== undefined && param !== "");
+    setIsSearching(hasSearchParams);
+    
     dispatch(operatorListApi({ limit: rowsPerPage, offset, ...searchParams }))
       .unwrap()
       .then((res) => {
@@ -148,57 +158,64 @@ const AccountListingTable = () => {
 
         setAccountList(formattedAccounts);
         setHasNextPage(items.length === rowsPerPage);
-        if ( loggedInUserId&& !loggedInUserAccount) {
-            dispatch(
-              operatorListApi({ limit: 1, offset: 0, id: loggedInUserId })
-            )
-              .unwrap()
-              .then((res) => {
-                const items = res.data || [];
-                const formattedAccounts = items.map((account: any) => ({
-                  id: account.id,
-                  fullName: account.full_name || account.fullName,
-                  username: account.username,
-                  gender:
-                    account.gender === 1
-                      ? "Other"
-                      : account.gender === 2
-                      ? "Female"
-                      : account.gender === 3
-                      ? "Male"
-                      : "Transgender",
-                  email_id: account.email_id,
-                  phoneNumber:
-                    account.phone_number || account.phoneNumber || "",
-                  status: account.status === 1 ? "Active" : "Suspended",
-                  created_on: account.created_on,
-                  updated_on: account.updated_on,
-                }));
-                setLoggedInUserAccount(formattedAccounts[0] || null);
-              });
-          }
+        
+        // Only fetch logged-in user on first page with no search
+        if (pageNumber === 0 && !hasSearchParams && loggedInUserId && !loggedInUserAccount) {
+          dispatch(
+            operatorListApi({ limit: 1, offset: 0, id: loggedInUserId })
+          )
+            .unwrap()
+            .then((res) => {
+              const items = res.data || [];
+              const formattedAccounts = items.map((account: any) => ({
+                id: account.id,
+                full_name: account.full_name || account.fullName,
+                username: account.username,
+                gender:
+                  account.gender === 1
+                    ? "Other"
+                    : account.gender === 2
+                    ? "Female"
+                    : account.gender === 3
+                    ? "Male"
+                    : "Transgender",
+                email_id: account.email_id || account.email,
+                phoneNumber: account.phone_number || account.phoneNumber || "",
+                status: account.status === 1 ? "Active" : "Suspended",
+                created_on: account.created_on,
+                updated_on: account.updated_on,
+              }));
+              setLoggedInUserAccount(formattedAccounts[0] || null);
+            });
+        }
       })
       .catch((error) => {
         console.error("Fetch Error:", error);
         showErrorToast(error.message || "Failed to fetch account list");
       })
       .finally(() => setIsLoading(false));
-  }, [loggedInUserId, loggedInUserAccount]);
-  const sortedAccountList = React.useMemo(() => {
-    const combined = [...accountList];
+  }, [loggedInUserId, loggedInUserAccount, rowsPerPage, dispatch]);
 
-    if (
-      loggedInUserAccount &&
-      !accountList.some((a) => a.id === loggedInUserAccount.id)
-    ) {
-      combined.unshift(loggedInUserAccount);
+  const sortedAccountList = React.useMemo(() => {
+    // Only add logged-in user to the first page when not searching
+    if (page === 0 && !isSearching && loggedInUserAccount) {
+      const combined = [...accountList];
+      
+      // Check if logged-in user is not already in the list
+      if (!accountList.some((a) => a.id === loggedInUserAccount.id)) {
+        combined.unshift(loggedInUserAccount);
+      }
+      
+      return combined.sort((a, b) => {
+        if (a.id === loggedInUserId) return -1;
+        if (b.id === loggedInUserId) return 1;
+        return 0;
+      });
     }
-    return combined.sort((a, b) => {
-      if (a.id === loggedInUserId) return -1;
-      if (b.id === loggedInUserId) return 1;
-      return 0;
-    });
-  }, [accountList, loggedInUserAccount, loggedInUserId]);
+    
+    // For other pages or when searching, return the account list as is
+    return accountList;
+  }, [accountList, loggedInUserAccount, loggedInUserId, page, isSearching]);
 
   const handleRowClick = (account: Account) => {
     setSelectedAccount(account);
@@ -315,7 +332,6 @@ const AccountListingTable = () => {
                   />
                   <ListItemText
                     primary={column.label}
-                    secondary={column.fixed ? "(Always visible)" : undefined}
                   />
                 </MenuItem>
               ))}
@@ -457,7 +473,7 @@ const AccountListingTable = () => {
                       borderBottom: "1px solid #ddd",
                     }}
                   >
-                    Created At
+                    Created Time
                   </TableCell>
                 )}
               </TableRow>

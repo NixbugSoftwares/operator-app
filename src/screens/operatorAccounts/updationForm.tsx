@@ -77,6 +77,8 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
   onCloseDetailCard,
   canupdateOperator,
 }) => {
+  console.log("accountData......", accountData);
+
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState<{ id: number; name: string }[]>([]);
@@ -194,7 +196,9 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
       refreshList("refresh");
       onClose();
     } catch (error: any) {
-      showErrorToast(error.message || "Something went wrong. Please try again.");
+      showErrorToast(
+        error.message || "Something went wrong. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -231,23 +235,23 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
             label="Full Name"
             defaultValue={accountData.fullName || ""}
             {...register("fullName", {
-              required: "Full name is required",
+              required: "Full Name is required",
               maxLength: {
                 value: 32,
-                message: "Full name cannot exceed 32 characters",
+                message: "Full Name cannot exceed 32 characters",
               },
               validate: {
                 noNumbers: (value: any) =>
                   !/[0-9]/.test(value) ||
-                  "Numbers are not allowed in the full name",
+                  "Numbers are not allowed in the full Name",
                 noSpecialChars: (value: any) =>
                   !/[^A-Za-z ]/.test(value) ||
                   "Special characters are not allowed",
                 endsWithLetter: (value: any) =>
-                  /[A-Za-z]$/.test(value) || "Full name must end with a letter",
+                  /[A-Za-z]$/.test(value) || "Full Name must end with a letter",
                 validPattern: (value: any) =>
                   /^[A-Za-z]+(?: [A-Za-z]+)*$/.test(value) ||
-                  "Full name should consist of letters separated by single spaces",
+                  "Full Name should consist of letters separated by single spaces",
               },
             })}
             error={!!errors.fullName}
@@ -300,11 +304,9 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
             <Controller
               name="role"
               control={control}
-              rules={{ required: "Role is required" }}
               render={({ field }) => (
                 <TextField
                   margin="normal"
-                  required
                   fullWidth
                   select
                   label="Role"

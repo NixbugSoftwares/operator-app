@@ -87,7 +87,7 @@ const BusListingTable = () => {
     },
     {
       id: "capacity",
-      label: "Capacity Up To",
+      label: "Maximum Capacity",
       width: "120px",
       minWidth: "120px",
       fixed: true,
@@ -106,25 +106,25 @@ const BusListingTable = () => {
     },
     {
       id: "insurance_upto",
-      label: "Insurance Upto",
+      label: "Insurance Up To",
       width: "150px",
       minWidth: "150px",
     },
     {
       id: "pollution_upto",
-      label: "Pollution Upto",
+      label: "Pollution Up To",
       width: "150px",
       minWidth: "150px",
     },
     {
       id: "fitness_upto",
-      label: "Fitness Upto",
+      label: "Fitness Up To",
       width: "150px",
       minWidth: "150px",
     },
     {
       id: "road_tax_upto",
-      label: "Road Tax Upto",
+      label: "Road Tax Up To",
       width: "150px",
       minWidth: "150px",
     },
@@ -407,7 +407,7 @@ const BusListingTable = () => {
                       borderBottom: "1px solid #ddd",
                     }}
                   >
-                    Capacity Up To
+                    Maximum Capacity
                   </TableCell>
                 )}
                 {visibleColumns.status && (
@@ -454,7 +454,7 @@ const BusListingTable = () => {
                       borderBottom: "1px solid #ddd",
                     }}
                   >
-                    Insurance Upto
+                    Insurance Up To
                   </TableCell>
                 )}
                 {visibleColumns.pollution_upto && (
@@ -469,7 +469,7 @@ const BusListingTable = () => {
                       borderBottom: "1px solid #ddd",
                     }}
                   >
-                    Pollution Upto
+                    Pollution Up To
                   </TableCell>
                 )}
                 {visibleColumns.fitness_upto && (
@@ -484,7 +484,7 @@ const BusListingTable = () => {
                       borderBottom: "1px solid #ddd",
                     }}
                   >
-                    Fitness Upto
+                    Fitness Up To
                   </TableCell>
                 )}
                 {visibleColumns.road_tax_upto && (
@@ -499,7 +499,7 @@ const BusListingTable = () => {
                       borderBottom: "1px solid #ddd",
                     }}
                   >
-                    Road Tax Upto
+                    Road Tax Up To
                   </TableCell>
                 )}
               </TableRow>

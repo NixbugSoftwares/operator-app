@@ -23,7 +23,7 @@ import {
   showErrorToast,
   showSuccessToast,
 } from "../../common/toastMessageHelper";
-import {operatorCreationSchema } from '../auth/validations/authValidation';
+import { operatorCreationSchema } from "../auth/validations/authValidation";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { RootState } from "../../store/Store";
 import { useSelector } from "react-redux";
@@ -61,8 +61,8 @@ const AccountForm: React.FC<IAccountCreationFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState<{ id: number; name: string }[]>([]);
   const [showPassword, setShowPassword] = useState(false);
- const canAssignRole = useSelector((state: RootState) =>
-    state.app.permissions.includes("update_op_role")
+  const canAssignRole = useSelector((state: RootState) =>
+    state.app.permissions.includes("update_role")
   );
   const {
     register,
@@ -121,12 +121,14 @@ const AccountForm: React.FC<IAccountCreationFormProps> = ({
               })
             ).unwrap();
             showSuccessToast("Account created and role assigned successfully!");
-          } catch (roleError:any) {
-            showSuccessToast(roleError.message||"Account created but role assignment failed!");
+          } catch (roleError: any) {
+            showSuccessToast(
+              roleError.message || "Account created but role assignment failed!"
+            );
             console.error("Role assignment failed:", roleError);
           }
         } else {
-          showSuccessToast("Account created without role assignment!");
+          showSuccessToast("Account created without role.");
         }
 
         refreshList("refresh");
@@ -190,33 +192,6 @@ const AccountForm: React.FC<IAccountCreationFormProps> = ({
               ),
             }}
           />
-{canAssignRole && (
-          <Controller
-            name="role"
-            control={control}
-            rules={{ required: "Role is required" }}
-            render={({ field }) => (
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                select
-                label="Role"
-                {...field}
-                error={!!errors.role}
-                helperText={errors.role?.message}
-                size="small"
-              >
-                {roles.map((role) => (
-                  <MenuItem key={role.id} value={role.id}>
-                    {role.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
-          
-          )}
 
           <TextField
             margin="normal"
@@ -228,8 +203,32 @@ const AccountForm: React.FC<IAccountCreationFormProps> = ({
             helperText={errors.fullName?.message}
             size="small"
           />
+          {canAssignRole && (
+            <Controller
+              name="role"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  margin="normal"
+                  fullWidth
+                  select
+                  label="Role"
+                  {...field}
+                  error={!!errors.role}
+                  helperText={errors.role?.message}
+                  size="small"
+                >
+                  {roles.map((role) => (
+                    <MenuItem key={role.id} value={role.id}>
+                      {role.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+          )}
 
-         <Controller
+          <Controller
             name="phoneNumber"
             control={control}
             render={({ field }) => (

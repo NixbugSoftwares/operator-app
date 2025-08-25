@@ -35,6 +35,7 @@ import {
 } from "../../common/toastMessageHelper";
 import localStorageHelper from "../../utils/localStorageHelper";
 import { setPermissions } from "../../slices/appSlice";
+
 interface ILoginFormInputs {
   company_id: number;
   username: string;
@@ -45,9 +46,11 @@ interface DropdownItem {
   id: number;
   name: string;
 }
+
 const LoginPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const [loading, setLoading] = useState(false);
+  const [formLoading, setFormLoading] = useState(false); // For form submission
+  const [companyLoading, setCompanyLoading] = useState(false); // For company dropdown
   const [showPassword, setShowPassword] = useState(false);
   const [searchParams, setSearchParams] = useState({
     company: "",
@@ -79,7 +82,7 @@ const LoginPage: React.FC = () => {
 
   const fetchCompanyList = useCallback(
     (pageNumber: number, searchText = "") => {
-      setLoading(true);
+      setCompanyLoading(true); // Use companyLoading instead of loading
       const offset = pageNumber * rowsPerPage;
       dispatch(
         companyListApi({
@@ -110,7 +113,7 @@ const LoginPage: React.FC = () => {
         .catch((error) => {
           showErrorToast(error.message || "Failed to fetch Company list");
         })
-        .finally(() => setLoading(false));
+        .finally(() => setCompanyLoading(false)); // Use companyLoading instead of loading
     },
     [dispatch]
   );
@@ -118,111 +121,115 @@ const LoginPage: React.FC = () => {
   useEffect(() => {
     fetchCompanyList(0);
   }, [fetchCompanyList]);
-const handleLogin: SubmitHandler<ILoginFormInputs> = async (data) => {
-  try {
-    if (!data.company_id) {
-      showErrorToast("Please select a company");
-      return;
-    }
 
-    const formData = new FormData();
-    formData.append("company_id", data.company_id.toString());
-    formData.append("username", data.username);
-    formData.append("password", data.password);
-
-    const response = await dispatch(LoginApi(formData)).unwrap();
-
-    if (response?.access_token) {
-      // Store basic user info
-      const user = {
-        username: data?.username,
-        operator_id: response?.operator_id,
-        company_id: data?.company_id,
-      };
-      const access_token = response?.access_token;
-      const expiresAt = Date.now() + response?.expires_in * 1000;
-
-      // Store company name
-      const selectedCompany = dropdownData.companyList.find(
-        (company) => company.id === data.company_id
-      );
-      if (selectedCompany) {
-        localStorageHelper.storeItem("@companyName", selectedCompany.name);
-      }
-
-      // Store auth tokens
-      localStorageHelper.storeItem("@token", access_token);
-      localStorageHelper.storeItem("@token_expires", expiresAt);
-      localStorageHelper.storeItem("@user", user);
-      dispatch(userLoggedIn(user));
-      showSuccessToast("Login successful");
-
-      // Fetch role mapping
-      const roleResponse = await dispatch(
-        fetchRoleMappingApi(response.operator_id)
-      ).unwrap();
-
-      if (!roleResponse || !roleResponse.role_id) {
-        // Clear any existing permissions if no role found
-        localStorage.removeItem("@permissions");
-        localStorage.removeItem("@assignedRole");
-        dispatch(setPermissions([]));
-        dispatch(setRoleDetails(null));
-        showErrorToast("No role assigned to this user");
+  const handleLogin: SubmitHandler<ILoginFormInputs> = async (data) => {
+    try {
+      if (!data.company_id) {
+        showErrorToast("Please select a company");
         return;
       }
 
-      // Store assigned role
-      const assignedRole = {
-        id: roleResponse?.id,
-        userId: roleResponse?.operator_id,
-        roleId: roleResponse?.role_id,
-      };
-      localStorage.setItem("@assignedRole", JSON.stringify(assignedRole));
+      setFormLoading(true); // Use formLoading for form submission
+      const formData = new FormData();
+      formData.append("company_id", data.company_id.toString());
+      formData.append("username", data.username);
+      formData.append("password", data.password);
 
-      // Fetch role details
-      const roleListingResponse = await dispatch(
-        loggedinUserRoleDetails(assignedRole.roleId)
-      ).unwrap();
+      const response = await dispatch(LoginApi(formData)).unwrap();
 
-      if (!roleListingResponse || roleListingResponse.length === 0) {
-        // Clear permissions if role details not found
-        localStorage.removeItem("@permissions");
-        dispatch(setPermissions([]));
-        dispatch(setRoleDetails(null));
-        showErrorToast("Role details not found");
-        return;
+      if (response?.access_token) {
+        // Store basic user info
+        const user = {
+          username: data?.username,
+          operator_id: response?.operator_id,
+          company_id: data?.company_id,
+        };
+        const access_token = response?.access_token;
+        const expiresAt = Date.now() + response?.expires_in * 1000;
+
+        // Store company name
+        const selectedCompany = dropdownData.companyList.find(
+          (company) => company.id === data.company_id
+        );
+        if (selectedCompany) {
+          localStorageHelper.storeItem("@companyName", selectedCompany.name);
+        }
+
+        // Store auth tokens
+        localStorageHelper.storeItem("@token", access_token);
+        localStorageHelper.storeItem("@token_expires", expiresAt);
+        localStorageHelper.storeItem("@user", user);
+        dispatch(userLoggedIn(user));
+        showSuccessToast("Login successful");
+
+        // Fetch role mapping
+        const roleResponse = await dispatch(
+          fetchRoleMappingApi(response.operator_id)
+        ).unwrap();
+
+        if (!roleResponse || !roleResponse.role_id) {
+          // Clear any existing permissions if no role found
+          localStorage.removeItem("@permissions");
+          localStorage.removeItem("@assignedRole");
+          dispatch(setPermissions([]));
+          dispatch(setRoleDetails(null));
+          showErrorToast("No role assigned to this user");
+          return;
+        }
+
+        // Store assigned role
+        const assignedRole = {
+          id: roleResponse?.id,
+          userId: roleResponse?.operator_id,
+          roleId: roleResponse?.role_id,
+        };
+        localStorage.setItem("@assignedRole", JSON.stringify(assignedRole));
+
+        // Fetch role details
+        const roleListingResponse = await dispatch(
+          loggedinUserRoleDetails(assignedRole.roleId)
+        ).unwrap();
+
+        if (!roleListingResponse || roleListingResponse.length === 0) {
+          // Clear permissions if role details not found
+          localStorage.removeItem("@permissions");
+          dispatch(setPermissions([]));
+          dispatch(setRoleDetails(null));
+          showErrorToast("Role details not found");
+          return;
+        }
+
+        // Process permissions
+        const roleDetails = roleListingResponse[0];
+        dispatch(setRoleDetails(roleDetails));
+
+        // Extract only true permissions
+        const permissions = Object.entries(roleDetails)
+          .filter(([_, value]) => value === true)
+          .map(([key]) => key);
+
+        if (permissions.length > 0) {
+          localStorage.setItem("@permissions", JSON.stringify(permissions));
+          dispatch(setPermissions(permissions));
+        } else {
+          // No permissions found for this role
+          localStorage.removeItem("@permissions");
+          dispatch(setPermissions([]));
+        }
       }
-
-      // Process permissions
-      const roleDetails = roleListingResponse[0];
-      dispatch(setRoleDetails(roleDetails));
-
-      // Extract only true permissions
-      const permissions = Object.entries(roleDetails)
-        .filter(([_, value]) => value === true)
-        .map(([key]) => key);
-
-      if (permissions.length > 0) {
-        localStorage.setItem("@permissions", JSON.stringify(permissions));
-        dispatch(setPermissions(permissions));
-      } else {
-        // No permissions found for this role
-        localStorage.removeItem("@permissions");
-        dispatch(setPermissions([]));
-        // showErrorToast("No permissions assigned for this role");
-      }
+    } catch (error: any) {
+      console.error("Login Error:", error);
+      // Clear permissions on error
+      localStorage.removeItem("@permissions");
+      localStorage.removeItem("@assignedRole");
+      dispatch(setPermissions([]));
+      dispatch(setRoleDetails(null));
+      showErrorToast(error.message || "Login failed");
+    } finally {
+      setFormLoading(false); // Use formLoading for form submission
     }
-  } catch (error: any) {
-    console.error("Login Error:", error);
-    // Clear permissions on error
-    localStorage.removeItem("@permissions");
-    localStorage.removeItem("@assignedRole");
-    dispatch(setPermissions([]));
-    dispatch(setRoleDetails(null));
-    showErrorToast(error.message || "Login failed");
-  }
-};
+  };
+
   const handleScroll = (event: React.UIEvent<HTMLElement>, type: "company") => {
     const element = event.currentTarget;
     if (
@@ -239,132 +246,144 @@ const handleLogin: SubmitHandler<ILoginFormInputs> = async (data) => {
       }
     }
   };
- return (
-  <Container component="main" maxWidth="xs" sx={{ mb: 10 }}>
-    <CssBaseline />
-    <Box
-      sx={{
-        marginTop: 8,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-      }}
-    >
-      <Card sx={{ width: "100%", p: 3, boxShadow: 3 }}>
-        <CardContent
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <Avatar sx={{ m: 1, bgcolor: "darkblue" }}>
-            <LockOutlinedIcon />
-          </Avatar>
-          <Typography component="h1" variant="h5">
-            Sign In
-          </Typography>
-          <Box
-            component="form"
-            noValidate
-            sx={{ mt: 1, width: '100%' }}
-            onSubmit={handleSubmit(handleLogin)}
+
+  return (
+    <Container component="main" maxWidth="xs" sx={{ mb: 10 }}>
+      <CssBaseline />
+      <Box
+        sx={{
+          marginTop: 8,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <Card sx={{ width: "100%", p: 3, boxShadow: 3 }}>
+          <CardContent
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
           >
-            <Stack spacing={2} width="100%">
-              <Controller
-                name="company_id"
-                control={control}
-                rules={{ required: "Company is required" }}
-                render={({ field }) => (
-                  <Autocomplete
-                    options={dropdownData.companyList}
-                    getOptionLabel={(option) => option.name}
-                    value={
-                      dropdownData.companyList.find(
-                        (item) => item.id === field.value
-                      ) || null
-                    }
-                    onChange={(_, newValue) => field.onChange(newValue?.id)}
-                    onInputChange={(_, newInputValue) => {
-                      setSearchParams((prev) => ({
-                        ...prev,
-                        bus: newInputValue,
-                      }));
-                      fetchCompanyList(0, newInputValue);
-                    }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Select Company"
-                        error={!!errors.company_id}
-                        helperText={errors.company_id?.message}
-                        required
-                        fullWidth
-                      />
-                    )}
-                    ListboxProps={{
-                      onScroll: (event) => handleScroll(event, "company"),
-                      style: { maxHeight: 200, overflow: "auto" },
-                    }}
-                  />
-                )}
-              />
+            <Avatar sx={{ m: 1, bgcolor: "darkblue" }}>
+              <LockOutlinedIcon />
+            </Avatar>
+            <Typography component="h1" variant="h5">
+              Sign In
+            </Typography>
+            <Box
+              component="form"
+              noValidate
+              sx={{ mt: 1, width: '100%' }}
+              onSubmit={handleSubmit(handleLogin)}
+            >
+              <Stack spacing={2} width="100%">
+                <Controller
+                  name="company_id"
+                  control={control}
+                  rules={{ required: "Company is required" }}
+                  render={({ field }) => (
+                    <Autocomplete
+                      options={dropdownData.companyList}
+                      getOptionLabel={(option) => option.name}
+                      value={
+                        dropdownData.companyList.find(
+                          (item) => item.id === field.value
+                        ) || null
+                      }
+                      onChange={(_, newValue) => field.onChange(newValue?.id)}
+                      onInputChange={(_, newInputValue) => {
+                        setSearchParams((prev) => ({
+                          ...prev,
+                          bus: newInputValue,
+                        }));
+                        fetchCompanyList(0, newInputValue);
+                      }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Select Company"
+                          error={!!errors.company_id}
+                          helperText={errors.company_id?.message}
+                          required
+                          fullWidth
+                          autoFocus
+                          InputProps={{
+                            ...params.InputProps,
+                            endAdornment: (
+                              <>
+                                {companyLoading ? (
+                                  <CircularProgress color="inherit" size={20} />
+                                ) : null}
+                                {params.InputProps.endAdornment}
+                              </>
+                            ),
+                          }}
+                        />
+                      )}
+                      ListboxProps={{
+                        onScroll: (event) => handleScroll(event, "company"),
+                        style: { maxHeight: 200, overflow: "auto" },
+                      }}
+                    />
+                  )}
+                />
 
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="username"
-                label="Username"
-                {...register("username")}
-                error={!!errors.username}
-                helperText={errors.username?.message}
-                autoComplete="username"
-                autoFocus
-              />
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  id="username"
+                  label="Username"
+                  {...register("username")}
+                  error={!!errors.username}
+                  helperText={errors.username?.message}
+                  autoComplete="username"
+                />
 
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="password"
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                {...register("password")}
-                error={!!errors.password}
-                helperText={errors.password?.message}
-                autoComplete="current-password"
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={handleTogglePassword} edge="end">
-                        {showPassword ? <Visibility /> : <VisibilityOff />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  id="password"
+                  label="Password"
+                  type={showPassword ? "text" : "password"}
+                  {...register("password")}
+                  error={!!errors.password}
+                  helperText={errors.password?.message}
+                  autoComplete="current-password"
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={handleTogglePassword} edge="end">
+                          {showPassword ? <Visibility /> : <VisibilityOff />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
 
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                sx={{ mt: 3, mb: 2, bgcolor: "darkblue" }}
-                disabled={loading}
-              >
-                {loading ? (
-                  <CircularProgress size={24} sx={{ color: "white" }} />
-                ) : (
-                  "Sign In"
-                )}
-              </Button>
-            </Stack>
-          </Box>
-        </CardContent>
-      </Card>
-    </Box>
-  </Container>
-);
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  sx={{ mt: 3, mb: 2, bgcolor: "darkblue" }}
+                  disabled={formLoading} // Use formLoading instead of loading
+                >
+                  {formLoading ? ( // Use formLoading instead of loading
+                    <CircularProgress size={24} sx={{ color: "white" }} />
+                  ) : (
+                    "Sign In"
+                  )}
+                </Button>
+              </Stack>
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
+    </Container>
+  );
 };
 
 export default LoginPage;

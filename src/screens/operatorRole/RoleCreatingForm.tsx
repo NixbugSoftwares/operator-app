@@ -240,7 +240,7 @@ const RoleCreationForm: React.FC<IRoleCreationFormProps> = ({
         pr: 1,
       }}
     >
-      <Typography variant="h6" gutterBottom>
+      <Typography variant="h5" gutterBottom>
         Create New Role
       </Typography>
 
@@ -275,7 +275,7 @@ const RoleCreationForm: React.FC<IRoleCreationFormProps> = ({
 
       <Divider />
       <Box display={"flex"} justifyContent={"space-between"} sx={{ mb: 1 }}>
-        <Typography variant="subtitle1" gutterBottom>
+        <Typography variant="h6" gutterBottom>
           Permissions
         </Typography>
         <FormControlLabel
@@ -320,7 +320,7 @@ const RoleCreationForm: React.FC<IRoleCreationFormProps> = ({
             <Box
               sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
             >
-              <Typography variant="subtitle2" fontWeight="medium">
+              <Typography variant="subtitle1" fontWeight="medium">
                 {group.groupName}
               </Typography>
               <FormControlLabel
