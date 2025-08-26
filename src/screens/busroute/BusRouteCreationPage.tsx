@@ -59,7 +59,7 @@ const BusRouteCreation = ({
   onClose,
 }: BusRouteCreationProps) => {
   console.log("landmarks.......", landmarks);
-  
+
   const dispatch = useAppDispatch();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localHour, setLocalHour] = useState<number>(6);
@@ -74,184 +74,201 @@ const BusRouteCreation = ({
   } = useForm<BusRouteFormInputs>();
 
   // Convert local time to UTC time string
-const convertLocalToUTC = (
-  hour: number,
-  minute: number,
-  period: string,
-  dayOffset: number = 0
-) => {
-  let istHour = hour;
-  if (period === "PM" && hour !== 12) istHour += 12;
-  if (period === "AM" && hour === 12) istHour = 0;
+  const convertLocalToUTC = (
+    hour: number,
+    minute: number,
+    period: string,
+    dayOffset: number = 0
+  ) => {
+    let istHour = hour;
+    if (period === "PM" && hour !== 12) istHour += 12;
+    if (period === "AM" && hour === 12) istHour = 0;
 
-  // Create IST date (Day 0)
-  const istDate = new Date(Date.UTC(1970, 0, 1 + dayOffset, istHour, minute, 0));
-
-  // Convert IST → UTC
-  istDate.setUTCHours(istDate.getUTCHours() - 5, istDate.getUTCMinutes() - 30);
-
-  return {
-    utcTime: istDate.toISOString().slice(11, 19) + "Z", // HH:MM:SSZ
-  };
-};
-
-const convertLocalToISTBaseDate = (
-  hour: number,
-  minute: number,
-  period: string,
-  dayOffset: number = 0
-): string => {
-  let istHour = hour;
-  if (period === "PM" && hour !== 12) istHour += 12;
-  if (period === "AM" && hour === 12) istHour = 0;
-
-  // Build IST Date
-  const istDate = new Date(1970, 0, 1 + dayOffset, istHour, minute, 0);
-
-  // Format as "1970-01-01 hh:mm AM/PM"
-  const options: Intl.DateTimeFormatOptions = {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: "Asia/Kolkata"
-  };
-  const formattedTime = istDate.toLocaleTimeString("en-IN", options);
-  return `1970-01-01 ${formattedTime}`;
-};
-
-useEffect(() => {
-  // 1. Keep UTC time for saving to DB
-  const { utcTime } = convertLocalToUTC(
-    localHour,
-    localMinute,
-    amPm,
-    startingDayOffset
-  );
-  setValue("starting_time", utcTime);
-console.log("utcTime startime........", utcTime);
-
-  // 2. Send IST (base date 1970-01-01) to Map Component
-  const istBaseDate = convertLocalToISTBaseDate(
-    localHour,
-    localMinute,
-    amPm,
-    startingDayOffset
-  );
-  onStartingTimeChange(istBaseDate);
-}, [localHour, localMinute, amPm, startingDayOffset, setValue, onStartingTimeChange]);
-const handleRouteCreation: SubmitHandler<BusRouteFormInputs> = async (data) => {
-  setIsSubmitting(true);
-
-  try {
-    // 1. Create the route
-    const routeFormData = new FormData();
-    routeFormData.append("name", data.name);
-    routeFormData.append("start_time", data.starting_time);
-    console.log("📦 FormData being sent:");
-    for (const [key, value] of routeFormData.entries()) {
-      console.log(`${key}: ${value}`);
-    }
-    const routeResponse = await dispatch(routeCreationApi(routeFormData)).unwrap();
-    const routeId = routeResponse.id;
-
-    // 2. Assume landmarks already have correct arrival/departure deltas
-    const sortedLandmarks = [...landmarks].sort(
-      (a, b) => (a.distance_from_start || 0) - (b.distance_from_start || 0)
+    // Create IST date (Day 0)
+    const istDate = new Date(
+      Date.UTC(1970, 0, 1 + dayOffset, istHour, minute, 0)
     );
 
-    // 3. Validate landmarks
-    const invalidLandmarks: { index: number; name: string; error: string }[] = [];
-    sortedLandmarks.forEach((landmark, index) => {
-      if (index > 0) {
-        if ((landmark.arrival_delta ?? 0) < 0) {
-          invalidLandmarks.push({
-            index,
-            name: landmark.name,
-            error: "Arrival time cannot be before route start time",
-          });
-          return;
-        }
+    // Convert IST → UTC
+    istDate.setUTCHours(
+      istDate.getUTCHours() - 5,
+      istDate.getUTCMinutes() - 30
+    );
 
-        if (
-          index < sortedLandmarks.length - 1 &&
-          (landmark.departure_delta ?? 0) < (landmark.arrival_delta ?? 0)
-        ) {
-          invalidLandmarks.push({
-            index,
-            name: landmark.name,
-            error: "Departure time must be after arrival time",
-          });
-        }
+    return {
+      utcTime: istDate.toISOString().slice(11, 19) + "Z", // HH:MM:SSZ
+    };
+  };
+
+  const convertLocalToISTBaseDate = (
+    hour: number,
+    minute: number,
+    period: string,
+    dayOffset: number = 0
+  ): string => {
+    let istHour = hour;
+    if (period === "PM" && hour !== 12) istHour += 12;
+    if (period === "AM" && hour === 12) istHour = 0;
+
+    // Build IST Date
+    const istDate = new Date(1970, 0, 1 + dayOffset, istHour, minute, 0);
+
+    // Format as "1970-01-01 hh:mm AM/PM"
+    const options: Intl.DateTimeFormatOptions = {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Kolkata",
+    };
+    const formattedTime = istDate.toLocaleTimeString("en-IN", options);
+    return `1970-01-01 ${formattedTime}`;
+  };
+
+  useEffect(() => {
+    // 1. Keep UTC time for saving to DB
+    const { utcTime } = convertLocalToUTC(
+      localHour,
+      localMinute,
+      amPm,
+      startingDayOffset
+    );
+    setValue("starting_time", utcTime);
+    console.log("utcTime startime........", utcTime);
+
+    // 2. Send IST (base date 1970-01-01) to Map Component
+    const istBaseDate = convertLocalToISTBaseDate(
+      localHour,
+      localMinute,
+      amPm,
+      startingDayOffset
+    );
+    onStartingTimeChange(istBaseDate);
+  }, [
+    localHour,
+    localMinute,
+    amPm,
+    startingDayOffset,
+    setValue,
+    onStartingTimeChange,
+  ]);
+  const handleRouteCreation: SubmitHandler<BusRouteFormInputs> = async (
+    data
+  ) => {
+    setIsSubmitting(true);
+
+    try {
+      // 1. Create the route
+      const routeFormData = new FormData();
+      routeFormData.append("name", data.name);
+      routeFormData.append("start_time", data.starting_time);
+      console.log("📦 FormData being sent:");
+      for (const [key, value] of routeFormData.entries()) {
+        console.log(`${key}: ${value}`);
       }
-    });
+      const routeResponse = await dispatch(
+        routeCreationApi(routeFormData)
+      ).unwrap();
+      const routeId = routeResponse.id;
 
-    // 4. Prepare valid landmarks for creation
-    const validLandmarkPromises = sortedLandmarks
-      .map((landmark, index) => {
-        if (invalidLandmarks.some((lm) => lm.index === index)) return null;
-
-        const landmarkFormData = new FormData();
-        landmarkFormData.append("route_id", routeId.toString());
-        landmarkFormData.append("landmark_id", landmark.id.toString());
-        landmarkFormData.append(
-          "distance_from_start",
-          landmark.distance_from_start?.toString() || "0"
-        );
-        landmarkFormData.append(
-          "arrival_delta",
-          landmark.arrival_delta?.toString() || "0"
-        );
-        landmarkFormData.append(
-          "departure_delta",
-          landmark.departure_delta?.toString() || "0"
-        );
-    for (const [key, value] of landmarkFormData.entries()) {
-      console.log(`${key}: ${value}`);
-    }
-        return dispatch(routeLandmarkCreationApi(landmarkFormData)).unwrap();
-      })
-      .filter(Boolean);
-
-    await Promise.all(validLandmarkPromises);
-
-    // 5. Notify user
-    if (invalidLandmarks.length > 0) {
-      const invalidNames = invalidLandmarks.map((lm) => lm.name).join(", ");
-      showSuccessToast(
-        `Route created, but some landmarks were skipped: ${invalidNames}`
+      // 2. Assume landmarks already have correct arrival/departure deltas
+      const sortedLandmarks = [...landmarks].sort(
+        (a, b) => (a.distance_from_start || 0) - (b.distance_from_start || 0)
       );
-    } else {
-      showSuccessToast("Route and all landmarks created successfully");
-    }
 
-    // 6. Cleanup
-    refreshList("refresh");
-    onSuccess();
-    if (onClearRoute) onClearRoute();
-    if (
-      mapRef.current?.toggleAddLandmarkMode &&
-      mapRef.current.isAddingLandmark
-    ) {
-      mapRef.current.toggleAddLandmarkMode();
-    }
-    if (onClose) onClose();
-  } catch (error: any) {
-    console.error("Error in route creation process:", error);
+      // 3. Validate landmarks
+      const invalidLandmarks: { index: number; name: string; error: string }[] =
+        [];
+      sortedLandmarks.forEach((landmark, index) => {
+        if (index > 0) {
+          if ((landmark.arrival_delta ?? 0) < 0) {
+            invalidLandmarks.push({
+              index,
+              name: landmark.name,
+              error: "Arrival time cannot be before route start time",
+            });
+            return;
+          }
 
-    if (error.message.includes("conflict")) {
-      showErrorToast(
-        "Route was created but there was an issue adding landmarks. Please check the route details."
-      );
+          if (
+            index < sortedLandmarks.length - 1 &&
+            (landmark.departure_delta ?? 0) < (landmark.arrival_delta ?? 0)
+          ) {
+            invalidLandmarks.push({
+              index,
+              name: landmark.name,
+              error: "Departure time must be after arrival time",
+            });
+          }
+        }
+      });
+
+      // 4. Prepare valid landmarks for creation
+      const validLandmarkPromises = sortedLandmarks
+        .map((landmark, index) => {
+          if (invalidLandmarks.some((lm) => lm.index === index)) return null;
+
+          const landmarkFormData = new FormData();
+          landmarkFormData.append("route_id", routeId.toString());
+          landmarkFormData.append("landmark_id", landmark.id.toString());
+          landmarkFormData.append(
+            "distance_from_start",
+            landmark.distance_from_start?.toString() || "0"
+          );
+          landmarkFormData.append(
+            "arrival_delta",
+            landmark.arrival_delta?.toString() || "0"
+          );
+          landmarkFormData.append(
+            "departure_delta",
+            landmark.departure_delta?.toString() || "0"
+          );
+          for (const [key, value] of landmarkFormData.entries()) {
+            console.log(`${key}: ${value}`);
+          }
+          return dispatch(routeLandmarkCreationApi(landmarkFormData)).unwrap();
+        })
+        .filter(Boolean);
+
+      await Promise.all(validLandmarkPromises);
+
+      // 5. Notify user
+      if (invalidLandmarks.length > 0) {
+        const invalidNames = invalidLandmarks.map((lm) => lm.name).join(", ");
+        showSuccessToast(
+          `Route created, but some landmarks were skipped: ${invalidNames}`
+        );
+      } else {
+        showSuccessToast("Route and all landmarks created successfully");
+      }
+
+      // 6. Cleanup
       refreshList("refresh");
       onSuccess();
+      if (onClearRoute) onClearRoute();
+      if (
+        mapRef.current?.toggleAddLandmarkMode &&
+        mapRef.current.isAddingLandmark
+      ) {
+        mapRef.current.toggleAddLandmarkMode();
+      }
       if (onClose) onClose();
-    } else {
-      showErrorToast(error.message || "Failed to create route and landmarks");
+    } catch (error: any) {
+      console.error("Error in route creation process:", error);
+
+      if (error.message.includes("conflict")) {
+        showErrorToast(
+          "Route was created but there was an issue adding landmarks. Please check the route details."
+        );
+        refreshList("refresh");
+        onSuccess();
+        if (onClose) onClose();
+      } else {
+        showErrorToast(error.message || "Failed to create route and landmarks");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   function formatTimeForDisplayIST(isoString: string, showDayLabel = true) {
     const date = new Date(isoString);
@@ -338,52 +355,60 @@ const handleRouteCreation: SubmitHandler<BusRouteFormInputs> = async (data) => {
         <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
           Starting Time (IST)
         </Typography>
-        <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-          {/* Hour */}
-          <FormControl fullWidth size="small">
-            <InputLabel>Hour</InputLabel>
-            <Select
-              value={localHour}
-              onChange={(e) => setLocalHour(Number(e.target.value))}
-              label="Hour"
-            >
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
-                <MenuItem key={h} value={h}>
-                  {h.toString().padStart(2, "0")}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+        <Tooltip
+          title={
+            landmarks.length > 0
+              ? "Remove all landmarks to change starting time"
+              : ""
+          }
+        >
+          <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+            {/* Hour */}
+            <FormControl fullWidth size="small" disabled={landmarks.length > 0}>
+              <InputLabel>Hour</InputLabel>
+              <Select
+                value={localHour}
+                onChange={(e) => setLocalHour(Number(e.target.value))}
+                label="Hour"
+              >
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                  <MenuItem key={h} value={h}>
+                    {h.toString().padStart(2, "0")}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-          {/* Minute */}
-          <FormControl fullWidth size="small">
-            <InputLabel>Minute</InputLabel>
-            <Select
-              value={localMinute}
-              onChange={(e) => setLocalMinute(Number(e.target.value))}
-              label="Minute"
-            >
-              {Array.from({ length: 60 }, (_, i) => i).map((m) => (
-                <MenuItem key={m} value={m}>
-                  {String(m).padStart(2, "0")}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+            {/* Minute */}
+            <FormControl fullWidth size="small" disabled={landmarks.length > 0}>
+              <InputLabel>Minute</InputLabel>
+              <Select
+                value={localMinute}
+                onChange={(e) => setLocalMinute(Number(e.target.value))}
+                label="Minute"
+              >
+                {Array.from({ length: 60 }, (_, i) => i).map((m) => (
+                  <MenuItem key={m} value={m}>
+                    {String(m).padStart(2, "0")}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-          {/* AM/PM */}
-          <FormControl fullWidth size="small">
-            <InputLabel>AM/PM</InputLabel>
-            <Select
-              value={amPm}
-              onChange={(e) => setAmPm(e.target.value as string)}
-              label="AM/PM"
-            >
-              <MenuItem value="AM">AM</MenuItem>
-              <MenuItem value="PM">PM</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
+            {/* AM/PM */}
+            <FormControl fullWidth size="small" disabled={landmarks.length > 0}>
+              <InputLabel>AM/PM</InputLabel>
+              <Select
+                value={amPm}
+                onChange={(e) => setAmPm(e.target.value as string)}
+                label="AM/PM"
+              >
+                <MenuItem value="AM">AM</MenuItem>
+                <MenuItem value="PM">PM</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        </Tooltip>
         <Typography variant="subtitle1" sx={{ mt: 3, mb: 1 }}>
           Route Landmark List
         </Typography>
@@ -490,13 +515,18 @@ const handleRouteCreation: SubmitHandler<BusRouteFormInputs> = async (data) => {
                                   alignItems: "center",
                                   mt: 0.5,
                                   fontSize: "0.7rem",
-                                  color: "text.secondary",
+                                  fontWeight: 600,
+                                  color: "primary.main",
                                 }}
                               >
                                 <DirectionsIcon
                                   sx={{ fontSize: "0.8rem", mr: 0.5 }}
                                 />
-                                {landmark.distance_from_start}m
+                                {landmark.distance_from_start >= 1000
+                                  ? `${Math.round(
+                                      landmark.distance_from_start / 1000
+                                    )}km`
+                                  : `${landmark.distance_from_start}m`}
                               </Box>
                             )}
                           </Box>
