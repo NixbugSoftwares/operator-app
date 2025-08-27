@@ -487,14 +487,13 @@ const StatementListingPage = () => {
                   <TableHead>
                     <TableRow>
                       <TableCell
+                        padding="checkbox"
                         sx={{
-                          textAlign: "center",
                           backgroundColor: "#fafafa",
                           fontWeight: 600,
                           fontSize: "0.875rem",
                           borderBottom: "1px solid #ddd",
                         }}
-                        padding="checkbox"
                       >
                         <Checkbox
                           indeterminate={
@@ -520,7 +519,6 @@ const StatementListingPage = () => {
                       </TableCell>
                       <TableCell
                         sx={{
-                          textAlign: "center",
                           backgroundColor: "#fafafa",
                           fontWeight: 600,
                           fontSize: "0.875rem",
@@ -531,7 +529,6 @@ const StatementListingPage = () => {
                       </TableCell>
                       <TableCell
                         sx={{
-                          textAlign: "center",
                           backgroundColor: "#fafafa",
                           fontWeight: 600,
                           fontSize: "0.875rem",
@@ -542,7 +539,6 @@ const StatementListingPage = () => {
                       </TableCell>
                       <TableCell
                         sx={{
-                          textAlign: "center",
                           backgroundColor: "#fafafa",
                           fontWeight: 600,
                           fontSize: "0.875rem",
@@ -576,7 +572,14 @@ const StatementListingPage = () => {
                             "Cannot generate statement for services in Started or Created state";
 
                           return (
-                            <TableRow key={service.id}>
+                            <TableRow
+                              key={service.id}
+                              hover
+                              sx={{ cursor: canSelect ? "pointer" : "default" }}
+                              onClick={() =>
+                                canSelect && handleServiceSelection(service.id)
+                              }
+                            >
                               <TableCell padding="checkbox">
                                 {canSelect ? (
                                   <Checkbox
@@ -597,13 +600,9 @@ const StatementListingPage = () => {
                                   </Tooltip>
                                 )}
                               </TableCell>
-                              <TableCell align="center">
-                                {service.name}
-                              </TableCell>
-                              <TableCell align="center">
-                                {service.routeName}
-                              </TableCell>
-                              <TableCell sx={{ textAlign: "center" }}>
+                              <TableCell>{service.name}</TableCell>
+                              <TableCell>{service.routeName}</TableCell>
+                              <TableCell>
                                 <Chip
                                   label={service.status}
                                   size="small"
