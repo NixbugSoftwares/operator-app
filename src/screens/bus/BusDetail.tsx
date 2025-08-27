@@ -190,7 +190,7 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
                 : "Not added yet"}
             </Typography>
             <Typography variant="body2" color="textSecondary">
-              <b>Road tax Upto:</b>{" "}
+              <b>Road Tax Upto:</b>{" "}
               {moment(bus?.road_tax_upto).isValid()
                 ? moment(bus.road_tax_upto).local().format("DD-MM-YYYY")
                 : "Not added yet"}

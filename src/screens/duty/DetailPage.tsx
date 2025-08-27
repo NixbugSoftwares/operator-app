@@ -59,6 +59,11 @@ const statusMap: Record<string, { label: string; color: string; bg: string }> =
       color: "#616161",
       bg: "rgba(158, 158, 158, 0.12)",
     }, // Grey
+    Discarded: {
+      label: "Discarded",
+      color: "#616161",
+      bg: "rgba(158, 158, 158, 0.12)",
+    },
   };
 const DutyDetailsCard: React.FC<DutyCardProps> = ({
   duty,

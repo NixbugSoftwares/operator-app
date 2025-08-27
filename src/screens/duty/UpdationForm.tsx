@@ -43,6 +43,7 @@ const statusOptions = [
   { label: "Started", value: 2 },
   { label: "Terminated", value: 3 },
   { label: "Ended", value: 4 },
+  { label: "Discarded", value: 5 },
 ];
 
 

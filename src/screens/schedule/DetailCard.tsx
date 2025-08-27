@@ -286,7 +286,7 @@ const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
               <DateRangeOutlinedIcon color="action" sx={{ mr: 1 }} />
 
               <Typography variant="body2">
-                <b> Created at:</b>
+                <b> Created At:</b>
                 {moment(schedule.created_on)
                   .local()
                   .format("DD-MM-YYYY, hh:mm A")}
@@ -296,7 +296,7 @@ const ScheduleDetailsCard: React.FC<ServiceCardProps> = ({
               <DateRangeOutlinedIcon color="action" sx={{ mr: 1 }} />
 
               <Typography variant="body2">
-                <b> Last updated at:</b>
+                <b> Last Updated At:</b>
                 {moment(schedule?.updated_on).isValid()
                   ? moment(schedule.updated_on)
                       .local()

@@ -407,7 +407,7 @@ const BusListingTable = () => {
                       borderBottom: "1px solid #ddd",
                     }}
                   >
-                    Maximum Capacity
+                     Capacity
                   </TableCell>
                 )}
                 {visibleColumns.status && (
