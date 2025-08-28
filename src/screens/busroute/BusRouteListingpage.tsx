@@ -272,6 +272,31 @@ const BusRouteListing = () => {
       fetchRoute(page, debouncedSearch);
     }
   };
+  const formatStartTimeToIST = (utcTime: string) => {
+    // Remove the 'Z' if present and parse as UTC
+    const cleanUtcTime = utcTime.endsWith("Z") ? utcTime.slice(0, -1) : utcTime;
+    const [hours, minutes, seconds] = cleanUtcTime.split(":").map(Number);
+
+    // Create a date in UTC
+    const utcDate = new Date(
+      Date.UTC(1970, 0, 1, hours, minutes, seconds || 0)
+    );
+
+    // Add 5 hours 30 minutes to convert to IST
+    const istDate = new Date(utcDate.getTime() + (5 * 60 + 30) * 60 * 1000);
+
+    // Extract IST components
+    let istHours = istDate.getUTCHours();
+    const istMinutes = istDate.getUTCMinutes();
+
+    // Convert to 12-hour format with AM/PM
+    const period = istHours >= 12 ? "PM" : "AM";
+    const displayHours = istHours % 12 || 12;
+
+    return `1970-01-01 ${displayHours}:${istMinutes
+      .toString()
+      .padStart(2, "0")} ${period}`;
+  };
   return (
     <Box
       sx={{
@@ -299,7 +324,7 @@ const BusRouteListing = () => {
           <BusRouteDetailsPage
             routeId={selectedRoute.id}
             routeName={selectedRoute.name}
-            routeStartingTime={`1970-01-01T${selectedRoute.start_time}`}
+            routeStartingTime={formatStartTimeToIST(selectedRoute.start_time)}
             refreshList={(value: any) => refreshList(value)}
             onBack={() => {
               setSelectedRoute(null);
@@ -308,6 +333,7 @@ const BusRouteListing = () => {
               if (mapRef.current) {
                 mapRef.current.clearRoutePath();
               }
+              refreshList("refresh");
             }}
             onLandmarksUpdate={setMapLandmarks}
             onEnableAddLandmark={() => {
@@ -620,7 +646,9 @@ const BusRouteListing = () => {
           selectedLandmarks={isEditingRoute ? newRouteLandmarks : landmarks}
           startingTime={routeStartingTime}
           routeId={selectedRoute?.id}
-          selectedRouteStartingTime={selectedRoute?.start_time}
+          selectedRouteStartingTime={formatStartTimeToIST(
+            selectedRoute?.start_time || ""
+          )}
           onLandmarkAdded={() => setNewLandmarkTrigger(true)}
         />
       </Box>

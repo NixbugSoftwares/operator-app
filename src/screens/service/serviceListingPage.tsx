@@ -4,6 +4,7 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Dialog,
   MenuItem,
   Select,
   Table,
@@ -231,6 +232,10 @@ const ServiceListingTable = () => {
               ml: "auto",
               mr: 2,
               mb: 2,
+              px: 1.5, // Reduce horizontal padding
+                py: 0.5, // Reduce vertical padding
+                fontSize: "0.75rem", // Smaller font
+                height: 36, // Match Select height
               backgroundColor: !canCreateService
                 ? "#6c87b7 !important"
                 : "#00008B",
@@ -248,7 +253,7 @@ const ServiceListingTable = () => {
         )}
 
         <TableContainer
-          sx={{
+           sx={{
             flex: 1,
             maxHeight: "calc(100vh - 100px)",
             overflowY: "auto",
@@ -466,14 +471,13 @@ const ServiceListingTable = () => {
       {selectedService && (
         <Box
           sx={{
-            flex: { xs: "0 0 100%", md: "0 0 35%" },
-            maxWidth: { xs: "100%", md: "35%" },
+            display: { xs: "none", lg: "block" }, // ✅ Only show on large screens
+            flex: "0 0 35%",
+            maxWidth: "35%",
             transition: "all 0.3s ease",
             bgcolor: "grey.100",
             p: 2,
-            mt: { xs: 2, md: 0 },
             overflowY: "auto",
-            overflowX: "hidden",
             height: "100%",
           }}
         >
@@ -487,6 +491,26 @@ const ServiceListingTable = () => {
           />
         </Box>
       )}
+      {/* 🔹 Dialog for Mobile/Tablet */}
+            <Dialog
+              open={Boolean(selectedService)}
+              onClose={() => setSelectedService(null)}
+              fullScreen
+              sx={{ display: { xs: "block", lg: "none" } }} // ✅ Show on mobile + tablet
+            >
+              {selectedService && (
+                <Box sx={{ p: 2 }}>
+                  <ServiceDetailsCard
+                    service={selectedService}
+                    onUpdate={() => {}}
+                    onDelete={() => {}}
+                    onBack={() => setSelectedService(null)}
+                    refreshList={(value: any) => refreshList(value)}
+                    onCloseDetailCard={() => setSelectedService(null)}
+                  />
+                </Box>
+              )}
+            </Dialog>
 
       <FormModal
         open={openCreateModal}

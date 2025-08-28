@@ -4,6 +4,7 @@ import {
   Button,
   Checkbox,
   CircularProgress,
+  Dialog,
   ListItemText,
   MenuItem,
   Select,
@@ -87,7 +88,7 @@ const BusListingTable = () => {
     },
     {
       id: "capacity",
-      label: "Capacity Up To",
+      label: "Maximum Capacity",
       width: "120px",
       minWidth: "120px",
       fixed: true,
@@ -106,25 +107,25 @@ const BusListingTable = () => {
     },
     {
       id: "insurance_upto",
-      label: "Insurance Upto",
+      label: "Insurance Up To",
       width: "150px",
       minWidth: "150px",
     },
     {
       id: "pollution_upto",
-      label: "Pollution Upto",
+      label: "Pollution Up To",
       width: "150px",
       minWidth: "150px",
     },
     {
       id: "fitness_upto",
-      label: "Fitness Upto",
+      label: "Fitness Up To",
       width: "150px",
       minWidth: "150px",
     },
     {
       id: "road_tax_upto",
-      label: "Road Tax Upto",
+      label: "Road Tax Up To",
       width: "150px",
       minWidth: "150px",
     },
@@ -221,7 +222,7 @@ const BusListingTable = () => {
   );
 
   useEffect(() => {
-    const statusBackendValue=getStatusBackendValue(debouncedSearch.status);
+    const statusBackendValue = getStatusBackendValue(debouncedSearch.status);
     const searchParams: any = {
       ...(debouncedSearch.id && { id: debouncedSearch.id }),
       ...(debouncedSearch.registrationNumber && {
@@ -245,7 +246,7 @@ const BusListingTable = () => {
     <Box
       sx={{
         display: "flex",
-        flexDirection: { xs: "column", md: "row" },
+        flexDirection: { xs: "column", lg: "row" }, // ✅ Use lg for side panel
         width: "100%",
         height: "100%",
         gap: 2,
@@ -253,8 +254,8 @@ const BusListingTable = () => {
     >
       <Box
         sx={{
-          flex: selectedBus ? { xs: "0 0 100%", md: "0 0 65%" } : "0 0 100%",
-          maxWidth: selectedBus ? { xs: "100%", md: "65%" } : "100%",
+          flex: selectedBus ? { xs: "0 0 100%", lg: "0 0 65%" } : "0 0 100%",
+          maxWidth: selectedBus ? { xs: "100%", lg: "65%" } : "100%",
           transition: "all 0.3s ease",
           height: "100%",
           display: "flex",
@@ -265,23 +266,33 @@ const BusListingTable = () => {
         <Box
           sx={{
             display: "flex",
-            justifyContent: "right",
+            justifyContent: "flex-end",
             alignItems: "center",
             mb: 2,
-            gap: 2,
+            gap: 1,
+            flexWrap: "nowrap", // Force one line
           }}
         >
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box
+            sx={{
+              flexShrink: 0,
+              width: { xs: "50%", md: "auto" },
+            }}
+          >
             <Select
               multiple
               value={Object.keys(visibleColumns).filter(
                 (key) => visibleColumns[key]
               )}
               onChange={handleColumnChange}
-              renderValue={(selected) =>
-                `Selected Columns (${selected.length})`
-              }
-              sx={{ minWidth: 200, height: 40 }}
+              renderValue={(selected) => `Columns (${selected.length})`}
+              size="small"
+              sx={{
+                minWidth: { xs: "120px", sm: "160px", md: "200px" },
+                height: 36,
+                fontSize: "0.75rem",
+                "& .MuiSelect-select": { py: 0.5 },
+              }}
             >
               {columnConfig.map((column) => (
                 <MenuItem
@@ -304,15 +315,21 @@ const BusListingTable = () => {
 
           {canCreateBus && (
             <Button
+              variant="contained"
+              onClick={() => setOpenCreateModal(true)}
               sx={{
+                flexShrink: 0,
+                minWidth: "fit-content",
+                px: 1.5, // Reduce horizontal padding
+                py: 0.5, // Reduce vertical padding
+                fontSize: "0.75rem", // Smaller font
+                height: 36, // Match Select height
                 backgroundColor: "#00008B",
                 color: "white !important",
                 "&.Mui-disabled": {
                   color: "#fff !important",
                 },
               }}
-              variant="contained"
-              onClick={() => setOpenCreateModal(true)}
             >
               Add New Bus
             </Button>
@@ -407,7 +424,7 @@ const BusListingTable = () => {
                       borderBottom: "1px solid #ddd",
                     }}
                   >
-                    Capacity Up To
+                    Capacity
                   </TableCell>
                 )}
                 {visibleColumns.status && (
@@ -454,7 +471,7 @@ const BusListingTable = () => {
                       borderBottom: "1px solid #ddd",
                     }}
                   >
-                    Insurance Upto
+                    Insurance Up To
                   </TableCell>
                 )}
                 {visibleColumns.pollution_upto && (
@@ -469,7 +486,7 @@ const BusListingTable = () => {
                       borderBottom: "1px solid #ddd",
                     }}
                   >
-                    Pollution Upto
+                    Pollution Up To
                   </TableCell>
                 )}
                 {visibleColumns.fitness_upto && (
@@ -484,7 +501,7 @@ const BusListingTable = () => {
                       borderBottom: "1px solid #ddd",
                     }}
                   >
-                    Fitness Upto
+                    Fitness Up To
                   </TableCell>
                 )}
                 {visibleColumns.road_tax_upto && (
@@ -499,7 +516,7 @@ const BusListingTable = () => {
                       borderBottom: "1px solid #ddd",
                     }}
                   >
-                    Road Tax Upto
+                    Road Tax Up To
                   </TableCell>
                 )}
               </TableRow>
@@ -733,18 +750,17 @@ const BusListingTable = () => {
           hasNextPage={hasNextPage}
         />
       </Box>
-      {/* Right Side - Bus Details Card */}
+      {/* 🔹 Right Side Details (Large Screens) */}
       {selectedBus && (
         <Box
           sx={{
-            flex: { xs: "0 0 100%", md: "0 0 35%" },
-            maxWidth: { xs: "100%", md: "35%" },
+            display: { xs: "none", lg: "block" }, // ✅ Only show on large screens
+            flex: "0 0 35%",
+            maxWidth: "35%",
             transition: "all 0.3s ease",
             bgcolor: "grey.100",
             p: 2,
-            mt: { xs: 2, md: 0 },
             overflowY: "auto",
-            overflowX: "hidden",
             height: "100%",
           }}
         >
@@ -759,7 +775,28 @@ const BusListingTable = () => {
         </Box>
       )}
 
-      {/* Create Bus Modal */}
+      {/* 🔹 Dialog for Mobile/Tablet */}
+      <Dialog
+        open={Boolean(selectedBus)}
+        onClose={() => setSelectedBus(null)}
+        fullScreen
+        sx={{ display: { xs: "block", lg: "none" } }} // ✅ Show on mobile + tablet
+      >
+        {selectedBus && (
+          <Box sx={{ p: 2 }}>
+            <BusDetailsCard
+              bus={selectedBus}
+              onUpdate={() => {}}
+              onDelete={() => {}}
+              onBack={() => setSelectedBus(null)}
+              refreshList={(value: any) => refreshList(value)}
+              onCloseDetailCard={() => setSelectedBus(null)}
+            />
+          </Box>
+        )}
+      </Dialog>
+
+      {/* 🔹 Create Bus Modal */}
       <FormModal
         open={openCreateModal}
         onClose={() => setOpenCreateModal(false)}

@@ -11,6 +11,7 @@ import {
   MenuItem,
   Autocomplete,
   Alert,
+  Stack,
 } from "@mui/material";
 import { useAppDispatch } from "../../store/Hooks";
 import {
@@ -39,6 +40,8 @@ const ticketModeOptions = [
 interface DropdownItem {
   id: number;
   name: string;
+  start_time?: string;
+  formattedTime?: string;
 }
 
 const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
@@ -70,6 +73,11 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
 
   const rowsPerPage = 10;
 
+  // Time dropdown states
+  const [selectedHour, setSelectedHour] = useState<number>(12);
+  const [selectedMinute, setSelectedMinute] = useState<number>(0);
+  const [selectedAmPm, setSelectedAmPm] = useState<"AM" | "PM">("AM");
+
   const {
     register,
     handleSubmit,
@@ -83,19 +91,9 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
     },
   });
 
-  // Memoize dropdown lists to prevent unnecessary re-renders
-  const memoizedBusList = useMemo(
-    () => dropdownData.busList,
-    [dropdownData.busList]
-  );
-  const memoizedRouteList = useMemo(
-    () => dropdownData.routeList,
-    [dropdownData.routeList]
-  );
-  const memoizedFareList = useMemo(
-    () => dropdownData.fareList,
-    [dropdownData.fareList]
-  );
+  const memoizedBusList = useMemo(() => dropdownData.busList, [dropdownData.busList]);
+  const memoizedRouteList = useMemo(() => dropdownData.routeList, [dropdownData.routeList]);
+  const memoizedFareList = useMemo(() => dropdownData.fareList, [dropdownData.fareList]);
 
   const fetchBusList = useCallback(
     (pageNumber: number, searchText = "") => {
@@ -117,15 +115,9 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
           }));
           setDropdownData((prev) => ({
             ...prev,
-            busList:
-              pageNumber === 0
-                ? formattedBusList
-                : [...prev.busList, ...formattedBusList],
+            busList: pageNumber === 0 ? formattedBusList : [...prev.busList, ...formattedBusList],
           }));
-          setHasMore((prev) => ({
-            ...prev,
-            bus: items.length === rowsPerPage,
-          }));
+          setHasMore((prev) => ({ ...prev, bus: items.length === rowsPerPage }));
         })
         .catch((error) => {
           showErrorToast(error.message || "Failed to fetch Bus list");
@@ -135,37 +127,46 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
   );
 
   const fetchFareList = useCallback(
-  async (pageNumber: number, searchText = "") => {
-    const offset = pageNumber * rowsPerPage;
-    try {
-      const res = await dispatch(
-        fareListApi({
-          limit: rowsPerPage,
-          offset,
-          name: searchText,
-        })
-      ).unwrap();
+    async (pageNumber: number, searchText = "") => {
+      const offset = pageNumber * rowsPerPage;
+      try {
+        const res = await dispatch(
+          fareListApi({
+            limit: rowsPerPage,
+            offset,
+            name: searchText,
+          })
+        ).unwrap();
 
-      const fares = res.data || [];
+        const fares = res.data || [];
+        const formattedFareList = fares.map((fare: any) => ({
+          id: fare.id,
+          name: fare.name ?? "-",
+        }));
 
-      const formattedFareList = fares.map((fare: any) => ({
-        id: fare.id,
-        name: fare.name ?? "-",
-      }));
+        setDropdownData((prev) => ({
+          ...prev,
+          fareList: pageNumber === 0 ? formattedFareList : [...prev.fareList, ...formattedFareList],
+        }));
+      } catch (error: any) {
+        showErrorToast(error.message || "Failed to fetch Fare list");
+      }
+    },
+    [dispatch, rowsPerPage]
+  );
 
-      setDropdownData((prev) => ({
-        ...prev,
-        fareList:
-          pageNumber === 0
-            ? formattedFareList
-            : [...prev.fareList, ...formattedFareList],
-      }));
-    } catch (error: any) {
-      showErrorToast(error.message || "Failed to fetch Fare list");
-    }
-  },
-  [dispatch, rowsPerPage]
-);
+  const convertUtcToIstTimeInput = (utcTime: string): string => {
+    if (!utcTime) return "";
+    const normalized = utcTime.endsWith("Z") ? utcTime : `${utcTime}Z`;
+    const utcDate = new Date(`1970-01-01T${normalized}`);
+    return utcDate
+      .toLocaleTimeString("en-US", {
+        timeZone: "Asia/Kolkata",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+  };
 
   const fetchRouteList = useCallback(
     (pageNumber: number, searchText = "") => {
@@ -184,18 +185,15 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
           const formattedList = items.map((item: any) => ({
             id: item.id,
             name: item.name ?? "-",
+            start_time: item.start_time,
+            formattedTime: item.start_time ? convertUtcToIstTimeInput(item.start_time) : "",
           }));
+
           setDropdownData((prev) => ({
             ...prev,
-            routeList:
-              pageNumber === 0
-                ? formattedList
-                : [...prev.routeList, ...formattedList],
+            routeList: pageNumber === 0 ? formattedList : [...prev.routeList, ...formattedList],
           }));
-          setHasMore((prev) => ({
-            ...prev,
-            route: items.length === rowsPerPage,
-          }));
+          setHasMore((prev) => ({ ...prev, route: items.length === rowsPerPage }));
         })
         .catch((error: any) => {
           showErrorToast(error.message || "Failed to fetch Route list");
@@ -210,37 +208,54 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
     fetchRouteList(0);
   }, [fetchBusList, fetchFareList, fetchRouteList]);
 
+  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+  const combineDateAndIstTimeToUtcIso = (dateStr: string): string => {
+    if (!dateStr) throw new Error("Missing date");
+    let hour = selectedHour % 12; // convert 12 to 0
+    if (selectedAmPm === "PM") hour += 12;
+    const [y, m, d] = dateStr.split("-").map((v) => parseInt(v, 10));
+
+    const utcMs = Date.UTC(y, m - 1, d, hour, selectedMinute) - IST_OFFSET_MS;
+    return new Date(utcMs).toISOString();
+  };
+
   const handleServiceCreation: SubmitHandler<Service> = async (data) => {
     try {
       setLoading(true);
-      const formatDateToUTC = (dateString: string | null): string | null => {
-        if (!dateString) return null;
-        const date = new Date(dateString);
-        const year = date.getUTCFullYear();
-        const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-        const day = String(date.getUTCDate()).padStart(2, "0");
-        return `${year}-${month}-${day}`; // "YYYY-MM-DD"
-      };
+
+      if (!data.route_id) {
+        showErrorToast("Please select a route");
+        setLoading(false);
+        return;
+      }
+
+      let datetimeIso: string;
+      try {
+        datetimeIso = combineDateAndIstTimeToUtcIso(data.starting_at!);
+      } catch {
+        showErrorToast("Invalid date or time");
+        setLoading(false);
+        return;
+      }
 
       const formData = new FormData();
       formData.append("route", data.route_id.toString());
       formData.append("bus_id", data.bus_id.toString());
       formData.append("fare", data.fare_id.toString());
-      formData.append("starting_at", formatDateToUTC(data.starting_at) || "");
-
+      formData.append("starting_at", datetimeIso);
       formData.append("ticket_mode", data.ticket_mode.toString());
 
       const response = await dispatch(serviceCreationApi(formData)).unwrap();
-
       if (response?.id) {
         showSuccessToast("Service created successfully!");
         refreshList("refresh");
         onClose();
       } else {
-        showErrorToast("Service creation failed. Please try again.");
+        showErrorToast("Service creation failed");
       }
     } catch (error: any) {
-      showErrorToast(error.message || "Something went wrong. Please try again.");
+      showErrorToast(error.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -271,7 +286,22 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
       }
     }
   };
-  const today = new Date().toISOString().split("T")[0];
+
+  const today = new Date();
+  const tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
+  const todayStr = today.toISOString().split("T")[0];
+  const tomorrowStr = tomorrow.toISOString().split("T")[0];
+
+  // Update dropdowns when route changes
+  const updateTimeDropdowns = (formattedTime: string) => {
+    if (!formattedTime) return;
+    const [time, meridiem] = formattedTime.split(" ");
+    const [h, m] = time.split(":").map(Number);
+    setSelectedHour(h);
+    setSelectedMinute(m);
+    setSelectedAmPm(meridiem as "AM" | "PM");
+  };
 
   return (
     <Container component="main" maxWidth="xs">
@@ -298,6 +328,7 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
           sx={{ mt: 1 }}
           onSubmit={handleSubmit(handleServiceCreation)}
         >
+          {/* ROUTE */}
           <Controller
             name="route_id"
             control={control}
@@ -307,18 +338,15 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
                 options={memoizedRouteList}
                 getOptionLabel={(option) => option.name}
                 isOptionEqualToValue={(option, value) => option.id === value.id}
-                value={
-                  memoizedRouteList.find((item) => item.id === field.value) ||
-                  null
-                }
+                value={memoizedRouteList.find((item) => item.id === field.value) || null}
                 onChange={(_, newValue) => {
                   field.onChange(newValue?.id);
+                  if (newValue?.formattedTime) {
+                    updateTimeDropdowns(newValue.formattedTime);
+                  }
                 }}
                 onInputChange={(_, newInputValue) => {
-                  setSearchParams((prev) => ({
-                    ...prev,
-                    route: newInputValue,
-                  }));
+                  setSearchParams((prev) => ({ ...prev, route: newInputValue }));
                   setPage((prev) => ({ ...prev, route: 0 }));
                   fetchRouteList(0, newInputValue);
                 }}
@@ -340,6 +368,7 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
             )}
           />
 
+          {/* BUS */}
           <Controller
             name="bus_id"
             control={control}
@@ -349,13 +378,8 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
                 options={memoizedBusList}
                 getOptionLabel={(option) => option.name}
                 isOptionEqualToValue={(option, value) => option.id === value.id}
-                value={
-                  memoizedBusList.find((item) => item.id === field.value) ||
-                  null
-                }
-                onChange={(_, newValue) => {
-                  field.onChange(newValue?.id);
-                }}
+                value={memoizedBusList.find((item) => item.id === field.value) || null}
+                onChange={(_, newValue) => field.onChange(newValue?.id)}
                 onInputChange={(_, newInputValue) => {
                   setSearchParams((prev) => ({ ...prev, bus: newInputValue }));
                   setPage((prev) => ({ ...prev, bus: 0 }));
@@ -379,34 +403,25 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
             )}
           />
 
+          {/* FARE */}
           <Controller
             name="fare_id"
             control={control}
             rules={{ required: "Fare is required" }}
             render={({ field }) => {
-              // Find the selected fare in the list, or create a fallback object if not found
               const selectedFare =
                 memoizedFareList.find((item) => item.id === field.value) ||
-                (field.value
-                  ? { id: field.value, name: "Selected Fare" }
-                  : null);
+                (field.value ? { id: field.value, name: "Selected Fare" } : null);
 
               return (
                 <Autocomplete
                   options={memoizedFareList}
                   getOptionLabel={(option) => option.name}
-                  isOptionEqualToValue={(option, value) =>
-                    option.id === value.id
-                  }
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
                   value={selectedFare}
-                  onChange={(_, newValue) => {
-                    field.onChange(newValue?.id);
-                  }}
+                  onChange={(_, newValue) => field.onChange(newValue?.id)}
                   onInputChange={(_, newInputValue) => {
-                    setSearchParams((prev) => ({
-                      ...prev,
-                      fare: newInputValue,
-                    }));
+                    setSearchParams((prev) => ({ ...prev, fare: newInputValue }));
                     setPage((prev) => ({ ...prev, fare: 0 }));
                     fetchFareList(0, newInputValue);
                   }}
@@ -429,32 +444,70 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
             }}
           />
 
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            label="Starting Date"
-            type="date"
-            InputLabelProps={{ shrink: true }}
-            {...register("starting_at", {
-              required: "Starting date is required",
-              validate: (value) => {
-                const selectedDate = new Date(value);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                return (
-                  selectedDate >= today || "Date must be today or in the future"
-                );
-              },
-            })}
-            error={!!errors.starting_at}
-            helperText={errors.starting_at?.message}
-            size="small"
-            inputProps={{
-              min: today,
-            }}
-          />
+         {/* DATE AND TIME IN ONE LINE */}
+<Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+  {/* DATE PICKER */}
+  <TextField
+    required
+    label="Starting Date"
+    type="date"
+    size="small"
+    InputLabelProps={{ shrink: true }}
+    {...register("starting_at", { required: "Starting date is required" })}
+    error={!!errors.starting_at}
+    helperText={errors.starting_at?.message}
+    inputProps={{ min: todayStr, max: tomorrowStr }}
+    sx={{ flex: 2 }} // Make date field larger
+  />
 
+  {/* HOUR */}
+  <TextField
+    select
+    size="small"
+    label="Hour"
+    value={selectedHour}
+    onChange={(e) => setSelectedHour(Number(e.target.value))}
+    sx={{ flex: 1 }}
+  >
+    {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+      <MenuItem key={h} value={h}>
+        {h}
+      </MenuItem>
+    ))}
+  </TextField>
+
+  {/* MINUTE */}
+  <TextField
+    select
+    size="small"
+    label="Minute"
+    value={selectedMinute}
+    onChange={(e) => setSelectedMinute(Number(e.target.value))}
+    sx={{ flex: 1 }}
+  >
+    {Array.from({ length: 60 }, (_, i) => i).map((m) => (
+      <MenuItem key={m} value={m}>
+        {m.toString().padStart(2, "0")}
+      </MenuItem>
+    ))}
+  </TextField>
+
+  {/* AM/PM */}
+  <TextField
+    select
+    size="small"
+    label="AM/PM"
+    value={selectedAmPm}
+    onChange={(e) => setSelectedAmPm(e.target.value as "AM" | "PM")}
+    sx={{ flex: 1 }}
+  >
+    <MenuItem value="AM">AM</MenuItem>
+    <MenuItem value="PM">PM</MenuItem>
+  </TextField>
+</Stack>
+
+
+          {/* TICKET MODE */}
           <Controller
             name="ticket_mode"
             control={control}
@@ -486,11 +539,7 @@ const ServiceCreationForm: React.FC<IOperatorCreationFormProps> = ({
             sx={{ mt: 3, mb: 2, bgcolor: "darkblue" }}
             disabled={loading}
           >
-            {loading ? (
-              <CircularProgress size={24} sx={{ color: "white" }} />
-            ) : (
-              "Create Service"
-            )}
+            {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Create Service"}
           </Button>
         </Box>
       </Box>

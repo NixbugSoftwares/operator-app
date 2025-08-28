@@ -377,251 +377,268 @@ const RoleDetailsCard: React.FC<RoleCardProps> = ({
   return (
     <>
       <Card
-        sx={{ maxWidth: 800, margin: "auto", boxShadow: 3, borderRadius: 2 }}
-      >
-        <Box sx={{ p: 2, bgcolor: "darkblue", color: "white" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Avatar sx={{ bgcolor: "white", width: 40, height: 40 }}>
-              <RolesIcon color="primary" />
-            </Avatar>
+  sx={{ 
+    maxWidth: 800, 
+    margin: "auto", 
+    boxShadow: 3, 
+    borderRadius: 2,
+    display: "flex",
+    flexDirection: "column",
+    height: "100%", // Ensure the card takes full height
+    maxHeight: "100vh", // Limit maximum height
+  }}
+>
+  {/* Header Section */}
+  <Box sx={{ p: 2, bgcolor: "darkblue", color: "white" }}>
+    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+      <Avatar sx={{ bgcolor: "white", width: 40, height: 40 }}>
+        <RolesIcon color="primary" />
+      </Avatar>
 
-            <Controller
-              name="name"
-              control={control}
-              rules={{
-                required: "Name is required",
-                minLength: {
-                  value: 3,
-                  message: "Name must be at least 3 characters",
+      <Controller
+        name="name"
+        control={control}
+        rules={{
+          required: "Name is required",
+          minLength: {
+            value: 3,
+            message: "Name must be at least 3 characters",
+          },
+          maxLength: {
+            value: 32,
+            message: "Name cannot exceed 32 characters",
+          },
+          validate: (value) => {
+            if (!value.trim()) {
+              return "Name cannot be empty or only spaces";
+            }
+            if (/^\s/.test(value)) {
+              return "Name cannot start with a space";
+            }
+            if (/\s$/.test(value)) {
+              return "Name cannot end with a space";
+            }
+            if (/\s{2,}/.test(value)) {
+              return "Name cannot contain consecutive spaces";
+            }
+            return true;
+          },
+        }}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            variant="outlined"
+            size="small"
+            fullWidth
+            sx={{
+              backgroundColor: "white",
+              borderRadius: 1,
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: "transparent",
                 },
-                maxLength: {
-                  value: 32,
-                  message: "Name cannot exceed 32 characters",
+                "&:hover fieldset": {
+                  borderColor: "transparent",
                 },
-                validate: (value) => {
-                  if (!value.trim()) {
-                    return "Name cannot be empty or only spaces";
-                  }
-                  if (/^\s/.test(value)) {
-                    return "Name cannot start with a space";
-                  }
-                  if (/\s$/.test(value)) {
-                    return "Name cannot end with a space";
-                  }
-                  if (/\s{2,}/.test(value)) {
-                    return "Name cannot contain consecutive spaces";
-                  }
-                  return true;
+                "&.Mui-focused fieldset": {
+                  borderColor: "transparent",
                 },
-              }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  sx={{
-                    backgroundColor: "white",
-                    borderRadius: 1,
-                    "& .MuiOutlinedInput-root": {
-                      "& fieldset": {
-                        borderColor: "transparent",
-                      },
-                      "&:hover fieldset": {
-                        borderColor: "transparent",
-                      },
-                      "&.Mui-focused fieldset": {
-                        borderColor: "transparent",
-                      },
-                    },
-                  }}
-                  error={!!errors.name}
-                  helperText={errors.name?.message}
-                />
-              )}
-            />
-          </Box>
-          <Typography variant="caption" sx={{ display: "block", mt: 1 }}>
-            Role ID: {role.id}
-          </Typography>
-        </Box>
+              },
+            }}
+            error={!!errors.name}
+            helperText={errors.name?.message}
+          />
+        )}
+      />
+    </Box>
+    <Typography variant="caption" sx={{ display: "block", mt: 1 }}>
+      Role ID: {role.id}
+    </Typography>
+  </Box>
 
-        <CardContent>
-          <Box display={"flex"} justifyContent={"space-between"} sx={{ mb: 1 }}>
-            <Typography variant="subtitle1" gutterBottom>
-              Permissions
+  {/* Scrollable Content Section */}
+  <CardContent sx={{ flex: 1, overflow: "auto", p: 2 }}>
+    <Box display={"flex"} justifyContent={"space-between"} sx={{ mb: 1 }}>
+      <Typography variant="subtitle1" gutterBottom>
+        Permissions
+      </Typography>
+      <FormControlLabel
+        control={
+          <Checkbox
+            size="small"
+            checked={isAllPermissionsSelected()}
+            indeterminate={
+              !isAllPermissionsSelected() &&
+              permissionGroups.some((group) =>
+                group.permissions.some((permission) =>
+                  watch(permission.key as keyof typeof role.roleDetails)
+                )
+              )
+            }
+            onChange={(e) => handleAllPermissionsToggle(e.target.checked)}
+          />
+        }
+        label="Select All Permissions"
+        labelPlacement="start"
+        sx={{ m: 0, mb: 1 }}
+      />
+    </Box>
+
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: "repeat(2, 1fr)",
+        gap: 2,
+      }}
+    >
+      {permissionGroups.map((group) => (
+        <Box
+          key={group.groupName}
+          sx={{
+            p: 2,
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 1,
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              mb: 1,
+            }}
+          >
+            <Typography variant="subtitle2" fontWeight="medium">
+              {group.groupName}
             </Typography>
+
             <FormControlLabel
               control={
                 <Checkbox
                   size="small"
-                  checked={isAllPermissionsSelected()}
+                  checked={isGroupAllSelected(group.groupName)}
                   indeterminate={
-                    !isAllPermissionsSelected() &&
-                    permissionGroups.some((group) =>
-                      group.permissions.some((permission) =>
-                        watch(permission.key as keyof typeof role.roleDetails)
+                    !isGroupAllSelected(group.groupName) &&
+                    group.permissions.some((permission) =>
+                      watch(
+                        permission.key as keyof typeof role.roleDetails
                       )
                     )
                   }
-                  onChange={(e) => handleAllPermissionsToggle(e.target.checked)}
+                  onChange={(e) =>
+                    handleGroupToggle(group.groupName, e.target.checked)
+                  }
                 />
               }
-              label="Select All Permissions"
+              label=""
               labelPlacement="start"
-              sx={{ m: 0, mb: 1 }}
+              sx={{ m: 0 }}
             />
           </Box>
 
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, 1fr)",
-              gap: 2,
-            }}
-          >
-            {permissionGroups.map((group) => (
-              <Box
-                key={group.groupName}
-                sx={{
-                  p: 2,
-                  border: `1px solid ${theme.palette.divider}`,
-                  borderRadius: 1,
-                }}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    mb: 1,
-                  }}
-                >
-                  <Typography variant="subtitle2" fontWeight="medium">
-                    {group.groupName}
-                  </Typography>
-
+          <Stack spacing={1}>
+            {group.permissions.map((permission) => (
+              <Controller
+                key={permission.key}
+                name={permission.key as keyof typeof role.roleDetails}
+                control={control}
+                render={({ field }) => (
                   <FormControlLabel
                     control={
-                      <Checkbox
+                      <Switch
                         size="small"
-                        checked={isGroupAllSelected(group.groupName)}
-                        indeterminate={
-                          !isGroupAllSelected(group.groupName) &&
-                          group.permissions.some((permission) =>
-                            watch(
-                              permission.key as keyof typeof role.roleDetails
-                            )
-                          )
-                        }
-                        onChange={(e) =>
-                          handleGroupToggle(group.groupName, e.target.checked)
-                        }
+                        checked={!!field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                        color="primary"
                       />
                     }
-                    label=""
+                    label={
+                      <Typography variant="body2">
+                        {permission.label}
+                      </Typography>
+                    }
                     labelPlacement="start"
-                    sx={{ m: 0 }}
+                    sx={{
+                      m: 0,
+                      justifyContent: "space-between",
+                      width: "100%",
+                    }}
                   />
-                </Box>
-
-                <Stack spacing={1}>
-                  {group.permissions.map((permission) => (
-                    <Controller
-                      key={permission.key}
-                      name={permission.key as keyof typeof role.roleDetails}
-                      control={control}
-                      render={({ field }) => (
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              size="small"
-                              checked={!!field.value}
-                              onChange={(e) => field.onChange(e.target.checked)}
-                              color="primary"
-                            />
-                          }
-                          label={
-                            <Typography variant="body2">
-                              {permission.label}
-                            </Typography>
-                          }
-                          labelPlacement="start"
-                          sx={{
-                            m: 0,
-                            justifyContent: "space-between",
-                            width: "100%",
-                          }}
-                        />
-                      )}
-                    />
-                  ))}
-                </Stack>
-              </Box>
+                )}
+              />
             ))}
-          </Box>
-        </CardContent>
+          </Stack>
+        </Box>
+      ))}
+    </Box>
+  </CardContent>
 
-        <CardActions
-          sx={{
-            display: "flex",
-            justifyContent: "left",
-            p: 2,
-            borderTop: `1px solid ${theme.palette.divider}`,
-          }}
-        >
+  {/* Sticky Footer Section */}
+  <CardActions
+    sx={{
+      display: "flex",
+      justifyContent: "left",
+      p: 2,
+      borderTop: `1px solid ${theme.palette.divider}`,
+      position: "sticky",
+      bottom: 0,
+      backgroundColor: "white",
+      zIndex: 10,
+      boxShadow: "0 -2px 4px rgba(0,0,0,0.1)",
+    }}
+  >
+    <Button
+      variant="outlined"
+      size="small"
+      onClick={onBack}
+      startIcon={<BackIcon />}
+      sx={{ minWidth: 100 }}
+    >
+      Back
+    </Button>
+
+    <Box sx={{ display: "flex", gap: 1 }}>
+      <>
+        {canUpdateRole && (
           <Button
-            variant="outlined"
+            variant="contained"
             size="small"
-            onClick={onBack}
-            startIcon={<BackIcon />}
-            sx={{ minWidth: 100 }}
+            onClick={handleSubmit(handleRoleUpdate)}
+            startIcon={<EditIcon />}
+            color="success"
+            disabled={loading}
+            sx={{
+              minWidth: 100,
+              "&.Mui-disabled": {
+                backgroundColor: theme.palette.action.disabledBackground,
+              },
+            }}
           >
-            Back
+            Update
           </Button>
+        )}
 
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <>
-              {canUpdateRole && (
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={handleSubmit(handleRoleUpdate)}
-                  startIcon={<EditIcon />}
-                  color="success"
-                  disabled={loading}
-                  sx={{
-                    minWidth: 100,
-                    "&.Mui-disabled": {
-                      backgroundColor: theme.palette.action.disabledBackground,
-                    },
-                  }}
-                >
-                  Update
-                </Button>
-              )}
-
-              {canDeleteRole && (
-                <Button
-                  variant="contained"
-                  color="error"
-                  size="small"
-                  onClick={() => setDeleteConfirmOpen(true)}
-                  disabled={!canDeleteRole}
-                  startIcon={<DeleteIcon />}
-                  sx={{
-                    "&.Mui-disabled": {
-                      backgroundColor: "#e57373 !important",
-                      color: "#ffffff99",
-                    },
-                  }}
-                >
-                  Delete
-                </Button>
-              )}
-            </>
-          </Box>
-        </CardActions>
-      </Card>
+        {canDeleteRole && (
+          <Button
+            variant="contained"
+            color="error"
+            size="small"
+            onClick={() => setDeleteConfirmOpen(true)}
+            disabled={!canDeleteRole}
+            startIcon={<DeleteIcon />}
+            sx={{
+              "&.Mui-disabled": {
+                backgroundColor: "#e57373 !important",
+                color: "#ffffff99",
+              },
+            }}
+          >
+            Delete
+          </Button>
+        )}
+      </>
+    </Box>
+  </CardActions>
+</Card>
 
       <Dialog
         open={deleteConfirmOpen}

@@ -50,7 +50,7 @@ const companyName = localStorageHelper.getItem("@companyName")?.toLowerCase();
         { label: "Route", path: "/busroute", icon: <RouteIcon /> },
         { label: "Fare", path: "/fare", icon: <CalculateIcon /> },
         { label: "Service", path: "/service", icon: <AssignmentIndRoundedIcon /> },
-        { label: "schedule", path: "/schedule", icon: <ScheduleIcon /> },
+        { label: "Schedule", path: "/schedule", icon: <ScheduleIcon /> },
         {label:"Duty",path:"/duty",icon:<AssignmentTurnedInRoundedIcon/>},
         // {label:"Ticket",path:"/ticket",icon:<ConfirmationNumberIcon/>},
         {label:"Statement",path:"/statement",icon:<ReceiptLongIcon/>},

@@ -24,6 +24,7 @@ import {
   Typography,
   Alert,
   Checkbox,
+  InputAdornment,
 } from "@mui/material";
 import {
   showErrorToast,
@@ -73,6 +74,8 @@ const MapComponent = React.forwardRef(
     }: MapComponentProps,
     ref
   ) => {
+    // console.log("startingTime........", startingTime);
+    // console.log("selectedroutestartingtime.....", selectedRouteStartingTime);
     const mapRef = useRef<HTMLDivElement | null>(null);
     const allBoundariesSource = useRef(new VectorSource());
     const selectedLandmarksSource = useRef(new VectorSource());
@@ -100,13 +103,17 @@ const MapComponent = React.forwardRef(
     const [departureAmPm, setDepartureAmPm] = useState<string>("AM");
     const [arrivalDayOffset, setArrivalDayOffset] = useState<number>(0);
     const [departureDayOffset, setDepartureDayOffset] = useState<number>(0);
+    const [startTimestamp, setStartTimestamp] = useState<number | null>(null);
+
     const [isFirstLandmark, setIsFirstLandmark] = useState(false);
     const [showTimeError, setShowTimeError] = useState<string>("");
-    const [distanceError, setDistanceError] = useState<string>("");
+    const [distanceError, setDistanceError] = useState<string | null>(null);
     const [isLastLandmark, setIsLastLandmark] = useState(false);
-    const [usedTimes, setUsedTimes] = useState<
+    const [_usedTimes, setUsedTimes] = useState<
       { arrivalTS: number; departureTS: number }[]
     >([]);
+     const [distanceUnit, setDistanceUnit] = useState<"m" | "km">("m");
+
     // Initialize the map
     const initializeMap = () => {
       if (!mapRef.current) return null;
@@ -754,15 +761,67 @@ const MapComponent = React.forwardRef(
         setIsAddingLandmark(false);
       },
     }));
-
     const handleAddLandmark = async () => {
+      // 🎯 Scenario 2: Editing existing route
+      if (isEditing && routeId) {
+        const arrivalTS = getTimestamp(
+          arrivalHour,
+          arrivalMinute,
+          arrivalAmPm,
+          arrivalDayOffset
+        );
+        const departureTS = isLastLandmark
+          ? arrivalTS
+          : getTimestamp(
+              departureHour,
+              departureMinute,
+              departureAmPm,
+              departureDayOffset
+            );
+        console.log("arrivalTS", arrivalTS);
+        console.log("departureTS", departureTS);
+        if (!arrivalTS || !departureTS) {
+          showErrorToast("Missing arrival or departure time");
+          return;
+        }
+        if (
+          selectedLandmark?.distance_from_start === undefined ||
+          selectedLandmark?.distance_from_start === null ||
+          selectedLandmark?.distance_from_start === 0
+        ) {setDistanceError("Distance is required");
+          return;
+        }
+
+        const landmarkWithDistance = {
+          ...selectedLandmark,
+          arrivalTS, // raw timestamp
+          departureTS, // raw timestamp
+          arrivalTime: { fullTime: formatFullTime(arrivalTS) },
+          departureTime: { fullTime: formatFullTime(departureTS) },
+          distance_from_start: selectedLandmark?.distance_from_start,
+        };
+
+        const result = await saveLandmarkToDatabase(landmarkWithDistance);
+        if (result.success) {
+          highlightSelectedLandmark(selectedLandmark.id.toString());
+          setIsModalOpen(false);
+          setIsLastLandmark(false);
+        }
+        return;
+      }
+
+      // 🎯 Scenario 1: New route creation
+      if (!startTimestamp) {
+        showErrorToast("Missing starting time");
+        return;
+      }
+
       const arrivalTS = getTimestamp(
         arrivalHour,
         arrivalMinute,
         arrivalAmPm,
         arrivalDayOffset
       );
-
       const departureTS = isLastLandmark
         ? arrivalTS
         : getTimestamp(
@@ -772,134 +831,195 @@ const MapComponent = React.forwardRef(
             departureDayOffset
           );
 
+      let arrivalDelta = Math.floor((arrivalTS - startTimestamp!) / 1000);
+      let departureDelta = Math.floor((departureTS - startTimestamp!) / 1000);
+
+      let finalArrivalTS = arrivalTS;
+      let finalDepartureTS = departureTS;
+
+
+
+      if (
+        selectedLandmark?.distance_from_start === undefined ||
+        selectedLandmark?.distance_from_start === null ||
+        selectedLandmark?.distance_from_start === ""
+      ) {
+        setDistanceError("Distance is required");
+        return;
+      }
+      if (
+        arrivalDelta &&
+        departureDelta > 0 &&
+        selectedLandmark?.distance_from_start === 0
+      ) {
+        setDistanceError("Only starting landmark can have distance 0");
+        return;
+      }
+
+
+      if (selectedLandmarks.length === 0) {
+        arrivalDelta = 0;
+        departureDelta = 0;
+        finalArrivalTS = startTimestamp!;
+        finalDepartureTS = startTimestamp!;
+      }
+
       if (!validateTimes()) {
         setShowTimeError("Both departure and arrival times are required");
         return;
       }
+      if (
+        !(selectedLandmarks.length === 0) &&
+        (arrivalDelta && departureDelta) <= 0
+      ) {
+        setShowTimeError(
+          "Arrival and Departure time must be after starting time"
+        );
+        return;
+      }
 
-      if (!isLastLandmark && departureTS < arrivalTS) {
+      if (!isLastLandmark && arrivalDelta > departureDelta) {
         setShowTimeError(
           "Departure time must be after or equal to arrival time."
         );
         return;
       }
       setShowTimeError("");
+      
 
-      // Special validation: only for NEW route creation
-      if (!isEditing || !routeId) {
-        const isDuplicate = usedTimes.some(
-          (t: any) => t.arrivalTS === arrivalTS || t.departureTS === departureTS
-        );
+      const landmarkWithDistance = {
+        ...selectedLandmark,
+        arrival_delta: arrivalDelta,
+        departure_delta: departureDelta,
+        distance_from_start: selectedLandmark?.distance_from_start,
+        arrivalTime: { fullTime: finalArrivalTS },
+        departureTime: { fullTime: finalDepartureTS },
+      };
 
-        if (isDuplicate) {
-          setShowTimeError(
-            "Arrival or Departure time is already used by another landmark."
-          );
-          return;
-        }
-      }
-
-      if (
-        selectedLandmark?.distance_from_start === undefined ||
-        selectedLandmark?.distance_from_start === null ||
-        selectedLandmark?.distance_from_start === "" ||
-        isNaN(selectedLandmark?.distance_from_start) ||
-        (!isFirstLandmark && selectedLandmark?.distance_from_start <= 0)
-      ) {
-        setDistanceError(
-          isFirstLandmark
-            ? "Distance from Start is required"
-            : "Distance must be greater than 0"
-        );
-        return;
-      }
-      setDistanceError("");
-
-      try {
-        // Prepare final landmark object (same as your code)
-        const arrivalTimeUTC = convertLocalToUTC(
-          arrivalHour,
-          arrivalMinute,
-          arrivalAmPm,
-          arrivalDayOffset
-        );
-
-        const departureTimeUTC = isLastLandmark
-          ? arrivalTimeUTC
-          : convertLocalToUTC(
-              departureHour,
-              departureMinute,
-              departureAmPm,
-              departureDayOffset
-            );
-
-        const landmarkWithDistance = {
-          ...selectedLandmark,
-          arrivalTime: arrivalTimeUTC,
-          departureTime: departureTimeUTC,
-          arrivalDayOffset,
-          departureDayOffset: isLastLandmark
-            ? arrivalDayOffset
-            : departureDayOffset,
-          distance_from_start: selectedLandmark?.distance_from_start,
-        };
-
-        if (isEditing && routeId) {
-          // Existing route case
-          const result = await saveLandmarkToDatabase(landmarkWithDistance);
-          if (result.success) {
-            highlightSelectedLandmark(selectedLandmark.id.toString());
-            setIsModalOpen(false);
-            setIsLastLandmark(false);
-          }
-        } else {
-          // New route case — store times
-          setUsedTimes((prev) => [...prev, { arrivalTS, departureTS }]);
-          onAddLandmark?.(landmarkWithDistance);
-          highlightSelectedLandmark(selectedLandmark.id.toString());
-          setIsModalOpen(false);
-          setIsLastLandmark(false);
-        }
-      } catch (error) {
-        showErrorToast("Failed to save landmark: " + error);
-      }
+      setUsedTimes((prev) => [...prev, { arrivalTS, departureTS }]);
+      onAddLandmark?.(landmarkWithDistance);
+      highlightSelectedLandmark(selectedLandmark.id.toString());
+      setIsModalOpen(false);
+      setIsLastLandmark(false);
     };
 
-    const saveLandmarkToDatabase = async (landmark: SelectedLandmark) => {
+    // Helper to format timestamps into "1970-01-01 hh:mm AM/PM"
+    const formatFullTime = (ts: number) => {
+      const date = new Date(ts);
+      const hours = date.getHours();
+      const minutes = date.getMinutes();
+      const ampm = hours >= 12 ? "PM" : "AM";
+      const adjustedHours = hours % 12 || 12;
+      const paddedMinutes = String(minutes).padStart(2, "0");
+      return `1970-01-01 ${adjustedHours}:${paddedMinutes} ${ampm}`;
+    };
+
+    // console.log("selectedroutestartingtime.....",selectedRouteStartingTime);
+
+    const saveLandmarkToDatabase = async (
+      landmark: SelectedLandmark & { arrivalTS?: number; departureTS?: number }
+    ) => {
       if (!routeId || !selectedRouteStartingTime) {
         console.error("Missing required parameters:", {
           routeId,
           selectedRouteStartingTime,
         });
         showErrorToast("Route ID and starting time are required");
-        return { success: false }; // Return failure status
+        return { success: false };
       }
 
       try {
         console.log("Starting saveLandmarkToDatabase with:", {
           routeId,
-          startingTime,
+          selectedRouteStartingTime,
           landmark,
         });
-        const utcStartTime = selectedRouteStartingTime.endsWith("Z")
-          ? selectedRouteStartingTime.slice(0, -1)
-          : selectedRouteStartingTime;
 
-        const [startHours, startMinutes, startSeconds] = utcStartTime
-          .split(":")
-          .map(Number);
-        const utcStartDate = new Date(
-          Date.UTC(1970, 0, 1, startHours, startMinutes, startSeconds)
+        // Parse time string to timestamp (treat as IST)
+        const parseISTTimeStringToTimestamp = (timeString: string): number => {
+          const [_datePart, timePart, period] = timeString.split(" ");
+          const [hourStr, minuteStr] = timePart.split(":");
+
+          let hours = parseInt(hourStr, 10);
+          const minutes = parseInt(minuteStr, 10);
+
+          // Convert to 24-hour format
+          if (period === "PM" && hours !== 12) hours += 12;
+          if (period === "AM" && hours === 12) hours = 0;
+
+          // Create date object - treat as IST (UTC+5:30)
+          // Use Date.UTC but add 5:30 to compensate for IST offset
+          const utcMs = Date.UTC(1970, 0, 1, hours, minutes, 0, 0);
+          // Since we want to treat this as IST, we need to subtract the IST offset
+          // to get the correct UTC timestamp that represents the same instant
+          const istOffsetMs = 5.5 * 60 * 60 * 1000; // 5:30 hours in milliseconds
+          return utcMs - istOffsetMs;
+        };
+
+        // Get route starting timestamp (IST)
+        const startTimestamp = parseISTTimeStringToTimestamp(
+          selectedRouteStartingTime
         );
-        const utcArrivalDate = new Date(landmark.arrivalTime.fullTime);
-        const utcDepartureDate = new Date(landmark.departureTime.fullTime);
+
+        // Handle arrival time
+        let arrivalTimestamp: number;
+        if (landmark.arrivalTS) {
+          // If we have raw timestamp, use it directly (assuming it's already in correct timezone context)
+          arrivalTimestamp = landmark.arrivalTS;
+        } else {
+          // Parse from formatted string (IST)
+          arrivalTimestamp = parseISTTimeStringToTimestamp(
+            landmark.arrivalTime.fullTime
+          );
+        }
+
+        // Handle departure time
+        let departureTimestamp: number;
+        if (landmark.departureTS) {
+          // If we have raw timestamp, use it directly
+          departureTimestamp = landmark.departureTS;
+        } else {
+          // Parse from formatted string (IST)
+          departureTimestamp = parseISTTimeStringToTimestamp(
+            landmark.departureTime.fullTime
+          );
+        }
+
+        // Calculate deltas in seconds
         const arrivalDelta = Math.floor(
-          (utcArrivalDate.getTime() - utcStartDate.getTime()) / 1000
+          (arrivalTimestamp - startTimestamp) / 1000
         );
         const departureDelta = Math.floor(
-          (utcDepartureDate.getTime() - utcStartDate.getTime()) / 1000
+          (departureTimestamp - startTimestamp) / 1000
         );
 
+        console.log("Calculated deltas (IST):", {
+          startTime: new Date(startTimestamp).toString(),
+          arrivalTime: new Date(arrivalTimestamp).toString(),
+          departureTime: new Date(departureTimestamp).toString(),
+          arrivalDelta,
+          departureDelta,
+        });
+if (landmark.distance_from_start <= 0) {
+          showErrorToast("Distance from start must be greater than 0.");
+          return { success: false };
+        }
+        // Validate deltas
+        if (arrivalDelta < 0 || departureDelta < 0) {
+          showErrorToast(
+            "Arrival and departure times must be after the starting time."
+          );
+          return { success: false };
+        }
+
+        if (arrivalDelta > departureDelta) {
+          showErrorToast("Departure time must be greater than arrival time.");
+          return { success: false };
+        }
+
+        
+
+        // ✅ Prepare FormData
         const formData = new FormData();
         formData.append("route_id", routeId.toString());
         formData.append("landmark_id", landmark.id.toString());
@@ -915,14 +1035,14 @@ const MapComponent = React.forwardRef(
         onLandmarkAdded();
         return { success: true };
       } catch (error: any) {
-        if (error?.status === 422) {
-          showErrorToast(
-            "Arrival and departure times must be after the starting time ."
-          );
-        } else {
-          showErrorToast(error.message || "Failed to add landmark");
-        }
-        return { success: false, error }; // Return failure status with error
+        //  if (error?.status === 422) {
+        //   showErrorToast(
+        //     "Arrival and departure times must be after the starting time."
+        //   );
+        // } else {
+        showErrorToast(error.message || "Failed to add landmark");
+        // }
+        return { success: false, error };
       }
     };
 
@@ -953,36 +1073,36 @@ const MapComponent = React.forwardRef(
       };
     };
 
-    const convertLocalToUTC = (
-      hour: number,
-      minute: number,
-      period: string,
-      dayOffset: number = 0
-    ) => {
-      let istHour = hour;
-      if (period === "PM" && hour !== 12) {
-        istHour += 12;
-      } else if (period === "AM" && hour === 12) {
-        istHour = 0;
-      }
+    // const convertLocalToUTC = (
+    //   hour: number,
+    //   minute: number,
+    //   period: string,
+    //   dayOffset: number = 0
+    // ) => {
+    //   let istHour = hour;
+    //   if (period === "PM" && hour !== 12) {
+    //     istHour += 12;
+    //   } else if (period === "AM" && hour === 12) {
+    //     istHour = 0;
+    //   }
 
-      // Create IST date
-      const istDate = new Date(
-        Date.UTC(1970, 0, 1 + dayOffset, istHour, minute, 0)
-      );
-      // Subtract 5 hours 30 minutes to get UTC
-      istDate.setUTCHours(
-        istDate.getUTCHours() - 5,
-        istDate.getUTCMinutes() - 30
-      );
+    //   // Create IST date
+    //   const istDate = new Date(
+    //     Date.UTC(1970, 0, 1 + dayOffset, istHour, minute, 0)
+    //   );
+    //   // Subtract 5 hours 30 minutes to get UTC
+    //   istDate.setUTCHours(
+    //     istDate.getUTCHours() - 5,
+    //     istDate.getUTCMinutes() - 30
+    //   );
 
-      return {
-        displayTime: istDate.toISOString().slice(11, 19),
-        fullTime: istDate.toISOString(),
-        dayOffset,
-        timestamp: istDate.getTime(),
-      };
-    };
+    //   return {
+    //     displayTime: istDate.toISOString().slice(11, 19),
+    //     fullTime: istDate.toISOString(),
+    //     dayOffset,
+    //     timestamp: istDate.getTime(),
+    //   };
+    // };
 
     useEffect(() => {
       // Only treat as first landmark if it's a new route creation (mode === "create")
@@ -1016,6 +1136,28 @@ const MapComponent = React.forwardRef(
       );
     };
 
+    const parseISTStringToTimestamp = (timeStr: string): number => {
+      // Try to parse as ISO first
+      const parsed = new Date(timeStr);
+      if (!isNaN(parsed.getTime())) return parsed.getTime();
+
+      // Fallback: "1970-01-01 hh:mm AM/PM"
+      const [datePart, timePart, periodRaw] = timeStr.split(" ");
+      const period = periodRaw?.toUpperCase();
+      const [hourStr, minuteStr] = timePart?.split(":") ?? [];
+
+      let hour = parseInt(hourStr, 10);
+      const minute = parseInt(minuteStr, 10);
+
+      if (period === "PM" && hour !== 12) hour += 12;
+      if (period === "AM" && hour === 12) hour = 0;
+
+      const [year, month, day] = datePart.split("-").map(Number);
+      const date = new Date(year, month - 1, day, hour, minute, 0);
+      return date.getTime();
+    };
+
+    // ✅ Directly get timestamp from landmark fields (in IST)
     const getTimestamp = (
       hour: number,
       minute: number,
@@ -1028,14 +1170,68 @@ const MapComponent = React.forwardRef(
           : amPm === "AM" && hour === 12
           ? 0
           : hour;
-      const date = new Date(2000, 0, 1 + dayOffset, h24, minute);
+      const date = new Date(1970, 0, 1 + dayOffset, h24, minute);
       return date.getTime();
     };
+    useEffect(() => {
+      if (startingTime) {
+        setStartTimestamp(parseISTStringToTimestamp(startingTime));
+      }
+    }, [startingTime]);
 
     const handleClose = () => {
       setShowTimeError("");
+      setDistanceError("");
       setIsModalOpen(false);
     };
+
+    //for update the landmark add form modal with previous landmark time
+    useEffect(() => {
+      if (!selectedLandmark) return;
+
+      if (selectedLandmarks.length === 0) {
+        // First landmark: skip manual time selection
+        setArrivalDayOffset(0);
+        setArrivalHour(12);
+        setArrivalMinute(0);
+        setArrivalAmPm("AM");
+        setDepartureDayOffset(0);
+        setDepartureHour(12);
+        setDepartureMinute(0);
+        setDepartureAmPm("AM");
+        setIsLastLandmark(false);
+      } else {
+        // Subsequent landmarks: initialize with previous landmark's times
+        const lastLandmark = selectedLandmarks[selectedLandmarks.length - 1];
+
+        const lastArrival = lastLandmark.arrivalTime?.fullTime || "";
+        const lastDeparture = lastLandmark.departureTime?.fullTime || "";
+
+        const arrivalDate = new Date(lastArrival);
+        const departureDate = new Date(lastDeparture);
+
+        const formatHour = (date: Date) => {
+          const hours = date.getHours();
+          const h = hours % 12 === 0 ? 12 : hours % 12;
+          return h;
+        };
+
+        const formatAmPm = (date: Date) =>
+          date.getHours() >= 12 ? "PM" : "AM";
+
+        setArrivalDayOffset(0); // calculate day offset if needed
+        setArrivalHour(formatHour(arrivalDate));
+        setArrivalMinute(arrivalDate.getMinutes());
+        setArrivalAmPm(formatAmPm(arrivalDate));
+
+        setDepartureDayOffset(0); // same as above
+        setDepartureHour(formatHour(departureDate));
+        setDepartureMinute(departureDate.getMinutes());
+        setDepartureAmPm(formatAmPm(departureDate));
+
+        setIsLastLandmark(false);
+      }
+    }, [selectedLandmark]);
 
     return (
       <Box height="100%" display="flex" flexDirection="column">
@@ -1117,25 +1313,94 @@ const MapComponent = React.forwardRef(
 
             {!isFirstLandmark && (
               <>
-                <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
-                  <Checkbox
-                    checked={isLastLandmark}
-                    onChange={(e) => {
-                      setIsLastLandmark(e.target.checked);
-                      // When checked, make departure match arrival
-                      if (e.target.checked) {
-                        setDepartureHour(arrivalHour);
-                        setDepartureMinute(arrivalMinute);
-                        setDepartureAmPm(arrivalAmPm);
-                        setDepartureDayOffset(arrivalDayOffset);
-                      }
-                    }}
-                    disabled={isFirstLandmark}
-                  />
-                  <Typography variant="body2">
-                    This is the last landmark in the route
-                  </Typography>
-                </Box>
+                <Box sx={{ display: "flex", alignItems: "center", mt: 2, gap: 2 }}>
+  {/* Distance Field (80%) */}
+  <Box sx={{ flex: 8 }}>
+  {(selectedLandmarks.length > 0 || propLandmarks.length > 0) && (
+    <TextField
+  label="Distance from Start"
+  type="number"
+  fullWidth
+  required
+  autoFocus
+  margin="normal"
+  value={
+    selectedLandmark?.distance_from_start
+      ? distanceUnit === "km"
+        ? selectedLandmark.distance_from_start / 1000
+        : selectedLandmark.distance_from_start
+      : ""
+  }
+  onChange={(e) => {
+    const value = e.target.value;
+    const numValue = value === "" ? undefined : parseFloat(value);
+
+    let distanceInMeters =
+      distanceUnit === "km" && numValue !== undefined
+        ? numValue * 1000
+        : numValue;
+
+    setSelectedLandmark({
+      ...selectedLandmark!,
+      distance_from_start: distanceInMeters,
+    });
+
+    if (value !== "") setDistanceError(null);
+  }}
+  inputProps={{
+    min: isFirstLandmark ? 0 : 1,
+    step: "any",
+  }}
+  error={!!distanceError}
+  helperText={distanceError}
+  sx={{ flex: 1 }}
+  InputProps={{
+    endAdornment: (
+      <InputAdornment position="end">
+        <Select
+          value={distanceUnit}
+          onChange={(e) => setDistanceUnit(e.target.value as "m" | "km")}
+          size="small"
+          sx={{
+            "& .MuiSelect-select": { padding: "4px 8px" }, // compact look
+            "& fieldset": { display: "none" }, // remove border
+            fontSize: "0.85rem",
+          }}
+          variant="outlined"
+        >
+          <MenuItem value="m">m</MenuItem>
+          <MenuItem value="km">km</MenuItem>
+        </Select>
+      </InputAdornment>
+    ),
+  }}
+/>
+
+  )}
+</Box>
+
+  {/* Last Landmark Checkbox (10%) */}
+  <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
+    <Checkbox
+    sx={{
+      scale: 0.8
+    }}
+      checked={isLastLandmark}
+      onChange={(e) => {
+        setIsLastLandmark(e.target.checked);
+        if (e.target.checked) {
+          setDepartureHour(arrivalHour);
+          setDepartureMinute(arrivalMinute);
+          setDepartureAmPm(arrivalAmPm);
+          setDepartureDayOffset(arrivalDayOffset);
+        }
+      }}
+      disabled={isFirstLandmark}
+    />
+  </Box>
+    <Typography variant="body2" fontSize={12}>Ending Landmark?</Typography>
+</Box>
+
                 <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
                   Arrival Time (IST)
                 </Typography>
@@ -1293,34 +1558,6 @@ const MapComponent = React.forwardRef(
                     </Select>
                   </FormControl>
                 </Box>
-
-                {(selectedLandmarks.length > 0 || propLandmarks.length > 0) && (
-                  <TextField
-                    label="Distance from Start (meters)"
-                    type="number"
-                    fullWidth
-                    margin="normal"
-                    value={selectedLandmark?.distance_from_start ?? ""}
-                    onChange={(e) => {
-                      const value =
-                        e.target.value === "" ? "" : parseFloat(e.target.value);
-                      // Prevent negative values
-                      if (value !== "" && value < 0) return;
-
-                      setSelectedLandmark({
-                        ...selectedLandmark!,
-                        distance_from_start: value,
-                      });
-                      setDistanceError("");
-                    }}
-                    inputProps={{
-                      min: isFirstLandmark ? 0 : 1,
-                      step: "any",
-                    }}
-                    error={!!distanceError}
-                    helperText={distanceError}
-                  />
-                )}
               </>
             )}
           </DialogContent>

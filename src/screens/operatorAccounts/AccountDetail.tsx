@@ -47,7 +47,7 @@ interface AccountCardProps {
 }
 const genderOptions = [
   { label: "Other", value: 1 },
-  { label: "Femal", value: 2 },
+  { label: "Female", value: 2 },
   { label: "Male", value: 3 },
   { label: "Transgender", value: 4 },
 ];

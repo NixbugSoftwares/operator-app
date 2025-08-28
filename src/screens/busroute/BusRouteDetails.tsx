@@ -22,6 +22,7 @@ import {
   MenuItem,
   Select,
   Alert,
+  InputAdornment,
 } from "@mui/material";
 import {
   Delete,
@@ -46,7 +47,6 @@ import {
 import { Landmark, RouteLandmark, SelectedLandmark } from "../../types/type";
 import { RootState } from "../../store/Store";
 import { useSelector } from "react-redux";
-
 interface BusRouteDetailsProps {
   routeId: number;
   routeName: string;
@@ -74,6 +74,7 @@ const BusRouteDetailsPage = ({
   refreshList,
   newLandmarkTrigger,
 }: BusRouteDetailsProps) => {
+  console.log("routeStartingTime.....", routeStartingTime);
   const dispatch = useAppDispatch();
   const [routeLandmarks, setRouteLandmarks] = useState<RouteLandmark[]>([]);
   const [landmarks, setLandmarks] = useState<Landmark[]>([]);
@@ -99,13 +100,15 @@ const BusRouteDetailsPage = ({
   const [arrivalDayOffset, setArrivalDayOffset] = useState<number>(0);
   const [departureDayOffset, setDepartureDayOffset] = useState<number>(0);
   const [_addMode, setAddMode] = useState<boolean>(false);
+  const [distanceError, setDistanceError] = useState(false);
+  
+       const [distanceUnit, setDistanceUnit] = useState<"m" | "km">("m");
   const canUpdateRoutes = useSelector((state: RootState) =>
     state.app.permissions.includes("update_route")
   );
   const canCreateRoutes = useSelector((state: RootState) =>
     state.app.permissions.includes("create_route")
   );
-
 
   const fetchRouteLandmarks = async () => {
     setIsLoading(true);
@@ -118,6 +121,7 @@ const BusRouteDetailsPage = ({
       const sortedLandmarks = processedLandmarks.sort(
         (a, b) => (a.distance_from_start || 0) - (b.distance_from_start || 0)
       );
+      console.log("sortedLandmarks.............", sortedLandmarks);
 
       setRouteLandmarks(sortedLandmarks);
       updateParentMapLandmarks(sortedLandmarks);
@@ -127,8 +131,6 @@ const BusRouteDetailsPage = ({
       const landmarkRes = await dispatch(
         landmarkListApi({ id_list: landmarkIds })
       ).unwrap();
-      console.log("landmarkRes", landmarkRes);
-
       setLandmarks(landmarkRes.data);
     } catch (error: any) {
       showErrorToast(error.message || "Failed to fetch route landmarks");
@@ -147,8 +149,7 @@ const BusRouteDetailsPage = ({
 
   useEffect(() => {
     fetchRouteLandmarks();
-  }, [routeId, newLandmarkTrigger ]);
-
+  }, [routeId, newLandmarkTrigger]);
 
   useEffect(() => {
     return () => {
@@ -167,72 +168,87 @@ const BusRouteDetailsPage = ({
     return landmark ? landmark.name : "Unknown Landmark";
   };
 
+  const formatTimeForDisplay = (isoString: string) => {
+    // Handle both full date strings and time-only strings
+    let timePart = isoString;
+
+    // If it's a full date string like "1970-01-01 12:00 am", extract just the time part
+    if (isoString.includes(" ")) {
+      const parts = isoString.split(" ");
+      timePart = parts[1] + " " + parts[2];
+    }
+
+    // Parse the time part (format: "12:00 am")
+    const [time, period] = timePart.split(" ");
+    const [hoursStr, minutesStr] = time.split(":");
+
+    let hours = parseInt(hoursStr, 10);
+    const minutes = parseInt(minutesStr, 10);
+
+    // Convert to 24-hour format for display consistency
+    if (period === "PM" && hours !== 12) hours += 12;
+    if (period === "AM" && hours === 12) hours = 0;
+
+    // Convert back to 12-hour format for display
+    const displayHours = hours % 12 || 12;
+    const displayPeriod = hours >= 12 ? "PM" : "AM";
+
+    return `${displayHours}:${minutes
+      .toString()
+      .padStart(2, "0")} ${displayPeriod}`;
+  };
+
   const calculateActualTime = (startingTime: string, deltaSeconds: string) => {
     if (!startingTime || !deltaSeconds) return "N/A";
+    // console.log("calculateActualTime - startingTime:", startingTime, "deltaSeconds:", deltaSeconds);
 
     try {
-      // Parse starting time as UTC
-      let timeString = startingTime;
-      if (!timeString.includes("T")) {
-        timeString = `1970-01-01T${timeString}`;
-      }
+      // Extract the time part from startingTime (format: "1970-01-01 04:00 am")
+      const timePart =
+        startingTime.split(" ")[1] + " " + startingTime.split(" ")[2];
+      // console.log("timePart:", timePart);
 
-      const startDate = new Date(timeString);
+      // Parse the time (04:00 am)
+      const [time, period] = timePart.split(" ");
+      const [hoursStr, minutesStr] = time.split(":");
+      let hours = parseInt(hoursStr, 10);
+      const minutes = parseInt(minutesStr, 10);
+
+      // console.log("Parsed time:", hours, minutes, period);
+
+      // Convert to 24-hour format
+      if (period === "PM" && hours !== 12) hours += 12;
+      if (period === "AM" && hours === 12) hours = 0;
+
+      // console.log("24-hour format:", hours, minutes);
+
+      // Calculate total seconds from start of day
+      const startSeconds = hours * 3600 + minutes * 60;
       const delta = parseInt(deltaSeconds, 10);
-      // Add delta seconds to starting time
-      const resultDate = new Date(startDate.getTime() + delta * 1000);
+      const totalSeconds = startSeconds + delta;
 
-      // Add 5 hours 30 minutes to UTC to get IST
-      resultDate.setTime(resultDate.getTime() + (5 * 60 + 30) * 60 * 1000);
-      let hours = resultDate.getUTCHours();
-      const minutes = resultDate.getUTCMinutes();
-      const period = hours >= 12 ? "PM" : "AM";
-      const displayHours = hours % 12 || 12;
+      // console.log("startSeconds:", startSeconds, "delta:", delta, "totalSeconds:", totalSeconds);
 
-      // Calculate day offset (in IST)
-      const dayOffset = Math.floor(
-        (resultDate.getTime() - Date.UTC(1970, 0, 1)) / (86400 * 1000)
-      );
-      const userDay = dayOffset + 1;
+      // Calculate new time
+      const newHours = Math.floor(totalSeconds / 3600) % 24;
+      const newMinutes = Math.floor((totalSeconds % 3600) / 60);
+      const newPeriod = newHours >= 12 ? "PM" : "AM";
+      const displayHours = newHours % 12 || 12;
 
-      const timeStr = `${displayHours}:${minutes
+      // Calculate day offset
+      const dayOffset = Math.floor(totalSeconds / 86400);
+
+      const result = `${displayHours}:${newMinutes
         .toString()
-        .padStart(2, "0")} ${period}`;
-      return `${timeStr} (D${userDay})`; // Changed to D1, D2 format
+        .padStart(2, "0")} ${newPeriod} (D${dayOffset + 1})`;
+      // console.log("Result:", result);
+
+      return result;
     } catch (e) {
       console.error("Error calculating actual time:", e);
       return "N/A";
     }
   };
-
-  const convertLocalToUTC = (
-    hour: number,
-    minute: number,
-    period: string,
-    dayOffset: number = 0
-  ) => {
-    let istHour = hour;
-    if (period === "PM" && hour !== 12) {
-      istHour += 12;
-    } else if (period === "AM" && hour === 12) {
-      istHour = 0;
-    }
-
-    // Create IST date
-    const istDate = new Date(
-      Date.UTC(1970, 0, 1 + dayOffset, istHour, minute, 0)
-    );
-    // Subtract 5 hours 30 minutes to get UTC
-    istDate.setTime(istDate.getTime() - (5 * 60 + 30) * 60 * 1000);
-
-    return {
-      displayTime: istDate.toISOString().slice(11, 19),
-      fullTime: istDate.toISOString(),
-      dayOffset,
-      timestamp: istDate.getTime(),
-    };
-  };
-
   // Helper function to format delta seconds into human-readable format
   const formatDeltaTime = (deltaSeconds: string) => {
     if (!deltaSeconds) return "N/A";
@@ -249,18 +265,6 @@ const BusRouteDetailsPage = ({
 
     return result.trim();
   };
-
-  const formatTimeForDisplay = (isoString: string) => {
-    const date = new Date(isoString);
-    // Add 5 hours 30 minutes to UTC to get IST
-    date.setUTCHours(date.getUTCHours() + 5, date.getUTCMinutes() + 30);
-    let hours = date.getUTCHours();
-    const minutes = date.getUTCMinutes();
-    const period = hours >= 12 ? "PM" : "AM";
-    const displayHours = hours % 12 || 12;
-    return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
-  };
-
   const updateParentMapLandmarks = (landmarks: RouteLandmark[]) => {
     const mapLandmarks = landmarks.map((lm) => ({
       id: lm.landmark_id,
@@ -280,86 +284,74 @@ const BusRouteDetailsPage = ({
   };
 
   const handleLandmarkEditClick = (landmark: RouteLandmark) => {
-    const startDate = new Date(routeStartingTime);
-    const arrivalDate = new Date(
-      startDate.getTime() + parseInt(landmark.arrival_delta || "0", 10) * 1000
-    );
-    arrivalDate.setTime(arrivalDate.getTime() + (5 * 60 + 30) * 60 * 1000); // Add IST offset
-    const arrivalDayOffset = Math.floor(
-      (arrivalDate.getTime() - Date.UTC(1970, 0, 1)) / (86400 * 1000)
-    );
+    // Extract the time part from startingTime (format: "1970-01-01 04:00 am")
+    const timePart =
+      routeStartingTime.split(" ")[1] + " " + routeStartingTime.split(" ")[2];
 
-    const departureDate = new Date(
-      startDate.getTime() + parseInt(landmark.departure_delta || "0", 10) * 1000
-    );
-    departureDate.setTime(departureDate.getTime() + (5 * 60 + 30) * 60 * 1000);
-    const departureDayOffset = Math.floor(
-      (departureDate.getTime() - Date.UTC(1970, 0, 1)) / (86400 * 1000)
-    );
-    console.log(
-      "arrival_delta:",
-      landmark.arrival_delta,
-      "arrivalDayOffset:",
-      arrivalDayOffset
-    );
+    // Parse the time (04:00 am)
+    const [time, period] = timePart.split(" ");
+    const [hoursStr, minutesStr] = time.split(":");
+
+    let hours = parseInt(hoursStr, 10);
+    const minutes = parseInt(minutesStr, 10);
+
+    // Convert to 24-hour format
+    if (period === "PM" && hours !== 12) hours += 12;
+    if (period === "AM" && hours === 12) hours = 0;
+
+    // Calculate total seconds from start of day
+    const startSeconds = hours * 3600 + minutes * 60;
+
+    // Calculate arrival time
+    const arrivalDelta = parseInt(landmark.arrival_delta || "0", 10);
+    const arrivalTotalSeconds = startSeconds + arrivalDelta;
+    const arrivalHours = Math.floor(arrivalTotalSeconds / 3600) % 24;
+    const arrivalMinutes = Math.floor((arrivalTotalSeconds % 3600) / 60);
+    const arrivalPeriod = arrivalHours >= 12 ? "PM" : "AM";
+    const displayArrivalHours = arrivalHours % 12 || 12;
+    const arrivalDayOffset = Math.floor(arrivalTotalSeconds / 86400);
+
+    // Calculate departure time
+    const departureDelta = parseInt(landmark.departure_delta || "0", 10);
+    const departureTotalSeconds = startSeconds + departureDelta;
+    const departureHours = Math.floor(departureTotalSeconds / 3600) % 24;
+    const departureMinutes = Math.floor((departureTotalSeconds % 3600) / 60);
+    const departurePeriod = departureHours >= 12 ? "PM" : "AM";
+    const displayDepartureHours = departureHours % 12 || 12;
+    const departureDayOffset = Math.floor(departureTotalSeconds / 86400);
 
     setArrivalDayOffset(arrivalDayOffset);
     setDepartureDayOffset(departureDayOffset);
 
-    // Convert UTC time to local time for display
-    const arrivalTime = calculateActualTime(
-      routeStartingTime,
-      landmark.arrival_delta || "0"
-    ).split(" (")[0];
-    const departureTime = calculateActualTime(
-      routeStartingTime,
-      landmark.departure_delta || "0"
-    ).split(" (")[0];
+    setArrivalHour(displayArrivalHours);
+    setArrivalMinute(arrivalMinutes);
+    setArrivalAmPm(arrivalPeriod);
 
-    // Parse the formatted time back to 12-hour format
-    const parse12HourTime = (timeStr: string) => {
-      const [time, period] = timeStr.split(" ");
-      const [hours, minutes] = time.split(":").map(Number);
-      return {
-        hours: hours === 12 ? 12 : hours % 12,
-        minutes,
-        period,
-      };
-    };
-
-    const arrival = parse12HourTime(arrivalTime);
-    const departure = parse12HourTime(departureTime);
-
-    setArrivalHour(arrival.hours);
-    setArrivalMinute(arrival.minutes);
-    setArrivalAmPm(arrival.period as "AM" | "PM");
-
-    setDepartureHour(departure.hours);
-    setDepartureMinute(departure.minutes);
-    setDepartureAmPm(departure.period as "AM" | "PM");
+    setDepartureHour(displayDepartureHours);
+    setDepartureMinute(departureMinutes);
+    setDepartureAmPm(departurePeriod);
 
     setEditingLandmark(landmark);
   };
-
   // Initialize the time values when component mounts
   useEffect(() => {
     if (routeStartingTime) {
-      // Extract time from routeStartingTime (format: "HH:MM:SS" or ISO)
-      let date = new Date(
-        routeStartingTime.includes("T")
-          ? routeStartingTime
-          : `1970-01-01T${routeStartingTime}Z`
-      );
-      // Convert to IST
-      date.setTime(date.getTime() + (5 * 60 + 30) * 60 * 1000);
-      const hours = date.getUTCHours();
-      const minutes = date.getUTCMinutes();
-      setLocalHour(hours % 12 || 12);
+      // Parse the starting time (it's already in IST format)
+      const date = new Date(routeStartingTime);
+
+      // Extract hours and minutes
+      let hours = date.getHours();
+      const minutes = date.getMinutes();
+
+      // Convert to 12-hour format
+      const period = hours >= 12 ? "PM" : "AM";
+      const displayHours = hours % 12 || 12; // Convert 0, 13-23 to 12, 1-11
+
+      setLocalHour(displayHours);
       setLocalMinute(minutes);
-      setAmPm(hours >= 12 ? "PM" : "AM");
+      setAmPm(period);
     }
   }, [routeStartingTime]);
-
   const validateTimes = () => {
     return (
       arrivalHour !== null &&
@@ -372,10 +364,35 @@ const BusRouteDetailsPage = ({
       departureMinute !== undefined
     );
   };
+  const convertLocalToUTC = (
+    hour: number,
+    minute: number,
+    period: string,
+    dayOffset: number = 0
+  ) => {
+    let istHour = hour;
+    if (period === "PM" && hour !== 12) istHour += 12;
+    if (period === "AM" && hour === 12) istHour = 0;
 
+    // Create IST date (Day 0)
+    const istDate = new Date(
+      Date.UTC(1970, 0, 1 + dayOffset, istHour, minute, 0)
+    );
+
+    // Convert IST → UTC
+    istDate.setUTCHours(
+      istDate.getUTCHours() - 5,
+      istDate.getUTCMinutes() - 30
+    );
+
+    return {
+      utcTime: istDate.toISOString().slice(11, 19) + "Z", // HH:MM:SSZ
+    };
+  };
   const handleRouteDetailsUpdate = async () => {
     try {
-      const timeString = convertLocalToUTC(
+      // Convert local time to UTC time string (HH:MM:SSZ format)
+      const { utcTime } = convertLocalToUTC(
         localHour,
         localMinute,
         amPm,
@@ -385,7 +402,7 @@ const BusRouteDetailsPage = ({
       const formData = new FormData();
       formData.append("id", routeId.toString());
       formData.append("name", updatedRouteName);
-      formData.append("start_time", timeString.displayTime + "Z");
+      formData.append("start_time", utcTime); // This should be in "HH:MM:SSZ" format
 
       await dispatch(routeUpdationApi({ routeId, formData })).unwrap();
       refreshList("refresh");
@@ -399,48 +416,97 @@ const BusRouteDetailsPage = ({
   const handleLandmarkUpdate = async () => {
     if (!editingLandmark) return;
     try {
-      const arrivalTimeUTC = convertLocalToUTC(
-        arrivalHour,
-        arrivalMinute,
-        arrivalAmPm,
-        arrivalDayOffset
-      );
-      const departureTimeUTC = convertLocalToUTC(
-        departureHour,
-        departureMinute,
-        departureAmPm,
-        departureDayOffset
-      );
+      // Parse the starting time (format: "1970-01-01 12:00 am")
+      const timePart =
+        routeStartingTime.split(" ")[1] + " " + routeStartingTime.split(" ")[2];
+      const [time, period] = timePart.split(" ");
+      const [startHourStr, startMinuteStr] = time.split(":");
 
-      // Fix 1: Handle the starting time properly
-      const startDate = new Date(routeStartingTime);
-      if (isNaN(startDate.getTime())) {
-        throw new Error("Invalid starting time format");
+      let startHours = parseInt(startHourStr, 10);
+      const startMinutes = parseInt(startMinuteStr, 10);
+
+      // Convert starting time to 24-hour format
+      // 12:00 am = 0, 12:00 pm = 12
+      if (period === "PM") {
+        startHours = startHours === 12 ? 12 : startHours + 12;
+      } else if (period === "AM") {
+        startHours = startHours === 12 ? 0 : startHours;
       }
 
-      // Fix 2: Ensure the arrival/departure times are valid
-      const arrivalDate = new Date(arrivalTimeUTC.fullTime);
-      const departureDate = new Date(departureTimeUTC.fullTime);
+      // Calculate total seconds from start of day for starting time
+      const startTotalSeconds = startHours * 3600 + startMinutes * 60;
 
-      if (isNaN(arrivalDate.getTime()) || isNaN(departureDate.getTime())) {
-        throw new Error("Invalid arrival/departure time format");
+      // Convert selected arrival time to seconds
+      let arrivalHours = arrivalHour;
+      if (arrivalAmPm === "PM") {
+        arrivalHours = arrivalHours === 12 ? 12 : arrivalHours + 12;
+      } else if (arrivalAmPm === "AM") {
+        arrivalHours = arrivalHours === 12 ? 0 : arrivalHours;
       }
+      const arrivalTotalSeconds =
+        arrivalHours * 3600 + arrivalMinute * 60 + arrivalDayOffset * 86400;
 
-      // Calculate deltas
-      const arrivalDelta = Math.floor(
-        (arrivalDate.getTime() - startDate.getTime()) / 1000
-      );
-      const departureDelta = Math.floor(
-        (departureDate.getTime() - startDate.getTime()) / 1000
-      );
+      // Convert selected departure time to seconds
+      let departureHours = departureHour;
+      if (departureAmPm === "PM") {
+        departureHours = departureHours === 12 ? 12 : departureHours + 12;
+      } else if (departureAmPm === "AM") {
+        departureHours = departureHours === 12 ? 0 : departureHours;
+      }
+      const departureTotalSeconds =
+        departureHours * 3600 +
+        departureMinute * 60 +
+        departureDayOffset * 86400;
+
+      // Calculate deltas (difference in seconds from starting time)
+      const arrivalDelta = arrivalTotalSeconds - startTotalSeconds;
+      const departureDelta = departureTotalSeconds - startTotalSeconds;
 
       console.log(
-        "landmark update",
-        "Calculated deltas - arrival:",
-        arrivalDelta,
-        "departure:",
+        "Starting time:",
+        startHours + ":" + startMinutes,
+        "Total seconds:",
+        startTotalSeconds
+      );
+      console.log(
+        "Arrival time:",
+        arrivalHours + ":" + arrivalMinute,
+        "Day offset:",
+        arrivalDayOffset,
+        "Total seconds:",
+        arrivalTotalSeconds,
+        "Delta:",
+        arrivalDelta
+      );
+      console.log(
+        "Departure time:",
+        departureHours + ":" + departureMinute,
+        "Day offset:",
+        departureDayOffset,
+        "Total seconds:",
+        departureTotalSeconds,
+        "Delta:",
         departureDelta
       );
+
+      // Validate that times are after starting time
+      if (arrivalDelta < 0 || departureDelta < 0) {
+        throw new Error(
+          "Arrival and departure times must be after the starting time"
+        );
+      }
+
+      if (arrivalDelta > departureDelta) {
+        throw new Error("Departure time must be after arrival time.");
+      }
+      if (
+        editingLandmark?.distance_from_start === undefined ||
+        editingLandmark?.distance_from_start === null
+      ) {
+        setDistanceError(true);
+        return;
+      }
+      setDistanceError(false);
 
       const formData = new FormData();
       formData.append("id", editingLandmark.id.toString());
@@ -453,7 +519,6 @@ const BusRouteDetailsPage = ({
           editingLandmark.distance_from_start.toString()
         );
       }
-
       await dispatch(
         routeLandmarkUpdationApi({
           routeLandmarkId: Number(editingLandmark.id),
@@ -464,20 +529,17 @@ const BusRouteDetailsPage = ({
       fetchRouteLandmarks();
       setEditingLandmark(null);
     } catch (error: any) {
-            if (error?.status === 422) {
-              showErrorToast(
-                "Arrival and departure times must be after the starting time ."
-              );
-            } if (error?.status === 409) {
-              showErrorToast(
-                "Different landmrks cannot have same distance ."
-              );
-            } else {
-              showErrorToast(error.message || "Failed to add landmark");
-            }
-          }
+      if (error?.status === 422) {
+        showErrorToast(
+          "Arrival and departure times must be after the starting time."
+        );
+      } else if (error?.status === 409) {
+        showErrorToast("Different landmarks cannot have same distance.");
+      } else {
+        showErrorToast(error.message || "Failed to add landmark");
+      }
+    }
   };
-
   const handleDeleteClick = (landmark: RouteLandmark) => {
     setRouteLandmarkToDelete(landmark);
     setDeleteConfirmOpen(true);
@@ -652,7 +714,6 @@ const BusRouteDetailsPage = ({
               Route Landmarks
             </Typography>
             <Box display="flex" alignItems="center" gap={1}>
-
               {(canCreateRoutes || canUpdateRoutes) && (
                 <Tooltip title="Add New Landmark">
                   <IconButton color="primary" onClick={handleAddClick}>
@@ -663,396 +724,419 @@ const BusRouteDetailsPage = ({
             </Box>
           </Box>
           <List sx={{ width: "100%", py: 0 }}>
-  {routeLandmarks.map((landmark, index) => {
-    const isFirstLandmark = index === 0;
-    const isLastLandmark = index === routeLandmarks.length - 1;
-    const arrivalTime = isFirstLandmark
-      ? formatTimeForDisplay(routeStartingTime)
-      : calculateActualTime(
-          routeStartingTime,
-          landmark.arrival_delta
-        );
-    const departureTime = isFirstLandmark
-      ? formatTimeForDisplay(routeStartingTime)
-      : calculateActualTime(
-          routeStartingTime,
-          landmark.departure_delta
-        );
+            {routeLandmarks.map((landmark, index) => {
+              const isFirstLandmark = index === 0;
+              const isLastLandmark = index === routeLandmarks.length - 1;
+              const arrivalTime = isFirstLandmark
+                ? formatTimeForDisplay(routeStartingTime)
+                : calculateActualTime(
+                    routeStartingTime,
+                    landmark.arrival_delta
+                  );
+              const departureTime = isFirstLandmark
+                ? formatTimeForDisplay(routeStartingTime)
+                : calculateActualTime(
+                    routeStartingTime,
+                    landmark.departure_delta
+                  );
 
-    const arrivalDelta = isFirstLandmark
-      ? "0m"
-      : formatDeltaTime(landmark.arrival_delta);
-    const departureDelta = isFirstLandmark
-      ? "0m"
-      : formatDeltaTime(landmark.departure_delta);
+              const arrivalDelta = isFirstLandmark
+                ? "0m"
+                : formatDeltaTime(landmark.arrival_delta);
+              const departureDelta = isFirstLandmark
+                ? "0m"
+                : formatDeltaTime(landmark.departure_delta);
 
-    return (
-      <Box key={landmark.id}>
-        <ListItem
-          sx={{
-            display: "flex",
-            alignItems: "flex-start",
-            py: 1,
-            px: 1,
-            backgroundColor: isFirstLandmark 
-              ? "#dbf1d9ff" 
-              : isLastLandmark
-                ? "#ebcacaff"
-                : index % 2 === 0 
-                  ? "action.hover" 
-                  : "background.paper",
-            borderRadius: 1,
-            gap: 1,
-          }}
-        >
-          <Chip
-            label={index + 1}
-            color="primary"
-            size="small"
-            sx={{
-              minWidth: 28,
-              height: 28,
-              fontSize: "0.75rem",
-              fontWeight: 600,
-              mt: 0.5,
-            }}
-          />
-
-          <Box
-            sx={{
-              flex: 1,
-              minWidth: 0,
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-              }}
-            >
-              <Box>
-                <Typography
-                  variant="subtitle2"
-                  fontWeight={600}
-                  sx={{
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {getLandmarkName(landmark.landmark_id)}
-                </Typography>
-
-                {landmark.distance_from_start !== undefined && (
-                  <Box
+              return (
+                <Box key={landmark.id}>
+                  <ListItem
                     sx={{
                       display: "flex",
-                      alignItems: "center",
-                      mt: 0.5,
-                      fontSize: "0.7rem",
-                      color: "text.secondary",
+                      alignItems: "flex-start",
+                      py: 1,
+                      px: 1,
+                      backgroundColor: isFirstLandmark
+                        ? "#dbf1d9ff"
+                        : isLastLandmark
+                        ? "#ebcacaff"
+                        : index % 2 === 0
+                        ? "action.hover"
+                        : "background.paper",
+                      borderRadius: 1,
+                      gap: 1,
                     }}
                   >
-                    <Directions
-                      sx={{ fontSize: "0.8rem", mr: 0.5 }}
-                    />
-                    {landmark.distance_from_start}m
-                  </Box>
-                )}
-              </Box>
-
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                  ml: 2,
-                }}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    gap: 1,
-                    minWidth: 200,
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  {/* Arrival Time - show for all except first */}
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      minWidth: 100,
-                      visibility: isFirstLandmark ? "hidden" : "visible",
-                    }}
-                  >
-                    <ArrowDownward
+                    <Chip
+                      label={index + 1}
+                      color="primary"
+                      size="small"
                       sx={{
-                        fontSize: "0.8rem",
-                        mr: 0.5,
-                        color: "error.main",
+                        minWidth: 28,
+                        height: 28,
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        mt: 0.5,
                       }}
                     />
-                    <Tooltip title={`Time delta: ${arrivalDelta}`}>
-                      <span>Arr: {arrivalTime}</span>
-                    </Tooltip>
-                  </Box>
 
-                  {/* Departure Time - show for all except last */}
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      minWidth: 100,
-                      visibility: isLastLandmark ? "hidden" : "visible",
-                    }}
-                  >
-                    <ArrowUpward
+                    <Box
                       sx={{
-                        fontSize: "0.8rem",
-                        mr: 0.5,
-                        color: "success.main",
+                        flex: 1,
+                        minWidth: 0,
                       }}
-                    />
-                    <Tooltip
-                      title={`Time delta: ${departureDelta}`}
                     >
-                      <span>Dep: {departureTime}</span>
-                    </Tooltip>
-                  </Box>
-                </Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                        }}
+                      >
+                        <Box>
+                          <Tooltip
+                            title={getLandmarkName(landmark.landmark_id)}
+                          >
+                            <Typography
+                              variant="subtitle2"
+                              fontWeight={600}
+                              sx={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                maxWidth: 120, // adjust width to control ellipsis behavior
+                              }}
+                            >
+                              {getLandmarkName(landmark.landmark_id)?.length >
+                              15
+                                ? `${getLandmarkName(
+                                    landmark.landmark_id
+                                  ).slice(0, 15)}...`
+                                : getLandmarkName(landmark.landmark_id)}
+                            </Typography>
+                          </Tooltip>
 
-                {/* Action buttons - show for all except first */}
-                {/* {!(index === 0) && ( */}
-                  <Stack direction="row" spacing={0.5} sx={{ ml: 1 }}>
-                    {(canUpdateRoutes || canCreateRoutes) && (
-                      <>
-                        <IconButton
-                          onClick={() =>
-                            handleLandmarkEditClick(landmark)
-                          }
-                          aria-label="edit"
-                          color="primary"
-                          size="small"
-                          sx={{ width: 24, height: 24 }}
-                          disabled={isFirstLandmark}
+                          {landmark.distance_from_start !== undefined && (
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                mt: 0.5,
+                                fontSize: "0.7rem",
+                                fontWeight: 600,
+                                color: "primary.main",
+                              }}
+                            >
+                              <Directions
+                                sx={{ fontSize: "0.8rem", mr: 0.5 }}
+                              />
+                              {landmark.distance_from_start >= 1000
+                                ? `${Math.round(
+                                    landmark.distance_from_start / 1000
+                                  )}km`
+                                : `${landmark.distance_from_start}m`}
+                            </Box>
+                          )}
+                        </Box>
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            ml: 2,
+                          }}
                         >
-                          <Edit fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          onClick={() => handleDeleteClick(landmark)}
-                          aria-label="delete"
-                          color="error"
-                          size="small"
-                          sx={{ width: 24, height: 24 }}
-                          disabled={isFirstLandmark}
-                        >
-                          <Delete fontSize="small" />
-                        </IconButton>
-                      </>
-                    )}
-                  </Stack>
-                {/* )} */}
-              </Box>
-            </Box>
-          </Box>
-        </ListItem>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              gap: 1,
+                              minWidth: 200,
+                              justifyContent: "flex-end",
+                            }}
+                          >
+                            {/* Arrival Time - show for all except first */}
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                minWidth: 100,
+                                visibility: isFirstLandmark
+                                  ? "hidden"
+                                  : "visible",
+                                fontSize: "0.8rem",
+                              }}
+                            >
+                              <ArrowDownward
+                                sx={{
+                                  fontSize: "0.8rem",
+                                  mr: 0.5,
+                                  color: "error.main",
+                                }}
+                              />
+                              <Tooltip title={`Time delta: ${arrivalDelta}`}>
+                                <span>Arr: {arrivalTime}</span>
+                              </Tooltip>
+                            </Box>
 
-        {index < routeLandmarks.length - 1 && (
-          <Divider
-            component="li"
-            sx={{
-              borderLeftWidth: 2,
-              borderLeftStyle: "dashed",
-              borderColor: "divider",
-              height: 16,
-              ml: 3.5,
-              listStyle: "none",
-            }}
-          />
-        )}
-      </Box>
-    );
-  })}
+                            {/* Departure Time - show for all except last */}
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                minWidth: 100,
+                                visibility: isLastLandmark
+                                  ? "hidden"
+                                  : "visible",
+                                fontSize: "0.8rem",
+                              }}
+                            >
+                              <ArrowUpward
+                                sx={{
+                                  fontSize: "0.8rem",
+                                  mr: 0.5,
+                                  color: "success.main",
+                                }}
+                              />
+                              <Tooltip title={`Time delta: ${departureDelta}`}>
+                                <span>Dep: {departureTime}</span>
+                              </Tooltip>
+                            </Box>
+                          </Box>
 
-  {newLandmarks.map((landmark, index) => {
-    const arrivalTime = formatTimeForDisplay(
-      landmark.arrivalTime.fullTime
-    );
-    const departureTime = formatTimeForDisplay(
-      landmark.departureTime.fullTime
-    );
-    const isLastNewLandmark = index === newLandmarks.length - 1;
-    const isFirstNewLandmark = index === 0;
+                          {/* Action buttons - show for all except first */}
+                          {/* {!(index === 0) && ( */}
+                          <Stack direction="row" spacing={0.5} sx={{ ml: 1 }}>
+                            {(canUpdateRoutes || canCreateRoutes) && (
+                              <>
+                                <IconButton
+                                  onClick={() =>
+                                    handleLandmarkEditClick(landmark)
+                                  }
+                                  aria-label="edit"
+                                  color="primary"
+                                  size="small"
+                                  sx={{ width: 24, height: 24 }}
+                                  disabled={isFirstLandmark}
+                                >
+                                  <Edit fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  onClick={() => handleDeleteClick(landmark)}
+                                  aria-label="delete"
+                                  color="error"
+                                  size="small"
+                                  sx={{ width: 24, height: 24 }}
+                                  disabled={isFirstLandmark}
+                                >
+                                  <Delete fontSize="small" />
+                                </IconButton>
+                              </>
+                            )}
+                          </Stack>
+                          {/* )} */}
+                        </Box>
+                      </Box>
+                    </Box>
+                  </ListItem>
 
-    return (
-      <Box key={`new-${landmark.id}-${index}`}>
-        <ListItem
-          sx={{
-            backgroundColor: "#e3f2fd",
-            borderRadius: 1,
-            display: "flex",
-            alignItems: "flex-start",
-            py: 1,
-            px: 1,
-            gap: 1,
-          }}
-        >
-          <Chip
-            label={routeLandmarks.length + index + 1}
-            color="primary"
-            size="small"
-            sx={{
-              minWidth: 28,
-              height: 28,
-              fontSize: "0.75rem",
-              fontWeight: 600,
-              mt: 0.5,
-            }}
-          />
-
-          <Box
-            sx={{
-              flex: 1,
-              minWidth: 0,
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-              }}
-            >
-              <Box>
-                <Typography
-                  variant="subtitle2"
-                  fontWeight={600}
-                  sx={{
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {landmark.name || "Unnamed Landmark"}
-                </Typography>
-
-                {landmark.distance_from_start !== undefined && (
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      mt: 0.5,
-                      fontSize: "0.7rem",
-                      color: "text.secondary",
-                    }}
-                  >
-                    <Directions
-                      sx={{ fontSize: "0.8rem", mr: 0.5 }}
-                    />
-                    {landmark.distance_from_start}m
-                  </Box>
-                )}
-              </Box>
-
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                  ml: 2,
-                }}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    gap: 1,
-                    minWidth: 200,
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  {/* Consistent with main landmarks - show arrival for all except first */}
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      minWidth: 100,
-                      visibility: isFirstNewLandmark ? "hidden" : "visible",
-                    }}
-                  >
-                    <ArrowDownward
+                  {index < routeLandmarks.length - 1 && (
+                    <Divider
+                      component="li"
                       sx={{
-                        fontSize: "0.8rem",
-                        mr: 0.5,
-                        color: "error.main",
+                        borderLeftWidth: 2,
+                        borderLeftStyle: "dashed",
+                        borderColor: "divider",
+                        height: 16,
+                        ml: 3.5,
+                        listStyle: "none",
                       }}
                     />
-                    <span>Arr: {arrivalTime}</span>
-                  </Box>
+                  )}
+                </Box>
+              );
+            })}
 
-                  {/* Consistent with main landmarks - show departure for all except last */}
-                  <Box
+            {newLandmarks.map((landmark, index) => {
+              const arrivalTime = formatTimeForDisplay(
+                landmark.arrivalTime.fullTime
+              );
+              const departureTime = formatTimeForDisplay(
+                landmark.departureTime.fullTime
+              );
+              const isLastNewLandmark = index === newLandmarks.length - 1;
+              const isFirstNewLandmark = index === 0;
+
+              return (
+                <Box key={`new-${landmark.id}-${index}`}>
+                  <ListItem
                     sx={{
+                      backgroundColor: "#e3f2fd",
+                      borderRadius: 1,
                       display: "flex",
-                      alignItems: "center",
-                      minWidth: 100,
-                      visibility: isLastNewLandmark ? "hidden" : "visible",
+                      alignItems: "flex-start",
+                      py: 1,
+                      px: 1,
+                      gap: 1,
                     }}
                   >
-                    <ArrowUpward
+                    <Chip
+                      label={routeLandmarks.length + index + 1}
+                      color="primary"
+                      size="small"
                       sx={{
-                        fontSize: "0.8rem",
-                        mr: 0.5,
-                        color: "success.main",
+                        minWidth: 28,
+                        height: 28,
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        mt: 0.5,
                       }}
                     />
-                    <span>Dep: {departureTime}</span>
-                  </Box>
+
+                    <Box
+                      sx={{
+                        flex: 1,
+                        minWidth: 0,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                        }}
+                      >
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            fontWeight={600}
+                            sx={{
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {landmark.name || "Unnamed Landmark"}
+                          </Typography>
+
+                          {landmark.distance_from_start !== undefined && (
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                mt: 0.5,
+                                fontSize: "0.7rem",
+                                color: "text.secondary",
+                              }}
+                            >
+                              <Directions
+                                sx={{ fontSize: "0.8rem", mr: 0.5 }}
+                              />
+                              {landmark.distance_from_start}m
+                            </Box>
+                          )}
+                        </Box>
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            ml: 2,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              gap: 1,
+                              minWidth: 200,
+                              justifyContent: "flex-end",
+                            }}
+                          >
+                            {/* Consistent with main landmarks - show arrival for all except first */}
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                minWidth: 100,
+                                visibility: isFirstNewLandmark
+                                  ? "hidden"
+                                  : "visible",
+                              }}
+                            >
+                              <ArrowDownward
+                                sx={{
+                                  fontSize: "0.8rem",
+                                  mr: 0.5,
+                                  color: "error.main",
+                                }}
+                              />
+                              <span>Arr: {arrivalTime}</span>
+                            </Box>
+
+                            {/* Consistent with main landmarks - show departure for all except last */}
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                minWidth: 100,
+                                visibility: isLastNewLandmark
+                                  ? "hidden"
+                                  : "visible",
+                              }}
+                            >
+                              <ArrowUpward
+                                sx={{
+                                  fontSize: "0.8rem",
+                                  mr: 0.5,
+                                  color: "success.main",
+                                }}
+                              />
+                              <span>Dep: {departureTime}</span>
+                            </Box>
+                          </Box>
+
+                          <IconButton
+                            color="error"
+                            size="small"
+                            onClick={() =>
+                              setNewLandmarks(
+                                newLandmarks.filter((_, i) => i !== index)
+                              )
+                            }
+                            sx={{
+                              width: 24,
+                              height: 24,
+                              backgroundColor: "error.light",
+                              "&:hover": {
+                                backgroundColor: "error.main",
+                                color: "error.contrastText",
+                              },
+                            }}
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </ListItem>
+
+                  {index < newLandmarks.length - 1 && (
+                    <Divider
+                      component="li"
+                      sx={{
+                        borderLeftWidth: 2,
+                        borderLeftStyle: "dashed",
+                        borderColor: "divider",
+                        height: 16,
+                        ml: 3.5,
+                        listStyle: "none",
+                      }}
+                    />
+                  )}
                 </Box>
-
-                <IconButton
-                  color="error"
-                  size="small"
-                  onClick={() =>
-                    setNewLandmarks(
-                      newLandmarks.filter((_, i) => i !== index)
-                    )
-                  }
-                  sx={{
-                    width: 24,
-                    height: 24,
-                    backgroundColor: "error.light",
-                    "&:hover": {
-                      backgroundColor: "error.main",
-                      color: "error.contrastText",
-                    },
-                  }}
-                >
-                  <Delete fontSize="small" />
-                </IconButton>
-              </Box>
-            </Box>
-          </Box>
-        </ListItem>
-
-        {index < newLandmarks.length - 1 && (
-          <Divider
-            component="li"
-            sx={{
-              borderLeftWidth: 2,
-              borderLeftStyle: "dashed",
-              borderColor: "divider",
-              height: 16,
-              ml: 3.5,
-              listStyle: "none",
-            }}
-          />
-        )}
-      </Box>
-    );
-  })}
-</List>
+              );
+            })}
+          </List>
         </Paper>
       )}
 
@@ -1091,13 +1175,65 @@ const BusRouteDetailsPage = ({
               <Typography>ID: {editingLandmark.landmark_id}</Typography>
               <Box mb={2}>
                 <Alert severity="info">
-                  1. For the starting landmark, arrival and departure time must
-                  be the same as the starting time.
-                  <br />
-                  2. For the ending landmark, arrival and departure time must be
+                  For the ending landmark, arrival and departure time must be
                   the same.
                 </Alert>
               </Box>
+              <TextField
+  label="Distance from Start"
+  required
+  fullWidth
+  margin="normal"
+  type="number"
+  value={
+    editingLandmark.distance_from_start !== undefined &&
+    editingLandmark.distance_from_start !== null
+      ? distanceUnit === "km"
+        ? editingLandmark.distance_from_start / 1000
+        : editingLandmark.distance_from_start
+      : ""
+  }
+  onChange={(e) => {
+    const value = e.target.value.trim();
+    const numValue = value === "" ? undefined : parseFloat(value);
+
+    let distanceInMeters =
+      distanceUnit === "km" && numValue !== undefined
+        ? numValue * 1000
+        : numValue;
+
+    setEditingLandmark({
+      ...editingLandmark,
+      distance_from_start: distanceInMeters,
+    });
+
+    if (value !== "") setDistanceError(false);
+  }}
+  error={distanceError}
+  helperText={distanceError ? "Distance is required" : ""}
+  inputProps={{ min: 0, step: "any" }}
+  InputProps={{
+    endAdornment: (
+      <InputAdornment position="end">
+        <Select
+          value={distanceUnit}
+          onChange={(e) => setDistanceUnit(e.target.value as "m" | "km")}
+          size="small"
+          sx={{
+            "& .MuiSelect-select": { padding: "4px 8px" },
+            "& fieldset": { display: "none" }, // removes border
+            fontSize: "0.85rem",
+          }}
+          variant="outlined"
+        >
+          <MenuItem value="m">m</MenuItem>
+          <MenuItem value="km">km</MenuItem>
+        </Select>
+      </InputAdornment>
+    ),
+  }}
+/>
+
 
               <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
                 Arrival Time (IST)
@@ -1222,23 +1358,7 @@ const BusRouteDetailsPage = ({
                 </FormControl>
               </Box>
 
-              <TextField
-                label="Distance from Start (meter)"
-                required
-                fullWidth
-                margin="normal"
-                value={editingLandmark.distance_from_start || ""}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setEditingLandmark({
-                    ...editingLandmark,
-                    distance_from_start:
-                      value === "" ? undefined : Number(value),
-                  });
-                }}
-                type="number"
-                inputProps={{ min: 0 }}
-              />
+              
             </>
           )}
         </DialogContent>
