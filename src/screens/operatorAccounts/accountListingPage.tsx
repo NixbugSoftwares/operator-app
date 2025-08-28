@@ -16,6 +16,7 @@ import {
   CircularProgress,
   ListItemText,
   Checkbox,
+  Dialog,
 } from "@mui/material";
 import ErrorIcon from "@mui/icons-material/Error";
 import { SelectChangeEvent } from "@mui/material";
@@ -75,7 +76,7 @@ const AccountListingTable = () => {
   const canCreateOperator = useSelector((state: RootState) =>
     state.app.permissions.includes("create_operator")
   );
-  
+
   const [isSearching, setIsSearching] = useState(false);
   const columnConfig: ColumnConfig[] = [
     { id: "id", label: "ID", width: "80px", minWidth: "80px", fixed: true },
@@ -108,7 +109,7 @@ const AccountListingTable = () => {
       minWidth: "150px",
     },
   ];
-  
+
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
     columnConfig.reduce((acc, column) => {
       acc[column.id] = column.fixed ? true : false;
@@ -125,94 +126,105 @@ const AccountListingTable = () => {
     setVisibleColumns(newVisibleColumns);
   };
 
-  const fetchAccounts = useCallback((pageNumber: number, searchParams = {}) => {
-    const offset = pageNumber * rowsPerPage;
-    setIsLoading(true);
-    
-    // Check if we're searching (any search parameter is present)
-    const hasSearchParams = Object.values(searchParams).some(param => param !== undefined && param !== "");
-    setIsSearching(hasSearchParams);
-    
-    dispatch(operatorListApi({ limit: rowsPerPage, offset, ...searchParams }))
-      .unwrap()
-      .then((res) => {
-        const items = res.data || [];
-        const formattedAccounts = items.map((account: any) => ({
-          id: account.id,
-          full_name: account.full_name || account.fullName,
-          username: account.username,
-          gender:
-            account.gender === 1
-              ? "Other"
-              : account.gender === 2
-              ? "Female"
-              : account.gender === 3
-              ? "Male"
-              : "Transgender",
-          email_id: account.email_id || account.email,
-          phoneNumber: account.phone_number || account.phoneNumber || "",
-          status: account.status === 1 ? "Active" : "Suspended",
-          created_on: account.created_on,
-          updated_on: account.updated_on,
-        }));
+  const fetchAccounts = useCallback(
+    (pageNumber: number, searchParams = {}) => {
+      const offset = pageNumber * rowsPerPage;
+      setIsLoading(true);
 
-        setAccountList(formattedAccounts);
-        setHasNextPage(items.length === rowsPerPage);
-        
-        // Only fetch logged-in user on first page with no search
-        if (pageNumber === 0 && !hasSearchParams && loggedInUserId && !loggedInUserAccount) {
-          dispatch(
-            operatorListApi({ limit: 1, offset: 0, id: loggedInUserId })
-          )
-            .unwrap()
-            .then((res) => {
-              const items = res.data || [];
-              const formattedAccounts = items.map((account: any) => ({
-                id: account.id,
-                full_name: account.full_name || account.fullName,
-                username: account.username,
-                gender:
-                  account.gender === 1
-                    ? "Other"
-                    : account.gender === 2
-                    ? "Female"
-                    : account.gender === 3
-                    ? "Male"
-                    : "Transgender",
-                email_id: account.email_id || account.email,
-                phoneNumber: account.phone_number || account.phoneNumber || "",
-                status: account.status === 1 ? "Active" : "Suspended",
-                created_on: account.created_on,
-                updated_on: account.updated_on,
-              }));
-              setLoggedInUserAccount(formattedAccounts[0] || null);
-            });
-        }
-      })
-      .catch((error) => {
-        console.error("Fetch Error:", error);
-        showErrorToast(error.message || "Failed to fetch account list");
-      })
-      .finally(() => setIsLoading(false));
-  }, [loggedInUserId, loggedInUserAccount, rowsPerPage, dispatch]);
+      // Check if we're searching (any search parameter is present)
+      const hasSearchParams = Object.values(searchParams).some(
+        (param) => param !== undefined && param !== ""
+      );
+      setIsSearching(hasSearchParams);
+
+      dispatch(operatorListApi({ limit: rowsPerPage, offset, ...searchParams }))
+        .unwrap()
+        .then((res) => {
+          const items = res.data || [];
+          const formattedAccounts = items.map((account: any) => ({
+            id: account.id,
+            full_name: account.full_name || account.fullName,
+            username: account.username,
+            gender:
+              account.gender === 1
+                ? "Other"
+                : account.gender === 2
+                ? "Female"
+                : account.gender === 3
+                ? "Male"
+                : "Transgender",
+            email_id: account.email_id || account.email,
+            phoneNumber: account.phone_number || account.phoneNumber || "",
+            status: account.status === 1 ? "Active" : "Suspended",
+            created_on: account.created_on,
+            updated_on: account.updated_on,
+          }));
+
+          setAccountList(formattedAccounts);
+          setHasNextPage(items.length === rowsPerPage);
+
+          // Only fetch logged-in user on first page with no search
+          if (
+            pageNumber === 0 &&
+            !hasSearchParams &&
+            loggedInUserId &&
+            !loggedInUserAccount
+          ) {
+            dispatch(
+              operatorListApi({ limit: 1, offset: 0, id: loggedInUserId })
+            )
+              .unwrap()
+              .then((res) => {
+                const items = res.data || [];
+                const formattedAccounts = items.map((account: any) => ({
+                  id: account.id,
+                  full_name: account.full_name || account.fullName,
+                  username: account.username,
+                  gender:
+                    account.gender === 1
+                      ? "Other"
+                      : account.gender === 2
+                      ? "Female"
+                      : account.gender === 3
+                      ? "Male"
+                      : "Transgender",
+                  email_id: account.email_id || account.email,
+                  phoneNumber:
+                    account.phone_number || account.phoneNumber || "",
+                  status: account.status === 1 ? "Active" : "Suspended",
+                  created_on: account.created_on,
+                  updated_on: account.updated_on,
+                }));
+                setLoggedInUserAccount(formattedAccounts[0] || null);
+              });
+          }
+        })
+        .catch((error) => {
+          console.error("Fetch Error:", error);
+          showErrorToast(error.message || "Failed to fetch account list");
+        })
+        .finally(() => setIsLoading(false));
+    },
+    [loggedInUserId, loggedInUserAccount, rowsPerPage, dispatch]
+  );
 
   const sortedAccountList = React.useMemo(() => {
     // Only add logged-in user to the first page when not searching
     if (page === 0 && !isSearching && loggedInUserAccount) {
       const combined = [...accountList];
-      
+
       // Check if logged-in user is not already in the list
       if (!accountList.some((a) => a.id === loggedInUserAccount.id)) {
         combined.unshift(loggedInUserAccount);
       }
-      
+
       return combined.sort((a, b) => {
         if (a.id === loggedInUserId) return -1;
         if (b.id === loggedInUserId) return 1;
         return 0;
       });
     }
-    
+
     // For other pages or when searching, return the account list as is
     return accountList;
   }, [accountList, loggedInUserAccount, loggedInUserId, page, isSearching]);
@@ -259,7 +271,9 @@ const AccountListingTable = () => {
     const genderBackendValue = getGenderBackendValue(debouncedSearch.gender);
     const searchParams = {
       ...(debouncedSearch.id && { id: debouncedSearch.id }),
-      ...(debouncedSearch.full_name && { full_name: debouncedSearch.full_name }),
+      ...(debouncedSearch.full_name && {
+        full_name: debouncedSearch.full_name,
+      }),
       ...(debouncedSearch.gender && { gender: genderBackendValue }),
       ...(debouncedSearch.email_id && { email_id: debouncedSearch.email_id }),
       ...(debouncedSearch.phoneNumber && {
@@ -302,23 +316,33 @@ const AccountListingTable = () => {
         <Box
           sx={{
             display: "flex",
-            justifyContent: "right",
+            justifyContent: "flex-end",
             alignItems: "center",
             mb: 2,
-            gap: 2,
+            gap: 1,
+            flexWrap: "nowrap", // Force one line
           }}
         >
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box
+            sx={{
+              flexShrink: 0,
+              width: { xs: "50%", md: "auto" },
+            }}
+          >
             <Select
               multiple
               value={Object.keys(visibleColumns).filter(
                 (key) => visibleColumns[key]
               )}
               onChange={handleColumnChange}
-              renderValue={(selected) =>
-                `Selected Columns (${selected.length})`
-              }
-              sx={{ minWidth: 200, height: 40 }}
+              renderValue={(selected) => `Columns (${selected.length})`}
+              size="small" // 👈 Makes Select compact
+              sx={{
+                minWidth: { xs: "120px", sm: "160px", md: "200px" },
+                height: 36,
+                fontSize: "0.75rem",
+                "& .MuiSelect-select": { py: 0.5 },
+              }}
             >
               {columnConfig.map((column) => (
                 <MenuItem
@@ -330,9 +354,7 @@ const AccountListingTable = () => {
                     checked={visibleColumns[column.id]}
                     disabled={column.fixed}
                   />
-                  <ListItemText
-                    primary={column.label}
-                  />
+                  <ListItemText primary={column.label} />
                 </MenuItem>
               ))}
             </Select>
@@ -340,20 +362,27 @@ const AccountListingTable = () => {
 
           {canCreateOperator && (
             <Button
+              variant="contained"
+              onClick={() => setOpenCreateModal(true)}
               sx={{
+                flexShrink: 0,
+                minWidth: "fit-content",
+                px: 1.5, // Reduce horizontal padding
+                py: 0.5, // Reduce vertical padding
+                fontSize: "0.75rem", // Smaller font
+                height: 36, // Match Select height
                 backgroundColor: "#00008B",
                 color: "white !important",
                 "&.Mui-disabled": {
                   color: "#fff !important",
                 },
               }}
-              variant="contained"
-              onClick={() => setOpenCreateModal(true)}
             >
-              Add New Operator
+              Add Operator
             </Button>
           )}
         </Box>
+
         <TableContainer
           sx={{
             flex: 1,
@@ -580,25 +609,25 @@ const AccountListingTable = () => {
                 sortedAccountList.map((row) => {
                   return (
                     <TableRow
-                    key={row.id}
-                    hover
-                    onClick={() => handleRowClick(row)}
-                    sx={{
-                      cursor: "pointer",
-                      backgroundColor:
-                        selectedAccount?.id === row.id
-                          ? "#E3F2FD !important"
-                          : row.id === loggedInUserId
-                          ? "#e6f8e1ff !important"
-                          : "inherit",
-                      "&:hover": {
+                      key={row.id}
+                      hover
+                      onClick={() => handleRowClick(row)}
+                      sx={{
+                        cursor: "pointer",
                         backgroundColor:
                           selectedAccount?.id === row.id
                             ? "#E3F2FD !important"
-                            : "#E3F2FD",
-                      },
-                    }}
-                  >
+                            : row.id === loggedInUserId
+                            ? "#e6f8e1ff !important"
+                            : "inherit",
+                        "&:hover": {
+                          backgroundColor:
+                            selectedAccount?.id === row.id
+                              ? "#E3F2FD !important"
+                              : "#E3F2FD",
+                        },
+                      }}
+                    >
                       {visibleColumns.id && (
                         <TableCell align="center">{row.id}</TableCell>
                       )}
@@ -688,18 +717,18 @@ const AccountListingTable = () => {
           hasNextPage={hasNextPage}
         />
       </Box>
+
       {/* Right Side - Account Details Card */}
       {selectedAccount && (
         <Box
           sx={{
-            flex: { xs: "0 0 100%", md: "0 0 35%" },
-            maxWidth: { xs: "100%", md: "35%" },
+            display: { xs: "none", lg: "block" }, // ✅ Show only on large screens
+            flex: "0 0 35%",
+            maxWidth: "35%",
             transition: "all 0.3s ease",
             bgcolor: "grey.100",
             p: 2,
-            mt: { xs: 2, md: 0 },
             overflowY: "auto",
-            overflowX: "hidden",
             height: "100%",
           }}
         >
@@ -713,6 +742,30 @@ const AccountListingTable = () => {
           />
         </Box>
       )}
+
+      {/* Mobile/Tablet View (Dialog) */}
+      <Dialog
+        open={Boolean(selectedAccount)}
+        onClose={() => setSelectedAccount(null)}
+        fullScreen
+        sx={{
+          display: { xs: "block", lg: "none" }, // ✅ Show on mobile + tablets
+        }}
+      >
+        {selectedAccount && (
+          <Box sx={{ p: 2 }}>
+            <AccountDetailsCard
+              account={selectedAccount}
+              onUpdate={() => {}}
+              onDelete={() => {}}
+              onBack={() => setSelectedAccount(null)}
+              refreshList={(value: any) => refreshList(value)}
+              onCloseDetailCard={() => setSelectedAccount(null)}
+            />
+          </Box>
+        )}
+      </Dialog>
+
       {/* Create Account Modal */}
       <FormModal
         open={openCreateModal}
