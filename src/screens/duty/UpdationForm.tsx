@@ -17,6 +17,8 @@ import {
   showErrorToast,
   showSuccessToast,
 } from "../../common/toastMessageHelper";
+import { RootState } from "../../store/Store";
+import { useSelector } from "react-redux";
 
 type DutyFormValues = {
   id: number;
@@ -81,7 +83,9 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
     null
   );
   const [searchText, _setSearchText] = useState("");
-
+    const canUpdateService = useSelector((state: RootState) =>
+    state.app.permissions.includes("update_service")
+  );
   const getInitialStatusValue = (statusLabel: string): number => {
     const option = statusOptions.find((opt) => opt.label === statusLabel);
     return option ? option.value : 2;
@@ -240,6 +244,7 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
           }}
           onSubmit={handleSubmit(handleDutyUpdate)}
         >
+          {canUpdateService && (
           <Controller
             name="status"
             control={control}
@@ -296,7 +301,7 @@ const DutyUpdateForm: React.FC<IOperatorUpdateFormProps> = ({
                 })}
               </TextField>
             )}
-          />
+          />)}
 
           <Controller
             name="service_id"
