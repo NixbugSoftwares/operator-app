@@ -112,7 +112,7 @@ const MapComponent = React.forwardRef(
     const [_usedTimes, setUsedTimes] = useState<
       { arrivalTS: number; departureTS: number }[]
     >([]);
-     const [distanceUnit, setDistanceUnit] = useState<"m" | "km">("m");
+    const [distanceUnit, setDistanceUnit] = useState<"m" | "km">("m");
 
     // Initialize the map
     const initializeMap = () => {
@@ -788,7 +788,8 @@ const MapComponent = React.forwardRef(
           selectedLandmark?.distance_from_start === undefined ||
           selectedLandmark?.distance_from_start === null ||
           selectedLandmark?.distance_from_start === 0
-        ) {setDistanceError("Distance is required");
+        ) {
+          setDistanceError("Distance is required");
           return;
         }
 
@@ -837,8 +838,6 @@ const MapComponent = React.forwardRef(
       let finalArrivalTS = arrivalTS;
       let finalDepartureTS = departureTS;
 
-
-
       if (
         selectedLandmark?.distance_from_start === undefined ||
         selectedLandmark?.distance_from_start === null ||
@@ -855,7 +854,6 @@ const MapComponent = React.forwardRef(
         setDistanceError("Only starting landmark can have distance 0");
         return;
       }
-
 
       if (selectedLandmarks.length === 0) {
         arrivalDelta = 0;
@@ -885,7 +883,6 @@ const MapComponent = React.forwardRef(
         return;
       }
       setShowTimeError("");
-      
 
       const landmarkWithDistance = {
         ...selectedLandmark,
@@ -1000,12 +997,12 @@ const MapComponent = React.forwardRef(
           arrivalDelta,
           departureDelta,
         });
-if (landmark.distance_from_start <= 0) {
+        if (landmark.distance_from_start <= 0) {
           showErrorToast("Distance from start must be greater than 0.");
           return { success: false };
         }
         // Validate deltas
-        if (arrivalDelta < 0 || departureDelta < 0) {
+        if (arrivalDelta <= 0 || departureDelta <= 0) {
           showErrorToast(
             "Arrival and departure times must be after the starting time."
           );
@@ -1016,8 +1013,6 @@ if (landmark.distance_from_start <= 0) {
           showErrorToast("Departure time must be greater than arrival time.");
           return { success: false };
         }
-
-        
 
         // ✅ Prepare FormData
         const formData = new FormData();
@@ -1233,6 +1228,15 @@ if (landmark.distance_from_start <= 0) {
       }
     }, [selectedLandmark]);
 
+    // Watch for changes in arrival time when isLastLandmark is true
+useEffect(() => {
+  if (isLastLandmark) {
+    setDepartureHour(arrivalHour);
+    setDepartureMinute(arrivalMinute);
+    setDepartureAmPm(arrivalAmPm);
+    setDepartureDayOffset(arrivalDayOffset);
+  }
+}, [isLastLandmark, arrivalHour, arrivalMinute, arrivalAmPm, arrivalDayOffset]);
     return (
       <Box height="100%" display="flex" flexDirection="column">
         <Box
@@ -1313,116 +1317,124 @@ if (landmark.distance_from_start <= 0) {
 
             {!isFirstLandmark && (
               <>
-                <Box sx={{ display: "flex", alignItems: "center", mt: 2, gap: 2 }}>
-  {/* Distance Field (80%) */}
-  <Box sx={{ flex: 8 }}>
-  {(selectedLandmarks.length > 0 || propLandmarks.length > 0) && (
-    <TextField
-  label="Distance from Start"
-  type="number"
-  fullWidth
-  required
-  autoFocus
-  margin="normal"
-  value={
-    selectedLandmark?.distance_from_start
-      ? distanceUnit === "km"
-        ? selectedLandmark.distance_from_start / 1000
-        : selectedLandmark.distance_from_start
-      : ""
-  }
-  onChange={(e) => {
-    const value = e.target.value;
-    const numValue = value === "" ? undefined : parseFloat(value);
+                {/* Distance + Checkbox */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: { xs: "column", sm: "row" },
+                    alignItems: { xs: "stretch", sm: "center" },
+                    mt: 2,
+                    gap: 2,
+                  }}
+                >
+                  {/* Distance Field */}
+                  <TextField
+                    label="Distance from Start"
+                    type="number"
+                    fullWidth
+                    required
+                    margin="normal"
+                    value={
+                      selectedLandmark?.distance_from_start
+                        ? distanceUnit === "km"
+                          ? selectedLandmark.distance_from_start / 1000
+                          : selectedLandmark.distance_from_start
+                        : ""
+                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const numValue =
+                        value === "" ? undefined : parseFloat(value);
 
-    let distanceInMeters =
-      distanceUnit === "km" && numValue !== undefined
-        ? numValue * 1000
-        : numValue;
+                      let distanceInMeters =
+                        distanceUnit === "km" && numValue !== undefined
+                          ? numValue * 1000
+                          : numValue;
 
-    setSelectedLandmark({
-      ...selectedLandmark!,
-      distance_from_start: distanceInMeters,
-    });
+                      setSelectedLandmark({
+                        ...selectedLandmark!,
+                        distance_from_start: distanceInMeters,
+                      });
 
-    if (value !== "") setDistanceError(null);
-  }}
-  inputProps={{
-    min: isFirstLandmark ? 0 : 1,
-    step: "any",
-  }}
-  error={!!distanceError}
-  helperText={distanceError}
-  sx={{ flex: 1 }}
-  InputProps={{
-    endAdornment: (
-      <InputAdornment position="end">
-        <Select
-          value={distanceUnit}
-          onChange={(e) => setDistanceUnit(e.target.value as "m" | "km")}
-          size="small"
-          sx={{
-            "& .MuiSelect-select": { padding: "4px 8px" }, // compact look
-            "& fieldset": { display: "none" }, // remove border
-            fontSize: "0.85rem",
-          }}
-          variant="outlined"
-        >
-          <MenuItem value="m">m</MenuItem>
-          <MenuItem value="km">km</MenuItem>
-        </Select>
-      </InputAdornment>
-    ),
-  }}
-/>
+                      if (value !== "") setDistanceError(null);
+                    }}
+                    inputProps={{
+                      min: isFirstLandmark ? 0 : 1,
+                      step: "any",
+                    }}
+                    error={!!distanceError}
+                    helperText={distanceError}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <Select
+                            value={distanceUnit}
+                            onChange={(e) =>
+                              setDistanceUnit(e.target.value as "m" | "km")
+                            }
+                            size="small"
+                            sx={{
+                              "& .MuiSelect-select": { padding: "4px 8px" },
+                              "& fieldset": { display: "none" },
+                              fontSize: "0.85rem",
+                            }}
+                            variant="outlined"
+                          >
+                            <MenuItem value="m">m</MenuItem>
+                            <MenuItem value="km">km</MenuItem>
+                          </Select>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
 
-  )}
-</Box>
+                  {/* Checkbox */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: { xs: "flex-start", sm: "center" },
+                    }}
+                  >
+                    <Checkbox
+                       sx={{ scale: 0.8 }}
+  checked={isLastLandmark}
+  onChange={(e) => setIsLastLandmark(e.target.checked)}
+  disabled={isFirstLandmark}
+                    />
+                    <Typography variant="body2" fontSize={12}>
+                      Ending Landmark?
+                    </Typography>
+                  </Box>
+                </Box>
 
-  {/* Last Landmark Checkbox (10%) */}
-  <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
-    <Checkbox
-    sx={{
-      scale: 0.8
-    }}
-      checked={isLastLandmark}
-      onChange={(e) => {
-        setIsLastLandmark(e.target.checked);
-        if (e.target.checked) {
-          setDepartureHour(arrivalHour);
-          setDepartureMinute(arrivalMinute);
-          setDepartureAmPm(arrivalAmPm);
-          setDepartureDayOffset(arrivalDayOffset);
-        }
-      }}
-      disabled={isFirstLandmark}
-    />
-  </Box>
-    <Typography variant="body2" fontSize={12}>Ending Landmark?</Typography>
-</Box>
-
+                {/* Arrival Time */}
                 <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
                   Arrival Time (IST)
                 </Typography>
-                <Box sx={{ display: "flex", gap: 2 }}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Day</InputLabel>
-                    <Select
-                      value={arrivalDayOffset}
-                      onChange={(e) =>
-                        !isFirstLandmark &&
-                        setArrivalDayOffset(Number(e.target.value))
-                      }
-                      label="Day"
-                      disabled={isFirstLandmark}
-                    >
-                      {Array.from({ length: 10 }, (_, i) => (
-                        <MenuItem key={i} value={i}>{`Day ${i + 1}`}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
 
-                  <FormControl fullWidth size="small">
+                {/* Day Full Width - Always full width on all devices */}
+                <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                  <InputLabel>Day</InputLabel>
+                  <Select
+                    value={arrivalDayOffset}
+                    onChange={(e) =>
+                      !isFirstLandmark &&
+                      setArrivalDayOffset(Number(e.target.value))
+                    }
+                    label="Day"
+                    disabled={isFirstLandmark}
+                  >
+                    {Array.from({ length: 10 }, (_, i) => (
+                      <MenuItem key={i} value={i}>{`Day ${i + 1}`}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                {/* Hour-Minute-AMPM Row - Always in one row on all devices */}
+                <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                  {/* Hour Select */}
+                  <FormControl size="small" sx={{ flex: 1 }}>
                     <InputLabel>Hour</InputLabel>
                     <Select
                       value={arrivalHour}
@@ -1441,7 +1453,8 @@ if (landmark.distance_from_start <= 0) {
                     </Select>
                   </FormControl>
 
-                  <FormControl fullWidth size="small">
+                  {/* Minute Select */}
+                  <FormControl size="small" sx={{ flex: 1 }}>
                     <InputLabel>Minute</InputLabel>
                     <Select
                       value={arrivalMinute}
@@ -1460,7 +1473,8 @@ if (landmark.distance_from_start <= 0) {
                     </Select>
                   </FormControl>
 
-                  <FormControl fullWidth size="small">
+                  {/* AM/PM Select */}
+                  <FormControl size="small" sx={{ flex: 1 }}>
                     <InputLabel>AM/PM</InputLabel>
                     <Select
                       value={arrivalAmPm}
@@ -1477,39 +1491,43 @@ if (landmark.distance_from_start <= 0) {
                   </FormControl>
                 </Box>
 
+                {/* Departure Time */}
                 <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
                   Departure Time (IST) {isLastLandmark && "(Same as arrival)"}
                 </Typography>
-                <Box sx={{ display: "flex", gap: 2 }}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Day</InputLabel>
-                    <Select
-                      value={
-                        isLastLandmark ? arrivalDayOffset : departureDayOffset
-                      }
-                      onChange={(e) => {
-                        if (!isLastLandmark) {
-                          setDepartureDayOffset(Number(e.target.value));
-                        }
-                      }}
-                      label="Day"
-                      disabled={isFirstLandmark || isLastLandmark}
-                    >
-                      {Array.from({ length: 10 }, (_, i) => (
-                        <MenuItem key={i} value={i}>{`Day ${i + 1}`}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
 
-                  <FormControl fullWidth size="small">
+                {/* Day Full Width - Always full width on all devices */}
+                <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                  <InputLabel>Day</InputLabel>
+                  <Select
+                    value={
+                      isLastLandmark ? arrivalDayOffset : departureDayOffset
+                    }
+                    onChange={(e) => {
+                      if (!isLastLandmark) {
+                        setDepartureDayOffset(Number(e.target.value));
+                      }
+                    }}
+                    label="Day"
+                    disabled={isFirstLandmark || isLastLandmark}
+                  >
+                    {Array.from({ length: 10 }, (_, i) => (
+                      <MenuItem key={i} value={i}>{`Day ${i + 1}`}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                {/* Hour-Minute-AMPM Row - Always in one row on all devices */}
+                <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                  {/* Hour Select */}
+                  <FormControl size="small" sx={{ flex: 1 }}>
                     <InputLabel>Hour</InputLabel>
                     <Select
-                      value={isLastLandmark ? arrivalHour : departureHour}
-                      onChange={(e) => {
-                        if (!isLastLandmark) {
-                          setDepartureHour(Number(e.target.value));
-                        }
-                      }}
+                      value={departureHour}
+                      onChange={(e) =>
+                        !isLastLandmark &&
+                        setDepartureHour(Number(e.target.value))
+                      }
                       label="Hour"
                       disabled={isFirstLandmark || isLastLandmark}
                     >
@@ -1521,15 +1539,15 @@ if (landmark.distance_from_start <= 0) {
                     </Select>
                   </FormControl>
 
-                  <FormControl fullWidth size="small">
+                  {/* Minute Select */}
+                  <FormControl size="small" sx={{ flex: 1 }}>
                     <InputLabel>Minute</InputLabel>
                     <Select
-                      value={isLastLandmark ? arrivalMinute : departureMinute}
-                      onChange={(e) => {
-                        if (!isLastLandmark) {
-                          setDepartureMinute(Number(e.target.value));
-                        }
-                      }}
+                      value={departureMinute}
+                      onChange={(e) =>
+                        !isLastLandmark &&
+                        setDepartureMinute(Number(e.target.value))
+                      }
                       label="Minute"
                       disabled={isFirstLandmark || isLastLandmark}
                     >
@@ -1541,15 +1559,15 @@ if (landmark.distance_from_start <= 0) {
                     </Select>
                   </FormControl>
 
-                  <FormControl fullWidth size="small">
+                  {/* AM/PM Select */}
+                  <FormControl size="small" sx={{ flex: 1 }}>
                     <InputLabel>AM/PM</InputLabel>
                     <Select
-                      value={isLastLandmark ? arrivalAmPm : departureAmPm}
-                      onChange={(e) => {
-                        if (!isLastLandmark) {
-                          setDepartureAmPm(e.target.value as string);
-                        }
-                      }}
+                      value={departureAmPm}
+                      onChange={(e) =>
+                        !isLastLandmark &&
+                        setDepartureAmPm(e.target.value as string)
+                      }
                       label="AM/PM"
                       disabled={isFirstLandmark || isLastLandmark}
                     >

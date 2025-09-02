@@ -4,6 +4,7 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Dialog,
   MenuItem,
   Select,
   Table,
@@ -272,12 +273,12 @@ const ScheduleListingTable = () => {
   return (
     <Box
       sx={{
-        display: "flex",
-        flexDirection: { xs: "column", md: "row" },
-        width: "100%",
-        height: "100%",
-        gap: 2,
-      }}
+      display: "flex",
+      flexDirection: { xs: "column", lg: "row" },
+      width: "100%",
+      height: "100%",
+      gap: 2,
+    }}
     >
       <Box
         sx={{
@@ -286,58 +287,57 @@ const ScheduleListingTable = () => {
             : "0 0 100%",
           maxWidth: selectedSchedule ? { xs: "100%", md: "65%" } : "100%",
           transition: "all 0.3s ease",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
         }}
       >
         {canCreateSchedule && (
           <Button
             sx={{
-              ml: "auto",
-              mr: 2,
-              mb: 2,
-              backgroundColor: !canCreateSchedule
-                ? "#6c87b7 !important"
-                : "#00008B",
-              color: "white",
-              display: "flex",
-              justifyContent: "flex-end",
-            }}
+            ml: "auto",
+            mr: 2,
+            mb: 2,
+            px: 1.5,
+            py: 0.5,
+            fontSize: "0.75rem",
+            height: 36,
+            backgroundColor: canCreateSchedule ? "#00008B" : "#6c87b7 !important",
+            color: "white",
+          }}
             variant="contained"
             onClick={() => setOpenCreateModal(true)}
             disabled={!canCreateSchedule}
-            style={{ cursor: !canCreateSchedule ? "not-allowed" : "pointer" }}
           >
             Add New Schedule
           </Button>
         )}
 
         <TableContainer
-          sx={{
-            flex: 1,
-            maxHeight: "calc(100vh - 100px)",
-            overflowY: "auto",
-            borderRadius: 2,
-            border: "1px solid #e0e0e0",
-            position: "relative",
-          }}
+         sx={{
+          flex: 1,
+          maxHeight: "calc(100vh - 100px)",
+          overflowY: "auto",
+          borderRadius: 2,
+          border: "1px solid #e0e0e0",
+          position: "relative",
+        }}
         >
           {isLoading && (
             <Box
               sx={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                backgroundColor: "rgba(255, 255, 255, 0.7)",
-                zIndex: 1,
-              }}
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(255, 255, 255, 0.7)",
+              zIndex: 1,
+            }}
             >
               <CircularProgress />
             </Box>
@@ -541,14 +541,13 @@ const ScheduleListingTable = () => {
       {selectedSchedule && (
         <Box
           sx={{
-            flex: { xs: "0 0 100%", md: "0 0 35%" },
-            maxWidth: { xs: "100%", md: "35%" },
+            display: { xs: "none", lg: "block" }, // ✅ Only show on large screens
+            flex: "0 0 35%",
+            maxWidth: "35%",
             transition: "all 0.3s ease",
             bgcolor: "grey.100",
             p: 2,
-            mt: { xs: 2, md: 0 },
             overflowY: "auto",
-            overflowX: "hidden",
             height: "100%",
           }}
         >
@@ -563,6 +562,26 @@ const ScheduleListingTable = () => {
           />
         </Box>
       )}
+      <Dialog
+        open={Boolean(selectedSchedule)}
+        onClose={() => setSelectedSchedule(null)}
+        fullScreen
+        sx={{ display: { xs: "block", lg: "none" } }} // ✅ Show on mobile + tablet
+      >
+        {selectedSchedule && (
+          <Box sx={{ p: 2 }}>
+            <ScheduleDetailsCard
+             schedule={selectedSchedule}
+            relatedNames={relatedNames} 
+            onUpdate={() => {}}
+            onDelete={() => {}}
+            onBack={() => setSelectedSchedule(null)}
+            refreshList={(value: any) => refreshList(value)}
+            onCloseDetailCard={() => setSelectedSchedule(null)}
+            />
+          </Box>
+        )}
+      </Dialog>
 
       <FormModal
         open={openCreateModal}

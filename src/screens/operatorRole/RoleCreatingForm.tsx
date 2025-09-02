@@ -227,173 +227,172 @@ const RoleCreationForm: React.FC<IRoleCreationFormProps> = ({
     }
   };
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit(handleRoleCreation)}
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-        width: "100%",
-        maxHeight: "70vh",
-        overflowY: "auto",
-        pr: 1,
-      }}
-    >
-      <Typography variant="h5" gutterBottom>
-        Create New Role
-      </Typography>
+<Box
+  component="form"
+  onSubmit={handleSubmit(handleRoleCreation)}
+  sx={{
+    display: "flex",
+    flexDirection: "column",
+    gap: 2,
+    width: "100%",
+    maxHeight: "70vh",
+    overflowY: "auto",
+    pr: 1,
+  }}
+>
+  <Typography variant="h5" gutterBottom>
+    Create New Role
+  </Typography>
 
-      <TextField
-        label="Role Name"
-        {...register("name", {
-          required: "Role name is required",
-          minLength: {
-            value: 3,
-            message: "Role name must be at least 3 characters",
-          },
-          maxLength: {
-            value: 32,
-            message: "Role name cannot exceed 32 characters",
-          },
-          validate: {
-            noEmptyString: (value) =>
-              value.trim().length > 0 ||
-              "Role name cannot be empty or just spaces",
-            noStartOrEndSpace: (value) =>
-              /^\S.*\S$|^\S$/.test(value) || "Cannot start or end with space",
-            noConsecutiveSpaces: (value) =>
-              !/ {2,}/.test(value) || "Cannot contain consecutive spaces",
-          },
-        })}
-        error={!!errors.name}
-        helperText={errors.name?.message}
-        variant="outlined"
-        size="small"
-        fullWidth
-      />
+  <TextField
+    label="Role Name"
+    {...register("name", {
+      required: "Role name is required",
+      minLength: {
+        value: 3,
+        message: "Role name must be at least 3 characters",
+      },
+      maxLength: {
+        value: 32,
+        message: "Role name cannot exceed 32 characters",
+      },
+      validate: {
+        noEmptyString: (value) =>
+          value.trim().length > 0 || "Role name cannot be empty or just spaces",
+        noStartOrEndSpace: (value) =>
+          /^\S.*\S$|^\S$/.test(value) || "Cannot start or end with space",
+        noConsecutiveSpaces: (value) =>
+          !/ {2,}/.test(value) || "Cannot contain consecutive spaces",
+      },
+    })}
+    error={!!errors.name}
+    helperText={errors.name?.message}
+    variant="outlined"
+    size="small"
+    fullWidth
+  />
 
-      <Divider />
-      <Box display={"flex"} justifyContent={"space-between"} sx={{ mb: 1 }}>
-        <Typography variant="h6" gutterBottom>
-          Permissions
-        </Typography>
-        <FormControlLabel
-          control={
-            <Checkbox
-              size="small"
-              checked={isAllPermissionsSelected()}
-              indeterminate={
-                !isAllPermissionsSelected() &&
-                permissionGroups.some((group) =>
+  <Divider />
+  <Box display="flex" justifyContent="space-between" sx={{ mb: 1 }}>
+    <Typography variant="h6" gutterBottom>
+      Permissions
+    </Typography>
+    <FormControlLabel
+      control={
+        <Checkbox
+          size="small"
+          checked={isAllPermissionsSelected()}
+          indeterminate={
+            !isAllPermissionsSelected() &&
+            permissionGroups.some((group) =>
+              group.permissions.some((permission) =>
+                watch(permission.key as keyof RoleFormValues)
+              )
+            )
+          }
+          onChange={(e) => handleAllPermissionsToggle(e.target.checked)}
+        />
+      }
+      label="Select All"
+      labelPlacement="start"
+      sx={{ m: 0, mb: 1 }}
+    />
+  </Box>
+
+  {/* Responsive grid */}
+  <Box
+    sx={{
+      display: "grid",
+      gridTemplateColumns: {
+        xs: "1fr", // 1 column on mobile
+        sm: "repeat(2, 1fr)", // 2 columns on tablet+
+      },
+      gap: 2,
+    }}
+  >
+    {permissionGroups.map((group) => (
+      <Box
+        key={group.groupName}
+        sx={{
+          p: 2,
+          border: `1px solid ${theme.palette.divider}`,
+          borderRadius: 1,
+        }}
+      >
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+          <Typography variant="subtitle1" fontWeight="medium">
+            {group.groupName}
+          </Typography>
+          <FormControlLabel
+            control={
+              <Checkbox
+                size="small"
+                checked={isGroupAllSelected(group.groupName)}
+                indeterminate={
+                  !isGroupAllSelected(group.groupName) &&
                   group.permissions.some((permission) =>
                     watch(permission.key as keyof RoleFormValues)
                   )
-                )
-              }
-              onChange={(e) => handleAllPermissionsToggle(e.target.checked)}
-            />
-          }
-          label="Select All Permissions"
-          labelPlacement="start"
-          sx={{ m: 0, mb: 1 }}
-        />
-      </Box>
-
-      {/* GRID for permission groups */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "repeat(2, 1fr)",
-          gap: 2,
-        }}
-      >
-        {permissionGroups.map((group) => (
-          <Box
-            key={group.groupName}
-            sx={{
-              p: 2,
-              border: `1px solid ${theme.palette.divider}`,
-              borderRadius: 1,
-            }}
-          >
-            <Box
-              sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
-            >
-              <Typography variant="subtitle1" fontWeight="medium">
-                {group.groupName}
-              </Typography>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    size="small"
-                    checked={isGroupAllSelected(group.groupName)}
-                    indeterminate={
-                      !isGroupAllSelected(group.groupName) &&
-                      group.permissions.some((permission) =>
-                        watch(permission.key as keyof RoleFormValues)
-                      )
-                    }
-                    onChange={(e) =>
-                      handleGroupToggle(group.groupName, e.target.checked)
-                    }
-                  />
                 }
-                label=""
-                labelPlacement="start"
-                sx={{ m: 0 }}
+                onChange={(e) =>
+                  handleGroupToggle(group.groupName, e.target.checked)
+                }
               />
-            </Box>
+            }
+            label=""
+            labelPlacement="start"
+            sx={{ m: 0 }}
+          />
+        </Box>
 
-            <Stack spacing={1}>
-              {group.permissions.map((permission) => (
-                <Controller
-                  key={permission.key}
-                  name={permission.key as keyof RoleFormValues}
-                  control={control}
-                  render={({ field }) => (
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          size="small"
-                          checked={!!field.value}
-                          onChange={(e) => field.onChange(e.target.checked)}
-                          color="primary"
-                        />
-                      }
-                      label={
-                        <Typography variant="body2">
-                          {permission.label}
-                        </Typography>
-                      }
-                      labelPlacement="start"
-                      sx={{
-                        m: 0,
-                        justifyContent: "space-between",
-                        width: "100%",
-                      }}
+        <Stack spacing={1}>
+          {group.permissions.map((permission) => (
+            <Controller
+              key={permission.key}
+              name={permission.key as keyof RoleFormValues}
+              control={control}
+              render={({ field }) => (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      size="small"
+                      checked={!!field.value}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                      color="primary"
                     />
-                  )}
+                  }
+                  label={
+                    <Typography variant="body2">{permission.label}</Typography>
+                  }
+                  labelPlacement="start"
+                  sx={{
+                    m: 0,
+                    justifyContent: "space-between",
+                    width: "100%",
+                  }}
                 />
-              ))}
-            </Stack>
-          </Box>
-        ))}
+              )}
+            />
+          ))}
+        </Stack>
       </Box>
+    ))}
+  </Box>
 
-      <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-        <Button
-          type="submit"
-          variant="contained"
-          size="small"
-          fullWidth
-          disabled={loading}
-          sx={{ bgcolor: "darkblue" }}
-        >
-          {loading ? "Creating..." : "Create Role"}
-        </Button>
-      </Box>
-    </Box>
+  <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+    <Button
+      type="submit"
+      variant="contained"
+      size="small"
+      fullWidth
+      disabled={loading}
+      sx={{ bgcolor: "darkblue" }}
+    >
+      {loading ? "Creating..." : "Create Role"}
+    </Button>
+  </Box>
+</Box>
+
   );
 };
 

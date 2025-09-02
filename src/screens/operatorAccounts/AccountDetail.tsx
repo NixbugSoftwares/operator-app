@@ -199,7 +199,7 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
             <DateRangeOutlinedIcon color="action" sx={{ mr: 1 }} />
 
             <Typography variant="body2">
-              <b> Last updated at:</b>
+              <b> Last updated :</b>
               {moment(account?.updated_on).isValid()
                 ? moment(account.updated_on)
                     .local()

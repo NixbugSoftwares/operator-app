@@ -17,7 +17,7 @@ import {
   Select,
   Checkbox,
   MenuItem,
-  Stack,
+  Dialog,
 } from "@mui/material";
 import RoleDetailsCard from "./RoleDetailCard";
 import RoleCreatingForm from "./RoleCreatingForm";
@@ -187,17 +187,17 @@ const RoleListingTable = () => {
     <Box
       sx={{
         display: "flex",
-        flexDirection: { xs: "column", md: "row" },
+        flexDirection: { xs: "column", lg: "row" }, // ✅ Use lg for side panel
         width: "100%",
-        height: "100vh",
+        height: "100%",
         gap: 2,
       }}
     >
       {/* Table Section */}
       <Box
         sx={{
-          flex: selectedRole ? { xs: "0 0 100%", md: "0 0 50%" } : "0 0 100%",
-          maxWidth: selectedRole ? { xs: "100%", md: "50%" } : "100%",
+          flex: selectedRole ? { xs: "0 0 100%", lg: "0 0 50%" } : "0 0 100%",
+          maxWidth: selectedRole ? { xs: "100%", lg: "50%" } : "100%",
           transition: "all 0.3s ease",
           height: "100%",
           display: "flex",
@@ -205,57 +205,91 @@ const RoleListingTable = () => {
           overflow: "hidden",
         }}
       >
-        <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ p: 2 }}>
-          {1>100==true && (
-          <Select
-            multiple
-            value={Object.keys(visibleColumns).filter(key => visibleColumns[key])}
-            onChange={handleColumnChange}
-            renderValue={(selected) => ` Selected Columns (${selected.length})`}
-            sx={{ minWidth: 200, height: 40 }}
+        
+<Box
+          sx={{
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
+            mb: 2,
+            gap: 1,
+            flexWrap: "nowrap", // Force one line
+          }}
+        >
+          <Box
+            sx={{
+              flexShrink: 0,
+              width: { xs: "50%", md: "auto" },
+            }}
           >
-            {columnConfig.map((column) => (
-              <MenuItem
-                key={column.id}
-                value={column.id}
-                disabled={column.fixed}
-              >
-                <Checkbox
-                  checked={visibleColumns[column.id]}
+            {1>100&&(
+            <Select
+              multiple
+              value={Object.keys(visibleColumns).filter(
+                (key) => visibleColumns[key]
+              )}
+              onChange={handleColumnChange}
+              renderValue={(selected) => `Columns (${selected.length})`}
+              size="small"
+              sx={{
+                minWidth: { xs: "120px", sm: "160px", md: "200px" },
+                height: 36,
+                fontSize: "0.75rem",
+                "& .MuiSelect-select": { py: 0.5 },
+              }}
+            >
+              {columnConfig.map((column) => (
+                <MenuItem
+                  key={column.id}
+                  value={column.id}
                   disabled={column.fixed}
-                />
-                <ListItemText
-                  primary={column.label}
-                  secondary={column.fixed ? "(Always visible)" : undefined}
-                />
-              </MenuItem>
-            ))}
-          </Select>)}
+                >
+                  <Checkbox
+                    checked={visibleColumns[column.id]}
+                    disabled={column.fixed}
+                  />
+                  <ListItemText
+                    primary={column.label}
+                    secondary={column.fixed ? "(Always visible)" : undefined}
+                  />
+                </MenuItem>
+              ))}
+            </Select>)}
+          </Box>
 
           {canCreateRole && (
             <Button
               variant="contained"
               onClick={() => setOpenCreateModal(true)}
               sx={{
+                flexShrink: 0,
+                minWidth: "fit-content",
+                px: 1.5, // Reduce horizontal padding
+                py: 0.5, // Reduce vertical padding
+                fontSize: "0.75rem", // Smaller font
+                height: 36, // Match Select height
                 backgroundColor: "#00008B",
-                color: "white",
-                height: 40,
+                color: "white !important",
+                "&.Mui-disabled": {
+                  color: "#fff !important",
+                },
               }}
             >
               Add New Role
             </Button>
           )}
-        </Stack>
+        </Box>
+
 
         <TableContainer
                   sx={{
-                    flex: 1,
-                    maxHeight: "calc(100vh - 180px)",
-                    overflowY: "auto",
-                    borderRadius: 2,
-                    border: "1px solid #e0e0e0",
-                    position: "relative",
-                  }}
+            flex: 1,
+            maxHeight: "calc(100vh - 100px)",
+            overflowY: "auto",
+            borderRadius: 2,
+            border: "1px solid #e0e0e0",
+            position: "relative",
+          }}
                 >
                   {isLoading && (
                     <Box
@@ -392,14 +426,13 @@ const RoleListingTable = () => {
       {selectedRole && (
         <Box
           sx={{
-            flex: { xs: "0 0 100%", md: "0 0 50%" },
-            maxWidth: { xs: "100%", md: "50%" },
+            display: { xs: "none", lg: "block" }, // ✅ Only show on large screens
+            flex: "0 0 50%",
+            maxWidth: "50%",
             transition: "all 0.3s ease",
             bgcolor: "grey.100",
             p: 2,
-            mt: { xs: 2, md: 0 },
             overflowY: "auto",
-            overflowX: "hidden",
             height: "100%",
           }}
         >
@@ -414,6 +447,27 @@ const RoleListingTable = () => {
           />
         </Box>
       )}
+
+      <Dialog
+              open={Boolean(selectedRole)}
+              onClose={() => setSelectedRole(null)}
+              fullScreen
+              sx={{ display: { xs: "block", lg: "none" } }} // ✅ Show on mobile + tablet
+            >
+              {selectedRole && (
+                <RoleDetailsCard
+                  role={selectedRole}
+                  onBack={() => setSelectedRole(null)}
+                  onUpdate={() => {}}
+                  onDelete={() => {}}
+                  refreshList={(value: any) => refreshList(value)}
+                  handleCloseDetailCard={() => setSelectedRole(null)}
+                  onCloseDetailCard={() => setSelectedRole(null)}
+                />
+              )}
+
+
+            </Dialog>
 
       <FormModal
         open={openCreateModal}

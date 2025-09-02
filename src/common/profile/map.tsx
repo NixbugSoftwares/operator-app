@@ -19,7 +19,6 @@ import {
 import Feature from "ol/Feature";
 import Point from "ol/geom/Point";
 import { Style, Icon } from "ol/style";
-import { showErrorToast } from "../../common/toastMessageHelper";
 import companyLocation from "../../assets/png/companyLocation.png";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/Store";
@@ -60,7 +59,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
       const data = await response.json();
       return data.display_name || "Unknown Location";
     } catch (error) {
-      showErrorToast("Error fetching location name: " + error);
+      // showErrorToast("Error fetching location name: " + error);
       return "Unknown Location";
     }
   };
@@ -77,7 +76,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
           center: initialCoordinates
             ? fromLonLat([initialCoordinates.lng, initialCoordinates.lat])
             : fromLonLat([76.9366, 8.5241]),
-          zoom: 13,
+          zoom: 15,
           minZoom: 3,
           maxZoom: 18,
         }),
@@ -264,11 +263,11 @@ const MapComponent: React.FC<MapComponentProps> = ({
     }
   };
 
-  return (
-  <Box height="100%">
-    {/* Alert Box - Moved to top */}
+return (
+  <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+    {/* Alert Box */}
     <Box mb={2}>
-      <Alert severity="info"> 
+      <Alert severity="info">
         <Typography variant="body2">
           This is a preview of your company's map. You can update your company's location by clicking on the map.
         </Typography>
@@ -281,8 +280,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: 1,
-        backgroundColor: "#f5f5f5",
+        p: 1,
+        bgcolor: "#f5f5f5",
         borderRadius: 1,
         mb: 2,
       }}
@@ -302,7 +301,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
             <MenuItem value="hybrid">Hybrid</MenuItem>
           </Select>
         </FormControl>
-        
       </Box>
 
       <Typography variant="body2">
@@ -323,10 +321,20 @@ const MapComponent: React.FC<MapComponentProps> = ({
       </Button>
     </Box>
 
-    {/* Map Container */}
-    <Box ref={mapRef} width="100%" height="400px" flex={1} />
+    {/* Map Container - Fills Remaining Height */}
+    <Box
+  ref={mapRef}
+  sx={{
+    flex: 1,
+    width: "100%",
+    minHeight: "400px", // 👈 Always at least 400px
+    borderRadius: 1,
+    overflow: "hidden",
+  }}
+/>
   </Box>
 );
+
 };
 
 export default MapComponent;

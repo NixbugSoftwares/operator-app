@@ -750,7 +750,6 @@ const BusListingTable = () => {
           hasNextPage={hasNextPage}
         />
       </Box>
-      {/* 🔹 Right Side Details (Large Screens) */}
       {selectedBus && (
         <Box
           sx={{
@@ -775,12 +774,11 @@ const BusListingTable = () => {
         </Box>
       )}
 
-      {/* 🔹 Dialog for Mobile/Tablet */}
       <Dialog
         open={Boolean(selectedBus)}
         onClose={() => setSelectedBus(null)}
         fullScreen
-        sx={{ display: { xs: "block", lg: "none" } }} // ✅ Show on mobile + tablet
+        sx={{ display: { xs: "block", lg: "none" } }} 
       >
         {selectedBus && (
           <Box sx={{ p: 2 }}>
@@ -796,7 +794,6 @@ const BusListingTable = () => {
         )}
       </Dialog>
 
-      {/* 🔹 Create Bus Modal */}
       <FormModal
         open={openCreateModal}
         onClose={() => setOpenCreateModal(false)}

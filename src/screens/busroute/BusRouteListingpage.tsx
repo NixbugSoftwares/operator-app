@@ -19,9 +19,14 @@ import {
   Typography,
   CircularProgress,
   Chip,
+  AppBar,
+  Toolbar,
+  IconButton,
 } from "@mui/material";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import ErrorIcon from "@mui/icons-material/Error";
+import CloseIcon from "@mui/icons-material/Close";
+import MapIcon from "@mui/icons-material/Map";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/Store";
 import {
@@ -88,7 +93,7 @@ const BusRouteListing = () => {
     state.app.permissions.includes("delete_route")
   );
   const [newLandmarkTrigger, setNewLandmarkTrigger] = useState(false);
-
+  const [showMapMobile, setShowMapMobile] = useState(false);
   const handleStartingTimeChange = (time: string) => {
     setRouteStartingTime(time);
   };
@@ -297,28 +302,31 @@ const BusRouteListing = () => {
       .toString()
       .padStart(2, "0")} ${period}`;
   };
+
+
+
   return (
     <Box
-      sx={{
-        display: "flex",
-        flexDirection: { xs: "column", md: "row" },
-        width: "100%",
-        height: "100vh",
-        gap: 2,
-      }}
+       sx={{
+      display: "flex",
+      flexDirection: { xs: "column", md: "row" },
+      width: "100%",
+      height: "100vh",
+      gap: 2,
+    }}
     >
       {/* Left Side: Table or Creation Form or Details */}
       <Box
         sx={{
-          flex: { xs: "0 0 100%", md: "50%" },
-          maxWidth: { xs: "100%", md: "50%" },
-          transition: "all 0.3s ease",
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-          height: "100vh", // Ensure full height
-          position: "relative", // Needed for absolute positioning of children
-        }}
+        flex: { xs: "0 0 100%", md: "50%" },
+        maxWidth: { xs: "100%", md: "50%" },
+        transition: "all 0.3s ease",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        position: "relative",
+      }}
       >
         {selectedRoute ? (
           <BusRouteDetailsPage
@@ -384,19 +392,18 @@ const BusRouteListing = () => {
               {canCreateRoutes && (
                 <Button
                   sx={{
-                    ml: "auto",
-                    mr: 2,
-                    mb: 2,
-                    display: "block",
-                    backgroundColor: !canCreateRoutes
-                      ? "#6c87b7 !important"
-                      : "#00008B",
-                    color: "white",
-                    "&.Mui-disabled": {
-                      backgroundColor: "#6c87b7 !important",
-                      color: "#ffffff99",
-                    },
-                  }}
+                flexShrink: 0,
+                minWidth: "fit-content",
+                px: 1.5, // Reduce horizontal padding
+                py: 0.5, // Reduce vertical padding
+                fontSize: "0.75rem", // Smaller font
+                height: 36, // Match Select height
+                backgroundColor: "#00008B",
+                color: "white !important",
+                "&.Mui-disabled": {
+                  color: "#fff !important",
+                },
+              }}
                   variant="contained"
                   onClick={toggleCreationForm}
                   disabled={!canCreateRoutes}
@@ -626,32 +633,88 @@ const BusRouteListing = () => {
 
       {/* Right Side: Map */}
       <Box
+      sx={{
+        flex: { xs: "0 0 100%", md: "50%" },
+        height: "100vh",
+        maxWidth: { xs: "100%", md: "50%" },
+        display: { xs: "none", md: "flex" }, // ❌ Hide map on mobile
+        flexDirection: "column",
+        gap: 2,
+      }}
+    >
+      <MapComponent
+        onAddLandmark={isEditingRoute ? handleAddLandmarkEdit : handleAddLandmark}
+        ref={mapRef}
+        landmarks={selectedRoute ? mapLandmarks : landmarks}
+        mode={selectedRoute ? "view" : showCreationForm ? "create" : "list"}
+        isEditing={isEditingRoute || showCreationForm}
+        selectedLandmarks={isEditingRoute ? newRouteLandmarks : landmarks}
+        startingTime={routeStartingTime}
+        routeId={selectedRoute?.id}
+        selectedRouteStartingTime={formatStartTimeToIST(
+          selectedRoute?.start_time || ""
+        )}
+        onLandmarkAdded={() => setNewLandmarkTrigger(true)}
+      />
+    </Box>
+
+     {/* Mobile: Floating "Show Map" Button */}
+    {!showMapMobile && (
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => setShowMapMobile(true)}
         sx={{
-          flex: { xs: "0 0 100%", md: "50%" },
-          height: "100vh",
-          maxWidth: { xs: "100%", md: "50%" },
-          display: "flex",
-          flexDirection: "column",
-          gap: 2,
+          position: "fixed",
+          bottom: 16,
+          right: 16,
+          borderRadius: "50%",
+          minWidth: 56,
+          height: 56,
+          zIndex: 1500,
+          display: { xs: "flex", md: "none" }, // Only mobile
         }}
       >
-        <MapComponent
-          onAddLandmark={
-            isEditingRoute ? handleAddLandmarkEdit : handleAddLandmark
-          }
-          ref={mapRef}
-          landmarks={selectedRoute ? mapLandmarks : landmarks}
-          mode={selectedRoute ? "view" : showCreationForm ? "create" : "list"}
-          isEditing={isEditingRoute || showCreationForm}
-          selectedLandmarks={isEditingRoute ? newRouteLandmarks : landmarks}
-          startingTime={routeStartingTime}
-          routeId={selectedRoute?.id}
-          selectedRouteStartingTime={formatStartTimeToIST(
-            selectedRoute?.start_time || ""
-          )}
-          onLandmarkAdded={() => setNewLandmarkTrigger(true)}
-        />
-      </Box>
+        <MapIcon />
+      </Button>
+    )}
+
+    {/* Mobile: Fullscreen Map Dialog */}
+    <Dialog
+      fullScreen
+      open={showMapMobile}
+      onClose={() => setShowMapMobile(false)}
+    >
+      <AppBar sx={{ position: "relative" }}>
+        <Toolbar>
+          <IconButton
+            edge="start"
+            color="inherit"
+            onClick={() => setShowMapMobile(false)}
+          >
+            <CloseIcon />
+          </IconButton>
+          <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
+            Map View
+          </Typography>
+        </Toolbar>
+      </AppBar>
+
+      <MapComponent
+        onAddLandmark={isEditingRoute ? handleAddLandmarkEdit : handleAddLandmark}
+        ref={mapRef}
+        landmarks={selectedRoute ? mapLandmarks : landmarks}
+        mode={selectedRoute ? "view" : showCreationForm ? "create" : "list"}
+        isEditing={isEditingRoute || showCreationForm}
+        selectedLandmarks={isEditingRoute ? newRouteLandmarks : landmarks}
+        startingTime={routeStartingTime}
+        routeId={selectedRoute?.id}
+        selectedRouteStartingTime={formatStartTimeToIST(
+          selectedRoute?.start_time || ""
+        )}
+        onLandmarkAdded={() => setNewLandmarkTrigger(true)}
+      />
+    </Dialog>
 
       <Dialog
         open={deleteConfirmOpen}
@@ -664,7 +727,7 @@ const BusRouteListing = () => {
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Are you sure you want to delete the route "{routeToDelete?.name}"?
+            Are you sure you want to delete the route "<b>{routeToDelete?.name}</b>"?
             This action cannot be undone.
           </DialogContentText>
         </DialogContent>

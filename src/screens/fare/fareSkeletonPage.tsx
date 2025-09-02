@@ -310,13 +310,17 @@ const CompanyFareSkeletonPage = ({
     }
   };
 
+  const [showEditor, setShowEditor] = useState(false);
   return (
     <Box
       sx={{
         display: "flex",
+        flexDirection: { xs: "column", sm: "row" }, // Stack on mobile, side-by-side on larger screens
         width: "100%",
         height: "100vh",
         overflow: "hidden",
+        maxWidth: { sm: "1200px" }, // Limit max width on larger screens
+        margin: "0 auto",
       }}
     >
       {/* Left Side - Form */}
@@ -324,14 +328,15 @@ const CompanyFareSkeletonPage = ({
         component="form"
         onSubmit={handleSubmit(handleFareCreation)}
         sx={{
-          flex: "0 0 40%",
-          maxWidth: "40%",
-          height: "100vh",
+          flex: { xs: "1", sm: "0 0 40%" },
+          maxWidth: { xs: "100%", sm: "40%" },
+          height: { xs: "100%", sm: "100vh" },
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
-          borderRight: "1px solid #e0e0e0",
-          p: 3,
+          borderRight: { sm: "1px solid #e0e0e0" }, // Border only on larger screens
+          p: { xs: 2, sm: 3 },
+          zIndex: 1,
         }}
       >
         <Box sx={{ flex: 1, overflowY: "auto", mb: 2 }}>
@@ -370,13 +375,13 @@ const CompanyFareSkeletonPage = ({
                 {...field}
                 label="Fare Name"
                 fullWidth
-                sx={{}}
                 error={!!errors.name}
                 helperText={errors.name?.message}
                 onChange={(e) => {
                   const value = e.target.value.replace(/\s{2,}/g, " ");
                   field.onChange(value);
                 }}
+                sx={{ mb: 3 }}
               />
             )}
           />
@@ -386,8 +391,7 @@ const CompanyFareSkeletonPage = ({
           </Typography>
 
           <Stack spacing={2} sx={{ mb: 3 }}>
-            {/* First row with 2 items side by side */}
-            <Stack direction="row" spacing={2}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <Controller
                 name="attributes.currency_type"
                 control={control}
@@ -401,7 +405,6 @@ const CompanyFareSkeletonPage = ({
                   </TextField>
                 )}
               />
-
               <Controller
                 name="attributes.distance_unit"
                 control={control}
@@ -417,25 +420,19 @@ const CompanyFareSkeletonPage = ({
               />
             </Stack>
 
-            {/* Full width field */}
             <Controller
               name="attributes.df_version"
               control={control}
-              disabled
+              defaultValue={1} // Always 1
               render={({ field }) => (
                 <TextField
                   {...field}
                   label="DF Version"
                   type="number"
                   fullWidth
-                  onChange={(e) =>
-                    field.onChange(parseInt(e.target.value) || 0)
-                  }
+                  value={1} // Force value to always be 1
                   InputProps={{
-                    inputProps: {
-                      min: 1,
-                      max: 1,
-                    },
+                    readOnly: true, // Prevent typing
                   }}
                 />
               )}
@@ -478,7 +475,6 @@ const CompanyFareSkeletonPage = ({
               sx={{ mb: 2 }}
               alignItems="center"
             >
-              {/* Ticket Name */}
               <Controller
                 name={`attributes.ticket_types.${index}.name`}
                 control={control}
@@ -496,8 +492,6 @@ const CompanyFareSkeletonPage = ({
                   />
                 )}
               />
-
-              {/* Ticket ID */}
               <Controller
                 name={`attributes.ticket_types.${index}.id`}
                 control={control}
@@ -515,8 +509,6 @@ const CompanyFareSkeletonPage = ({
                   />
                 )}
               />
-
-              {/* Delete Button */}
               <Tooltip title="Remove ticket type">
                 <IconButton onClick={() => remove(index)}>
                   <DeleteIcon color="error" />
@@ -530,35 +522,25 @@ const CompanyFareSkeletonPage = ({
               At least one valid ticket type is required
             </FormHelperText>
           )}
-          {/* calculate fare */}
         </Box>
 
-        {/* Buttons  */}
         <Box
           sx={{
             mt: "auto",
             display: "flex",
             justifyContent: "left",
-            gap: 2,
+            gap: 1,
             pt: 2,
+            flexWrap: "wrap", // Helps buttons wrap on smaller screens
           }}
         >
-          <Button
-            variant="outlined"
-            onClick={onCancel}
-            size="small"
-            disabled={loading}
-          >
-            Back
-          </Button>
-
+          {/* View Mode */}
           {mode === "view" ? (
             <>
               {canDeleteFare && (
                 <Button
                   variant="contained"
                   color="error"
-                  size="small"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDeleteFare(fareToEdit!.id);
@@ -568,6 +550,9 @@ const CompanyFareSkeletonPage = ({
                       backgroundColor: "#e57373 !important",
                       color: "#ffffff99",
                     },
+                    fontSize: { xs: "0.7rem", sm: "0.875rem" },
+                    py: { xs: 0.5, sm: 1 },
+                    px: { xs: 1, sm: 2 },
                   }}
                 >
                   Delete
@@ -577,13 +562,15 @@ const CompanyFareSkeletonPage = ({
                 <Button
                   variant="contained"
                   color="success"
-                  size="small"
                   onClick={handleSubmit(handleFareUpdate)}
                   sx={{
                     "&.Mui-disabled": {
                       backgroundColor: "#81c784 !important",
                       color: "#ffffff99",
                     },
+                    fontSize: { xs: "0.7rem", sm: "0.875rem" },
+                    py: { xs: 0.5, sm: 1 },
+                    px: { xs: 1, sm: 2 },
                   }}
                 >
                   Update
@@ -596,22 +583,53 @@ const CompanyFareSkeletonPage = ({
               variant="contained"
               onClick={handleSubmit(handleFareCreation)}
               disabled={loading}
+              sx={{
+                fontSize: { xs: "0.7rem", sm: "0.875rem" },
+                py: { xs: 0.5, sm: 1 },
+                px: { xs: 1, sm: 2 },
+                backgroundColor:"darkblue"
+              }}
             >
               {loading ? "Saving..." : "Save Fare"}
             </Button>
           )}
+
+          {/* View Editor (Mobile Only) */}
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => setShowEditor(true)}
+            sx={{
+              display: { xs: "block", sm: "none" },
+              ml: "auto",
+              fontSize: { xs: "0.7rem", sm: "0.875rem" },
+              py: { xs: 0.5, sm: 1 },
+              px: { xs: 1, sm: 2 },
+            }}
+          >
+            Function
+          </Button>
         </Box>
       </Paper>
 
-      {/*  Editor */}
+      {/* Editor - Overlay on mobile, side panel on larger screens */}
       <Paper
         sx={{
-          flex: "0 0 60%",
-          maxWidth: "60%",
-          height: "100%",
-          display: "flex",
+          flex: { xs: "none", sm: "0 0 60%" },
+          maxWidth: { xs: "100%", sm: "60%" },
+          height: { xs: "100vh", sm: "100%" },
+          display: {
+            xs: showEditor ? "flex" : "none", // Show only when toggled on mobile
+            sm: "flex",
+          },
           flexDirection: "column",
           overflow: "hidden",
+          position: { xs: "fixed", sm: "static" }, // Overlay on mobile
+          top: 0,
+          left: 0,
+          width: "100%",
+          zIndex: 2,
+          bgcolor: "background.paper",
         }}
       >
         <Box
@@ -623,7 +641,14 @@ const CompanyFareSkeletonPage = ({
             borderBottom: "1px solid #e0e0e0",
           }}
         >
-          <Typography variant="h6">Fare Function</Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <IconButton
+              onClick={() => setShowEditor(false)}
+              sx={{ display: { xs: "block", sm: "none" }, ml: 2 }} // Back button only on mobile
+            >
+              <ArrowBackIcon />
+            </IconButton>
+          </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <TextField
               label="Distance (km)"
@@ -637,7 +662,7 @@ const CompanyFareSkeletonPage = ({
               inputProps={{ min: 1 }}
             />
             <Button variant="contained" onClick={handleRunCode}>
-              Run Code
+              Calculate
             </Button>
           </Box>
         </Box>
@@ -652,7 +677,7 @@ const CompanyFareSkeletonPage = ({
         <Collapse in={showOutput}>
           <Box
             sx={{
-              height: "300px", // Increased height for better visibility
+              height: "300px",
               p: 2,
               overflow: "auto",
               borderTop: "1px solid #e0e0e0",
@@ -702,8 +727,6 @@ const CompanyFareSkeletonPage = ({
                   <Typography variant="subtitle1" gutterBottom>
                     Fare Calculation Results:
                   </Typography>
-
-                  {/* Single distance result */}
                   <Box sx={{ mb: 3 }}>
                     <Typography variant="body2" sx={{ mb: 1 }}>
                       For {fareResults.distance} km:
@@ -731,9 +754,6 @@ const CompanyFareSkeletonPage = ({
                       </TableBody>
                     </Table>
                   </Box>
-
-                  {/* Distance range results */}
-                  {/* Distance range results */}
                   <Box>
                     <Typography variant="body2" sx={{ mb: 1 }}>
                       Fare breakdown by distance:
@@ -779,6 +799,7 @@ const CompanyFareSkeletonPage = ({
           </Box>
         </Collapse>
       </Paper>
+
       <Dialog
         open={deleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}
