@@ -11,6 +11,7 @@ import {
   MenuItem,
   InputAdornment,
   IconButton,
+  Alert,
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
@@ -219,9 +220,9 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
           Update Account
         </Typography>
         {roleMappingError && (
-          <Typography color="error" variant="body2" sx={{ mt: 2 }}>
-            Note: Previous role assignment not found. Please select a new role.
-          </Typography>
+          <Alert severity="error">
+            This account does not have a role assigned. Please assign a role.
+          </Alert>
         )}
         <Box
           component="form"

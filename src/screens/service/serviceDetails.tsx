@@ -291,16 +291,20 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
             </Box>
           </Box>
           <Box sx={{ mt: 2, textAlign: "center" }}>
-            <Button
-              variant="outlined"
-              color="secondary"
-              sx={{ width: "300px" }}
-              onClick={() => navigate(`/ticket?service_id=${service.id}`)}
-            >
-              <ConfirmationNumberIcon sx={{ mr: 1 }} />
-              View All Tickets
-            </Button>
-          </Box>
+  <Button
+    variant="outlined"
+    color="secondary"
+    fullWidth // 👈 auto makes it responsive
+    sx={{
+      maxWidth: 300, // optional, keeps it nice on larger screens
+    }}
+    onClick={() => navigate(`/ticket?service_id=${service.id}`)}
+  >
+    <ConfirmationNumberIcon sx={{ mr: 1 }} />
+    View All Tickets
+  </Button>
+</Box>
+
         </Card>
 
         {/* Action Buttons */}

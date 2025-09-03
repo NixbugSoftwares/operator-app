@@ -311,7 +311,6 @@ const DutyDetailsCard: React.FC<DutyCardProps> = ({
               id: duty.id,
               status: duty.status,
               type: duty.type,
-              service_id: duty.service_id,
             }}
             refreshList={(value: any) => refreshList(value)}
             onClose={() => setUpdateFormOpen(false)}

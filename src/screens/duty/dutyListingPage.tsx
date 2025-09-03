@@ -4,6 +4,7 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Dialog,
   MenuItem,
   Select,
   Table,
@@ -62,99 +63,98 @@ const DutyListingTable = () => {
     state.app.permissions.includes("create_duty")
   );
   const [openCreateModal, setOpenCreateModal] = useState(false);
-  const fetchDutyList = useCallback(
-    async (pageNumber: number, searchParams = {}) => {
-      setIsLoading(true);
-      const offset = pageNumber * rowsPerPage;
 
-      try {
-        const dutyResponse = await dispatch(
-          dutyListingApi({
-            limit: rowsPerPage,
-            offset,
-            ...searchParams,
+
+const fetchDutyList = useCallback(
+  async (pageNumber: number, searchParams = {}) => {
+    setIsLoading(true);
+    const offset = pageNumber * rowsPerPage;
+
+    try {
+      // Fetch duties
+      const dutyResponse = await dispatch(
+        dutyListingApi({
+          limit: rowsPerPage,
+          offset,
+          ...searchParams,
+        })
+      ).unwrap();
+
+      const duties: any[] = dutyResponse.data || [];
+
+      // Convert IDs to string[] and ensure uniqueness
+      const operatorIds: string[] = Array.from(
+        new Set(duties.map((duty) => String(duty.operator_id)))
+      );
+      const serviceIds: string[] = Array.from(
+        new Set(duties.map((duty) => String(duty.service_id)))
+      );
+
+      // Fetch operators and services in parallel (with dummy pagination)
+      const [operatorResponse, serviceResponse] = await Promise.all([
+        dispatch(
+          operatorListApi({
+            id_list: operatorIds,
           })
-        ).unwrap();
-
-        const items = dutyResponse.data || [];
-console.log("items......",items);
-
-        // Fetch details for each duty in parallel
-        const dutiesWithDetails = await Promise.all(
-          items.map(async (duty: any) => {
-            try {
-              const [operatorResponse, serviceResponse] = await Promise.all([
-                dispatch(
-                  operatorListApi({ limit: 1, offset: 0, id: duty.operator_id })
-                ).unwrap(),
-                dispatch(
-                  serviceListingApi({
-                    limit: 1,
-                    offset: 0,
-                    id: duty.service_id,
-                  })
-                ).unwrap(),
-              ]);
-
-              const operator = operatorResponse.data.find(
-                (operator: any) => operator.id === duty.operator_id
-              );
-              const service = serviceResponse.data.find(
-                (service: any) => service.id === duty.service_id
-              );
-
-              return {
-                id: duty.id,
-                name: duty.name,
-                service_id: duty.service_id,
-                serviceName: service?.name || `Service ${duty.service_id}`,
-                operator_id: duty.operator_id,
-                operatorName:
-                  operator?.full_name || `Operator ${duty.operator_id}`,
-                status:
-                  duty.status === 1
-                    ? "Assigned"
-                    : duty.status === 2
-                    ? "Started"
-                    : duty.status === 3
-                    ? "Terminated"
-                    : duty.status === 4
-                    ? "Ended"
-                    : duty.status === 5
-                    ? "Discarded"
-                    : "",
-                created_on: duty.created_on,
-                updated_on: duty.updated_on,
-              };
-            } catch (error:any) {
-              console.error(
-                `Error fetching details for duty ${duty.id}:`,
-                error
-              );
-              
-                showErrorToast(error.message||"Failed fetch duty list");
-              return {
-                ...duty,
-                serviceName: `Service ${duty.service_id}`,
-                operatorName: `Operator ${duty.operator_id}`,
-                status: "Unknown",
-                type: "Unknown",
-              };
-            }
+        ).unwrap(),
+        dispatch(
+          serviceListingApi({
+            id_list: serviceIds,
           })
-        );
+        ).unwrap(),
+      ]);
 
-        setDutyList(dutiesWithDetails);
-        setHasNextPage(items.length === rowsPerPage);
-      } catch (error: any) {
-        console.error("Fetch Error:", error);
-        showErrorToast(error.message || "Failed to fetch Duty list");
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [dispatch]
-  );
+      // Create lookup maps
+      const operatorMap: Record<string, any> = {};
+      operatorResponse.data.forEach((o: any) => {
+        operatorMap[o.id] = o;
+      });
+
+      const serviceMap: Record<string, any> = {};
+      serviceResponse.data.forEach((s: any) => {
+        serviceMap[s.id] = s;
+      });
+
+      // Merge details into duties
+      const dutiesWithDetails : any = duties.map((duty) => ({
+        id: duty.id,
+        name: duty.name,
+        service_id: duty.service_id,
+        serviceName:
+          serviceMap[duty.service_id]?.name || `Service ${duty.service_id}`,
+        operator_id: duty.operator_id,
+        operatorName:
+          operatorMap[duty.operator_id]?.full_name ||
+          `Operator ${duty.operator_id}`,
+        status:
+          duty.status === 1
+            ? "Assigned"
+            : duty.status === 2
+            ? "Started"
+            : duty.status === 3
+            ? "Terminated"
+            : duty.status === 4
+            ? "Ended"
+            : duty.status === 5
+            ? "Discarded"
+            : "",
+        created_on: duty.created_on,
+        updated_on: duty.updated_on,
+      }));
+
+      setDutyList(dutiesWithDetails);
+      setHasNextPage(duties.length === rowsPerPage);
+    } catch (error: any) {
+      console.error("Fetch Error:", error);
+      showErrorToast(error.message || "Failed to fetch Duty list");
+    } finally {
+      setIsLoading(false);
+    }
+  },
+  [dispatch]
+);
+
+
 
   const handleRowClick = (duty: Duty) => {
     setSelectedDuty(duty);
@@ -216,7 +216,7 @@ console.log("items......",items);
     <Box
       sx={{
         display: "flex",
-        flexDirection: { xs: "column", md: "row" },
+        flexDirection: { xs: "column", lg: "row" }, // ✅ Use lg for side panel
         width: "100%",
         height: "100%",
         gap: 2,
@@ -224,8 +224,8 @@ console.log("items......",items);
     >
       <Box
         sx={{
-          flex: selectedDuty ? { xs: "0 0 100%", md: "0 0 65%" } : "0 0 100%",
-          maxWidth: selectedDuty ? { xs: "100%", md: "65%" } : "100%",
+          flex: selectedDuty ? { xs: "0 0 100%", lg: "0 0 65%" } : "0 0 100%",
+          maxWidth: selectedDuty ? { xs: "100%", lg: "65%" } : "100%",
           transition: "all 0.3s ease",
           height: "100%",
           display: "flex",
@@ -235,49 +235,48 @@ console.log("items......",items);
       >
         {canCreateDuty&&(
          <Button
-            sx={{
-              ml: "auto",
-              mr: 2,
-              mb: 2,
-              backgroundColor: !canCreateDuty
-                ? "#6c87b7 !important"
-                : "#00008B",
-              color: "white",
-              display: "flex",
-              justifyContent: "flex-end",
-            }}
-            variant="contained"
-            onClick={() => setOpenCreateModal(true)}
-            disabled={!canCreateDuty}
-            style={{ cursor: !canCreateDuty ? "not-allowed" : "pointer" }}
-          >
+                   variant="contained"
+                   sx={{
+                     ml: "auto",
+                     mr: 2,
+                     mb: 2,
+                     px: 1.5,
+                     py: 0.5,
+                     fontSize: "0.75rem",
+                     height: 36,
+                     backgroundColor: canCreateDuty ? "#00008B" : "#6c87b7 !important",
+                     color: "white",
+                   }}
+                   onClick={() => setOpenCreateModal(true)}
+                   disabled={!canCreateDuty}
+                 >
             Add New Duty
           </Button>)}
 
         <TableContainer
           sx={{
-            flex: 1,
-            maxHeight: "calc(100vh - 100px)",
-            overflowY: "auto",
-            borderRadius: 2,
-            border: "1px solid #e0e0e0",
-            position: "relative",
-          }}
+          flex: 1,
+          maxHeight: "calc(100vh - 100px)",
+          overflowY: "auto",
+          borderRadius: 2,
+          border: "1px solid #e0e0e0",
+          position: "relative",
+        }}
         >
           {isLoading && (
             <Box
-              sx={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                backgroundColor: "rgba(255, 255, 255, 0.7)",
-                zIndex: 1,
-              }}
+             sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(255, 255, 255, 0.7)",
+              zIndex: 1,
+            }}
             >
               <CircularProgress />
             </Box>
@@ -460,6 +459,25 @@ console.log("items......",items);
           />
         </Box>
       )}
+<Dialog
+      open={Boolean(selectedDuty)}
+      onClose={() => setSelectedDuty(null)}
+      fullScreen
+      sx={{ display: { xs: "block", lg: "none" } }}
+    >
+      {selectedDuty && (
+        <Box sx={{ p: 2 }}>
+          <DutyDetailsCard
+            duty={selectedDuty}
+            onBack={() => setSelectedDuty(null)}
+            refreshList={refreshList}
+            onCloseDetailCard={() => setSelectedDuty(null)}
+            onUpdate={() => {}}
+            onDelete={() => {}}
+          />
+        </Box>
+      )}
+    </Dialog>
 
       {/* Create Account Modal */}
       <FormModal

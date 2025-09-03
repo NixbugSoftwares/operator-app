@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Box, Typography, Button } from "@mui/material";
+import { Modal, Box, Typography, Button, useMediaQuery } from "@mui/material";
 import MapComponent from "./map";
 import { showErrorToast } from "../../common/toastMessageHelper";
 
@@ -39,7 +39,7 @@ const MapModal: React.FC<MapModalProps> = ({
           const data = await response.json();
           setSelectedLocation({ name: data.display_name, lat, lng });
         } catch (error) {
-          showErrorToast("Error fetching location name:" + error);
+          showErrorToast("Error fetching location name");
         }
       };
 
@@ -66,52 +66,57 @@ const MapModal: React.FC<MapModalProps> = ({
     }
   };
 
-  return (
-    <Modal open={open} onClose={onClose}>
-      <Box
-        sx={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: 800,
-          height: 600,
-          bgcolor: "background.paper",
-          boxShadow: 24,
-          p: 3,
-          borderRadius: 2,
-        }}
-      >
-        <Typography variant="h6" component="h2">
-          Select Location
-        </Typography>
-        <Box sx={{ height: 480, overflow: "hidden" }}>
-          <MapComponent
-            onSelectLocation={handleLocationSelect}
-            isOpen={open}
-            initialCoordinates={initialCoordinates}
-          />
-        </Box>
-        <Box display={"flex"} justifyContent={"flex-end"}>
-          {canUpdateCompany && (
-          <Button
-            onClick={handleConfirm}
-            disabled={!selectedLocation}
-            sx={{ mt: 2 }}
-          >
-            Confirm
-          </Button>
-        )}
+return (
+<Modal open={open} onClose={onClose}>
+  <Box
+    sx={(theme) => {
+      const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+      const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
+      return {
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: isMobile ? "100%" : isTablet ? "90%" : 900,
+        height: isMobile ? "100%" : isTablet ? "80%" : 700,
+        bgcolor: "background.paper",
+        boxShadow: 24,
+        p: 2,
+        borderRadius: 2,
+        display: "flex",
+        flexDirection: "column",
+      };
+    }}
+  >
+    <Typography variant="h6" component="h2" mb={2}>
+      Select Location
+    </Typography>
 
-        <Button onClick={onClose} sx={{ mt: 2, ml: 2 }} variant="outlined">
-          Back
+    <Box sx={{ flex: 1, overflow: "hidden", mb: 2 }}>
+      <MapComponent
+        onSelectLocation={handleLocationSelect}
+        isOpen={open}
+        initialCoordinates={initialCoordinates}
+      />
+    </Box>
+
+    <Box display="flex" justifyContent="flex-end" gap={2}>
+      {canUpdateCompany && selectedLocation && (
+        <Button
+          onClick={handleConfirm}
+          variant="contained"
+        >
+          Confirm
         </Button>
+      )}
+      <Button onClick={onClose} variant="outlined">
+        Back
+      </Button>
+    </Box>
+  </Box>
+</Modal>
 
-        </Box>
-        
-      </Box>
-    </Modal>
-  );
+);
 };
 
 export default MapModal;

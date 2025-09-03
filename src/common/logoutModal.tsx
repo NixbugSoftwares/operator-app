@@ -6,17 +6,6 @@ import localStorageHelper from "../utils/localStorageHelper";
 import commonHelper from "../utils/commonHelper";
 import { showErrorToast, showSuccessToast } from "./toastMessageHelper";
 
-const style = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  width: 400,
-  bgcolor: "background.paper",
-  boxShadow: 24,
-  p: 4,
-  borderRadius: 2,
-};
 
 interface LogoutConfirmationModalProps {
   open: boolean;
@@ -46,23 +35,59 @@ const LogoutConfirmationModal: React.FC<LogoutConfirmationModalProps> = ({
 
   return (
     <Modal open={open} onClose={onClose}>
-      <Box sx={style}>
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Confirm Logout
-        </Typography>
-        <Typography variant="body1" sx={{ mb: 3 }}>
-          Are you sure you want to logout?
-        </Typography>
-        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
-          <Button variant="outlined" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button variant="contained" color="error" onClick={handleLogout}>
-            Logout
-          </Button>
-        </Box>
-      </Box>
-    </Modal>
+  <Box
+    sx={{
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      bgcolor: "background.paper",
+      boxShadow: 24,
+      p: { xs: 2, sm: 3 },
+      borderRadius: 2,
+      width: { xs: "90%", sm: 400, md: 450 }, // Responsive width
+      maxWidth: "95%",
+      textAlign: "center",
+    }}
+  >
+    <Typography variant="h6" sx={{ mb: 2, fontSize: { xs: "1.1rem", sm: "1.25rem" } }}>
+      Confirm Logout
+    </Typography>
+    <Typography
+      variant="body1"
+      sx={{ mb: 3, fontSize: { xs: "0.9rem", sm: "1rem" } }}
+    >
+      Are you sure you want to logout?
+    </Typography>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: { xs: "column", sm: "row" }, // Stack buttons on small screens
+        justifyContent: "flex-end",
+        gap: 2,
+      }}
+    >
+      <Button
+        variant="outlined"
+        onClick={onClose}
+        fullWidth={true} // Full width on mobile
+        sx={{ flex: 1 }}
+      >
+        Cancel
+      </Button>
+      <Button
+        variant="contained"
+        color="error"
+        onClick={handleLogout}
+        fullWidth={true} // Full width on mobile
+        sx={{ flex: 1 }}
+      >
+        Logout
+      </Button>
+    </Box>
+  </Box>
+</Modal>
+
   );
 };
 

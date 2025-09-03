@@ -37,9 +37,10 @@ const initialState: AppState = {
 };
 
 interface OperatorListParams {
-  limit: number;
-  offset: number;
+  limit?: number;
+  offset?: number;
   id?: string;
+  id_list?: string[];
   full_name?: string;
   gender?: string;
   email_id?: string;
@@ -94,6 +95,7 @@ interface ServiceListParams {
   offset?: number;
   company_id?: number;
   id?: string;
+  id_list?: string[];
   name?: string;
   ticket_mode?: number;
   status?: number;
@@ -124,6 +126,7 @@ interface DutyListParams {
   type?: number;
   company_id?: number;
   service_id?: number;
+  status_list?: number[];
   service_id_list?: number[];
 }
 
@@ -268,12 +271,13 @@ export const companyUpdateApi = createAsyncThunk(
 export const operatorListApi = createAsyncThunk(
   "/Account",
   async (params: OperatorListParams, { rejectWithValue }) => {
-    const { limit, offset, id, full_name, status, gender, email_id, phoneNumber } =
+    const { limit, offset, id, full_name, status, gender, email_id, phoneNumber, id_list } =
       params;
     const queryParams = {
       limit,
       offset,
       ...(id && { id }),
+      ...(id_list && { id_list }),
       ...(full_name && { full_name: full_name }),
       ...(gender && { gender }),
       ...(email_id && { email_id }),
@@ -1126,13 +1130,14 @@ export const fareDeleteApi = createAsyncThunk(
 export const serviceListingApi = createAsyncThunk(
   "/service",
   async (params: ServiceListParams, { rejectWithValue }) => {
-    const { limit, offset, id, name,  ticket_mode, status, status_list, bus_id, starting_at_ge, starting_at_le, order_by, order_in  } =
+    const { limit, offset, id, name, ticket_mode, status, status_list, bus_id, starting_at_ge, starting_at_le, order_by, order_in, id_list } =
       params;
 
     const queryParams = {
       limit,
       offset,
       ...(id && { id }),
+      ...(id_list && { id_list }),
       ...(name && { name: name }),
       ...(ticket_mode && { ticket_mode }),
       ...(status && { status }),
@@ -1375,13 +1380,14 @@ export const scheduleDeleteApi = createAsyncThunk(
 export const dutyListingApi = createAsyncThunk(
   "/duty",
   async (params: DutyListParams, { rejectWithValue }) => {
-    const { limit, offset, id, name, status, type, service_id, service_id_list } = params;
+    const { limit, offset, id, name, status, status_list, type, service_id, service_id_list } = params;
     const queryParams = {
       limit,
       offset,
       ...(id && { id }),
       ...(name && { name }),
       ...(status && { status }),
+      ...(status_list && { status_list }),
       ...(type && { type }),
       ...(service_id && { service_id }),
       ...(service_id_list && { service_id_list }),

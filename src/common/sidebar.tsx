@@ -18,15 +18,15 @@ import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined
 import Diversity3Icon from "@mui/icons-material/Diversity3";
 import RouteIcon from "@mui/icons-material/Route";
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
-import ScheduleIcon from '@mui/icons-material/Schedule';
+import ScheduleIcon from "@mui/icons-material/Schedule";
 import PowerSettingsNewIcon from "@mui/icons-material/PowerSettingsNew";
-import AssignmentIndRoundedIcon from '@mui/icons-material/AssignmentIndRounded';
-import AssignmentTurnedInRoundedIcon from '@mui/icons-material/AssignmentTurnedInRounded';
+import AssignmentIndRoundedIcon from "@mui/icons-material/AssignmentIndRounded";
+import AssignmentTurnedInRoundedIcon from "@mui/icons-material/AssignmentTurnedInRounded";
 import CalculateIcon from "@mui/icons-material/Calculate";
-import PersonIcon from '@mui/icons-material/Person';
+import PersonIcon from "@mui/icons-material/Person";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import { useTheme, useMediaQuery } from "@mui/material";
 import LogoutConfirmationModal from "./logoutModal";
 import localStorageHelper from "../utils/localStorageHelper";
@@ -38,22 +38,34 @@ const Sidebar: React.FC = () => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  
-const companyName = localStorageHelper.getItem("@companyName")?.toLowerCase();
+
+  const companyName = localStorageHelper.getItem("@companyName")?.toLowerCase();
   const sections = [
     {
       title: companyName ? companyName : "",
       items: [
-        { label: "Operator", path: "/operator", icon: <AccountCircleOutlinedIcon /> },
+        {
+          label: "Operator",
+          path: "/operator",
+          icon: <AccountCircleOutlinedIcon />,
+        },
         { label: "Role", path: "/role", icon: <Diversity3Icon /> },
         { label: "Bus", path: "/bus", icon: <DirectionsBusIcon /> },
         { label: "Route", path: "/busroute", icon: <RouteIcon /> },
         { label: "Fare", path: "/fare", icon: <CalculateIcon /> },
-        { label: "Service", path: "/service", icon: <AssignmentIndRoundedIcon /> },
+        {
+          label: "Service",
+          path: "/service",
+          icon: <AssignmentIndRoundedIcon />,
+        },
         { label: "Schedule", path: "/schedule", icon: <ScheduleIcon /> },
-        {label:"Duty",path:"/duty",icon:<AssignmentTurnedInRoundedIcon/>},
+        {
+          label: "Duty",
+          path: "/duty",
+          icon: <AssignmentTurnedInRoundedIcon />,
+        },
         // {label:"Ticket",path:"/ticket",icon:<ConfirmationNumberIcon/>},
-        {label:"Statement",path:"/statement",icon:<ReceiptLongIcon/>},
+        { label: "Statement", path: "/statement", icon: <ReceiptLongIcon /> },
       ],
     },
   ];
@@ -61,7 +73,7 @@ const companyName = localStorageHelper.getItem("@companyName")?.toLowerCase();
   return (
     <>
       {/******************************************  Toggle Button for Small Screens**************************************************/}
-      {isSmallScreen && (
+      {isSmallScreen && !isOpen && (
         <IconButton
           color="inherit"
           aria-label="open drawer"
@@ -80,9 +92,9 @@ const companyName = localStorageHelper.getItem("@companyName")?.toLowerCase();
 
       {/****************************************************  SidebarDrawer *************************************************/}
       <Drawer
-        variant={isSmallScreen ? "temporary" : "permanent"} 
-        open={isSmallScreen ? isOpen : true} 
-        onClose={() => setIsOpen(false)} 
+        variant={isSmallScreen ? "temporary" : "permanent"}
+        open={isSmallScreen ? isOpen : true}
+        onClose={() => setIsOpen(false)}
         sx={{
           width: isSmallScreen ? "auto" : 240,
           flexShrink: 0,
@@ -109,7 +121,7 @@ const companyName = localStorageHelper.getItem("@companyName")?.toLowerCase();
             fontWeight="bold"
             fontSize={{ xs: "1rem", sm: "1.5rem" }}
           >
-           Ente Bus
+            Ente Bus
           </Typography>
         </Box>
         <Divider />
@@ -118,7 +130,15 @@ const companyName = localStorageHelper.getItem("@companyName")?.toLowerCase();
         <Box sx={{ overflow: "auto", p: 2 }}>
           {sections.map((section, index) => (
             <Box key={index} sx={{ mb: 3 }}>
-              <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, textTransform: "uppercase", fontSize: { xs: "0.8rem", sm: "1rem" } }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  mb: 1,
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  fontSize: { xs: "0.8rem", sm: "1rem" },
+                }}
+              >
                 {section.title}
               </Typography>
               <List>
@@ -127,17 +147,17 @@ const companyName = localStorageHelper.getItem("@companyName")?.toLowerCase();
                     <ListItemButton
                       onClick={() => {
                         navigate(item.path);
-                        if (isSmallScreen) setIsOpen(false); 
+                        if (isSmallScreen) setIsOpen(false);
                       }}
-                     sx={{
+                      sx={{
                         backgroundColor:
                           location.pathname === item.path
                             ? "primary.light"
                             : "inherit",
-                             borderRadius: 1,
+                        borderRadius: 1,
                         "&:hover": {
                           backgroundColor: "#E3F2FD",
-                           borderRadius: 1,
+                          borderRadius: 1,
                         },
                       }}
                     >
@@ -152,7 +172,9 @@ const companyName = localStorageHelper.getItem("@companyName")?.toLowerCase();
           ))}
         </Box>
         {/* *******************************************************logout section******************************************************** */}
-        <Box sx={{ px: 2, pt: 1, pb: 0, borderTop: "1px solid #eee", mt: "auto" }}>
+        <Box
+          sx={{ px: 2, pt: 1, pb: 0, borderTop: "1px solid #eee", mt: "auto" }}
+        >
           <List>
             <ListItem disablePadding>
               <ListItemButton
@@ -165,15 +187,14 @@ const companyName = localStorageHelper.getItem("@companyName")?.toLowerCase();
                   py: 0.5,
                 }}
               >
-                <ListItemIcon sx={{ minWidth: 32 }}>
-                </ListItemIcon>
+                <ListItemIcon sx={{ minWidth: 32 }}></ListItemIcon>
                 <ListItemText
                   primary="User"
                   primaryTypographyProps={{
                     fontSize: "0.95rem",
                     fontWeight: 500,
                   }}
-                  sx={{ m: 0 }}
+                  sx={{ ml: 5 }}
                 />
                 {userMenuOpen ? <ExpandMore /> : <ExpandLess />}
               </ListItemButton>
@@ -218,7 +239,10 @@ const companyName = localStorageHelper.getItem("@companyName")?.toLowerCase();
                     <ListItemIcon sx={{ minWidth: 32 }}>
                       <PowerSettingsNewIcon color="error" />
                     </ListItemIcon>
-                    <ListItemText primary="Logout" sx={{ color: "error.main" }} />
+                    <ListItemText
+                      primary="Logout"
+                      sx={{ color: "error.main" }}
+                    />
                   </ListItemButton>
                 </ListItem>
               </List>
@@ -241,7 +265,6 @@ const companyName = localStorageHelper.getItem("@companyName")?.toLowerCase();
           </Typography>
         </Box>
       </Drawer>
-
       <LogoutConfirmationModal
         open={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}

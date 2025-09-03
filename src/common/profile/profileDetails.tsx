@@ -13,7 +13,6 @@ import {
   IconButton,
   useTheme,
   Divider,
-  Button,
   Tooltip,
 } from "@mui/material";
 import {
@@ -32,15 +31,12 @@ import {
 import Diversity3Icon from "@mui/icons-material/Diversity3";
 import { useDispatch } from "react-redux";
 import {
-  clearRoleDetails,
   fetchRoleMappingApi,
-  logoutApi,
   operatorListApi,
   operatorRoleAssignApi,
   operatorRoleListApi,
   operatorUpdationApi,
   roleAssignUpdateApi,
-  userLoggedOut,
 } from "../../slices/appSlice";
 import { companyListApi } from "../../slices/authSlice";
 import localStorageHelper from "../../utils/localStorageHelper";
@@ -50,7 +46,6 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/Store";
 import CompanyDetailsCard from "./compnayDetails";
-import commonHelper from "../../utils/commonHelper";
 
 interface IAccountFormInputs {
   username?: string;
@@ -322,21 +317,6 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await dispatch(logoutApi({})).unwrap();
-      localStorageHelper.clearStorage();
-      localStorageHelper.removeStoredItem("@user");
-      dispatch(clearRoleDetails());
-      commonHelper.logout();
-      dispatch(userLoggedOut());
-      showSuccessToast("Logout successful!");
-    } catch (error: any) {
-      console.error("Logout Error:", error);
-      showErrorToast(error.message || "Logout failed. Please try again.");
-    }
-  };
-
   if (isLoading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
@@ -353,408 +333,440 @@ const ProfilePage: React.FC = () => {
     );
   }
 
-  const renderEditableField = (
-    field: string,
-    label: string,
-    value: string | number,
-    icon: React.ReactNode
-  ) => {
-    if (editingField === field) {
-      return (
-        <Box
-          component="form"
-          onSubmit={handleSubmit(handleAccountUpdate)}
-          sx={{
-            width: "100%",
-            p: 2,
-            backgroundColor:
-              theme.palette.mode === "light"
-                ? theme.palette.grey[50]
-                : theme.palette.grey[800],
-            borderRadius: 1,
-            mb: 1,
-          }}
-        >
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <Avatar
-              sx={{
-                bgcolor: "background.paper",
-                color: "primary.main",
-                width: 40,
-                height: 40,
-              }}
-            >
-              {icon}
-            </Avatar>
-            <Box sx={{ flex: 1 }}>
-              {field === "fullName" && (
-                <TextField
-                  fullWidth
-                  variant="outlined"
-                  size="small"
-                  defaultValue={value}
-                  {...register(field as "fullName", {
-                    required: `${label} is required`,
-                  })}
-                  error={!!errors[field as keyof typeof errors]}
-                  helperText={errors[field as keyof typeof errors]?.message}
-                />
-              )}
-              {field === "email" && (
-                <TextField
-                  fullWidth
-                  variant="outlined"
-                  size="small"
-                  defaultValue={value}
-                  {...register(field as "email", {
-                    required: `${label} is required`,
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: "Invalid email address",
-                    },
-                  })}
-                  error={!!errors.email}
-                  helperText={errors.email?.message}
-                />
-              )}
-              {field === "phoneNumber" && (
-                <TextField
-                  fullWidth
-                  variant="outlined"
-                  size="small"
-                  type="number"
-                  defaultValue={value}
-                  {...register(field as "phoneNumber", {
-                    required: `${label} is required`,
-                    pattern: {
-                      value: /^[0-9]{10}$/,
-                      message: "Invalid phone number (10 digits required)",
-                    },
-                  })}
-                  error={!!errors.phoneNumber}
-                  helperText={errors.phoneNumber?.message}
-                />
-              )}
-              {field === "gender" && (
-                <FormControl fullWidth size="small">
-                  <Select
-                    value={genderValue}
-                    {...register("gender")}
-                    onChange={(e) => setGenderValue(Number(e.target.value))}
-                  >
-                    <MenuItem value={1}>Other</MenuItem>
-                    <MenuItem value={2}>Female</MenuItem>
-                    <MenuItem value={3}>Male</MenuItem>
-                    <MenuItem value={4}>Transgender</MenuItem>
-                  </Select>
-                </FormControl>
-              )}
-              {field === "role" && canManageOperator && (
-                <FormControl fullWidth size="small">
-                  <Select
-                    value={role || ""}
-                    {...register("role", { required: "Role is required" })}
-                    onChange={(e) => setRole(Number(e.target.value))}
-                    error={!!errors.role}
-                  >
-                    {roles.map((r) => (
-                      <MenuItem key={r.id} value={r.id}>
-                        {r.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              )}
-            </Box>
-            <Stack direction="row" spacing={0.5}>
-              <IconButton type="submit" color="primary" size="small">
-                <Check fontSize="small" />
-              </IconButton>
-              <IconButton
-                onClick={handleCancelEdit}
-                color="error"
-                size="small"
-              >
-                <Close fontSize="small" />
-              </IconButton>
-            </Stack>
-          </Stack>
-        </Box>
-      );
-    }
-
+const renderEditableField = (
+  field: string,
+  label: string,
+  value: string | number,
+  icon: React.ReactNode
+) => {
+  if (editingField === field) {
     return (
       <Box
+        component="form"
+        onSubmit={handleSubmit(handleAccountUpdate)}
         sx={{
-          p: 2,
+          width: "100%",
+          p: { xs: 1, sm: 1.5 },
+          backgroundColor:
+            theme.palette.mode === "light"
+              ? theme.palette.grey[50]
+              : theme.palette.grey[800],
           borderRadius: 1,
-          "&:hover": {
-            backgroundColor:
-              theme.palette.mode === "light"
-                ? theme.palette.grey[50]
-                : theme.palette.grey[800],
-          },
           mb: 1,
         }}
       >
-        <Stack direction="row" alignItems="center" spacing={1}>
+        <Stack direction="row" alignItems="center" spacing={1.5}>
           <Avatar
             sx={{
               bgcolor: "background.paper",
               color: "primary.main",
-              width: 32,
-              height: 32,
-              fontSize: 18,
+              width: { xs: 32, sm: 36 },
+              height: { xs: 32, sm: 36 },
             }}
           >
             {icon}
           </Avatar>
-          <Typography
-            variant="subtitle2"
-            color="text.secondary"
-            fontWeight={600}
-            sx={{ minWidth: 110 }}
-          >
-            {label}:
-          </Typography>
-          <Typography
-            variant="body1"
-            color="text.primary"
-            fontWeight={500}
-            sx={{ flex: 1, ml: 2 }}
-          >
-            {value || "Not provided"}
-          </Typography>
-          <IconButton
-            onClick={() => handleEditField(field)}
-            color="primary"
-            size="small"
-            sx={{
-              opacity: 0.7,
-              ml: 1,
-              "&:hover": {
-                opacity: 1,
-              },
-            }}
-          >
-            <Edit fontSize="small" />
-          </IconButton>
+          <Box sx={{ flex: 1, minWidth: 0 }}> {/* Added minWidth: 0 to prevent overflow */}
+            {field === "fullName" && (
+              <TextField
+                fullWidth
+                variant="outlined"
+                size="small"
+                defaultValue={value}
+                {...register(field as "fullName", {
+                  required: `${label} is required`,
+                })}
+                error={!!errors[field as keyof typeof errors]}
+                helperText={errors[field as keyof typeof errors]?.message}
+              />
+            )}
+            {field === "email" && (
+              <TextField
+                fullWidth
+                variant="outlined"
+                size="small"
+                defaultValue={value}
+                {...register(field as "email", {
+                  required: `${label} is required`,
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: "Invalid email address",
+                  },
+                })}
+                error={!!errors.email}
+                helperText={errors.email?.message}
+              />
+            )}
+            {field === "phoneNumber" && (
+              <TextField
+                fullWidth
+                variant="outlined"
+                size="small"
+                type="number"
+                defaultValue={value}
+                {...register(field as "phoneNumber", {
+                  required: `${label} is required`,
+                  pattern: {
+                    value: /^[0-9]{10}$/,
+                    message: "Invalid phone number (10 digits required)",
+                  },
+                })}
+                error={!!errors.phoneNumber}
+                helperText={errors.phoneNumber?.message}
+              />
+            )}
+            {field === "gender" && (
+              <FormControl fullWidth size="small">
+                <Select
+                  value={genderValue}
+                  {...register("gender")}
+                  onChange={(e) => setGenderValue(Number(e.target.value))}
+                >
+                  <MenuItem value={1}>Other</MenuItem>
+                  <MenuItem value={2}>Female</MenuItem>
+                  <MenuItem value={3}>Male</MenuItem>
+                  <MenuItem value={4}>Transgender</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+            {field === "role" && canManageOperator && (
+              <FormControl fullWidth size="small">
+                <Select
+                  value={role || ""}
+                  {...register("role", { required: "Role is required" })}
+                  onChange={(e) => setRole(Number(e.target.value))}
+                  error={!!errors.role}
+                >
+                  {roles.map((r) => (
+                    <MenuItem key={r.id} value={r.id}>
+                      {r.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          </Box>
+          <Stack direction="row" spacing={0.5}>
+            <IconButton type="submit" color="primary" size="small">
+              <Check fontSize="small" />
+            </IconButton>
+            <IconButton
+              onClick={handleCancelEdit}
+              color="error"
+              size="small"
+            >
+              <Close fontSize="small" />
+            </IconButton>
+          </Stack>
         </Stack>
       </Box>
     );
-  };
+  }
 
-  return (
-    <Box sx={{ width: "100%", px: { xs: 1, sm: 2 }, py: 2 }}>
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        sx={{
-          width: "100%",
-          borderRadius: 2,
-          boxShadow: 3,
+return (
+    <Box
+      sx={{
+        p: { xs: 1, sm: 1.5 }, // Reduced padding on mobile
+        borderRadius: 1,
+        "&:hover": {
           backgroundColor:
             theme.palette.mode === "light"
-              ? "#fff"
-              : theme.palette.background.default,
-          overflow: "hidden",
-        }}
-      >
-        {/* Left: Profile Summary */}
-        <Box
+              ? theme.palette.grey[50]
+              : theme.palette.grey[800],
+        },
+        mb: 1,
+      }}
+    >
+      <Stack direction="row" alignItems="center" spacing={1.5}>
+        <Avatar
           sx={{
-            flex: 1,
-            p: { xs: 2, sm: 3 },
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 2,
-            minHeight: "100%",
-            backgroundColor:
-              theme.palette.mode === "light"
-                ? "#f9f9f9"
-                : theme.palette.background.paper,
-            position: "relative",
+            bgcolor: "background.paper",
+            color: "primary.main",
+            width: { xs: 28, sm: 32 }, // Smaller on mobile
+            height: { xs: 28, sm: 32 }, // Smaller on mobile
+            fontSize: { xs: 14, sm: 16 }, // Smaller icon on mobile
           }}
         >
-          <Stack spacing={2} alignItems="center" width="100%">
-            <Avatar
-              sx={{
-                width: 96,
-                height: 96,
-                fontSize: 40,
-                bgcolor: "primary.main",
-                border: `4px solid ${theme.palette.primary.light}`,
-              }}
-            >
-              {profile.full_name.charAt(0)}
-            </Avatar>
-
-            <Typography variant="h5" fontWeight={700}>
-              {profile.full_name}
-            </Typography>
-
-            <Chip
-              label={profile.status}
-              color={getStatusColor(profile.status)}
-              size="medium"
-              sx={{ fontWeight: 600, px: 2, fontSize: 16 }}
-            />
-
-            <Stack
-              spacing={2}
-              alignItems="center"
-              divider={
-                <Box sx={{ width: 1, height: 24, bgcolor: "divider" }} />
-              }
-            >
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Diversity3Icon fontSize="small" color="primary" />
-                <Typography variant="body1" fontWeight={500}>
-                  {roles.find((r) => r.id === role)?.name ?? ""}
-                </Typography>
-              </Stack>
-            </Stack>
-
-            {company && (
-              <Tooltip title="Click to see the company details" arrow>
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  spacing={1}
-                  sx={{
-                    mt: 1,
-                    cursor: "pointer",
-                    color: "primary.main",
-                    "&:hover": { textDecoration: "underline" },
-                  }}
-                  onClick={() => {
-                    setShowCompanyDetails(true);
-                    setTimeout(() => {
-                      const el = document.getElementById("company-details");
-                      if (el) el.scrollIntoView({ behavior: "smooth" });
-                    }, 100); // slight delay to ensure render
-                  }}
-                >
-                  <Business fontSize="small" />
-                  <Typography variant="body1" fontWeight={600}>
-                    {company.name}
-                  </Typography>
-                </Stack>
-              </Tooltip>
-            )}
-          </Stack>
-
-          {/* Logout Button at the Bottom */}
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="flex-end"
-            sx={{ mt: 4, width: "100%" }}
-          >
-            {/* Account Created Date on the left */}
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <CalendarToday fontSize="small" color="primary" />
-              <Typography variant="body2" fontWeight={500}>
-                Account Created: {formatUTCDateToLocal(profile.created_on)}
-              </Typography>
-            </Stack>
-            <Button
-              variant="outlined"
-              color="error"
-              onClick={handleLogout}
-              sx={{ fontWeight: 600 }}
-            >
-              Logout
-            </Button>
-          </Stack>
-        </Box>
-
-        {/* Vertical Divider */}
-        <Box
-          sx={{
-            width: "1px",
-            backgroundColor: "divider",
-            display: { xs: "none", md: "block" },
+          {icon}
+        </Avatar>
+        <Typography
+          variant="subtitle2"
+          color="text.secondary"
+          fontWeight={600}
+          sx={{ 
+            width: { xs: 70, sm: 90 }, // Smaller label width on mobile
+            flexShrink: 0,
+            fontSize: { xs: "0.75rem", sm: "0.875rem" } // Smaller font on mobile
           }}
-        />
-
-        {/* Right: Editable Fields */}
-        <Box sx={{ flex: 2, p: { xs: 2, sm: 3 } }}>
-          <Stack spacing={2}>
-            <Stack
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
-              spacing={2}
-              sx={{ width: "100%" }}
-            >
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Avatar
-                  sx={{
-                    bgcolor: "background.paper",
-                    color: "primary.main",
-                    width: 32,
-                    height: 32,
-                  }}
-                >
-                  <Person />
-                </Avatar>
-                <Typography variant="body1">
-                  <strong>Username:</strong> @{profile.username}
-                </Typography>
-              </Stack>
-              <Typography variant="body1" sx={{ whiteSpace: "nowrap" }}>
-                <strong>User ID:</strong> {profile.id}
-              </Typography>
-            </Stack>
-            <Divider />
-
-            {/* Editable Fields */}
-            {renderEditableField(
-              "fullName",
-              "Full Name",
-              profile.full_name,
-              <Person />
-            )}
-            {renderEditableField("email", "Email", profile.email_id, <Email />)}
-            {renderEditableField(
-              "phoneNumber",
-              "Phone",
-              profile.phoneNumber,
-              <Phone />
-            )}
-            {renderEditableField(
-              "gender",
-              "Gender",
-              profile.gender,
-              profile.gender === "Male" ? (
-                <Male />
-              ) : profile.gender === "Female" ? (
-                <Female />
-              ) : (
-                <Transgender />
-              )
-            )}
-            {canManageOperator &&
-              renderEditableField(
-                "role",
-                "Role",
-                roles.find((r) => r.id === role)?.name ?? "",
-                <Diversity3Icon />
-              )}
-          </Stack>
-        </Box>
+        >
+          {label}:
+        </Typography>
+        <Typography
+          variant="body1"
+          color="text.primary"
+          fontWeight={500}
+          sx={{ 
+            flex: 1, 
+            ml: 1,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            fontSize: { xs: "0.8rem", sm: "1rem" } // Smaller font on mobile
+          }}
+        >
+          {value || "Not provided"}
+        </Typography>
+        <IconButton
+          onClick={() => handleEditField(field)}
+          color="primary"
+          size="small"
+          sx={{
+            opacity: 0.7,
+            "&:hover": {
+              opacity: 1,
+            },
+          }}
+        >
+          <Edit fontSize="small" />
+        </IconButton>
       </Stack>
-
-      {/* Company Details Below */}
-      {company && showCompanyDetails && (
-        <Box id="company-details" sx={{ mt: 4 }}>
-          <CompanyDetailsCard companyId={company.id} />
-        </Box>
-      )}
     </Box>
   );
+};
+
+return (
+  <Box
+    sx={{
+      width: "100%",
+      px: { xs: 0.5, sm: 2, md: 3 },
+      py: { xs: 1, sm: 2 },
+    }}
+  >
+    <Stack
+      direction={{ xs: "column", md: "row" }}
+      sx={{
+        width: "100%",
+        borderRadius: 2,
+        boxShadow: 3,
+        backgroundColor:
+          theme.palette.mode === "light"
+            ? "#fff"
+            : theme.palette.background.default,
+        overflow: "hidden",
+      }}
+    >
+      {/* Left: Profile Summary */}
+      <Box
+        sx={{
+          flex: { xs: "unset", md: 1 },
+          width: { xs: "100%", md: "auto" },
+          p: { xs: 1.5, sm: 3 }, // Reduced padding on mobile
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: { xs: 1, sm: 2 }, // Reduced gap on mobile
+          backgroundColor:
+            theme.palette.mode === "light"
+              ? "#f9f9f9"
+              : theme.palette.background.paper,
+        }}
+      >
+        <Stack spacing={{ xs: 1, sm: 2 }} alignItems="center" width="100%">
+          <Avatar
+            sx={{
+              width: { xs: 60, sm: 90 }, // Smaller on mobile
+              height: { xs: 60, sm: 90 }, // Smaller on mobile
+              fontSize: { xs: 24, sm: 36 }, // Smaller initial on mobile
+              bgcolor: "primary.main",
+              border: `2px solid ${theme.palette.primary.light}`, // Thinner border on mobile
+            }}
+          >
+            {profile.full_name.charAt(0)}
+          </Avatar>
+
+          <Typography
+            variant="h6"
+            fontWeight={700}
+            sx={{ fontSize: { xs: "0.9rem", sm: "1.25rem" } }} // Smaller on mobile
+            textAlign="center"
+          >
+            {profile.full_name}
+          </Typography>
+
+          <Chip
+            label={profile.status}
+            color={getStatusColor(profile.status)}
+            size="small"
+            sx={{
+              fontWeight: 600,
+              fontSize: { xs: "0.65rem", sm: "0.9rem" }, // Smaller on mobile
+              height: { xs: 24, sm: 32 }, // Smaller on mobile
+            }}
+          />
+
+          <Stack spacing={0.5} alignItems="center">
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <Diversity3Icon fontSize="small" color="primary" />
+              <Typography
+                variant="body2"
+                fontWeight={500}
+                sx={{ fontSize: { xs: "0.75rem", sm: "1rem" } }} 
+              >
+                {roles.find((r) => r.id === role)?.name ?? ""}
+              </Typography>
+            </Stack>
+          </Stack>
+
+
+          {company && (
+            <Tooltip title="Click to see the company details" arrow>
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={0.5}
+                sx={{
+                  mt: 0.5,
+                  cursor: "pointer",
+                  color: "primary.main",
+                  "&:hover": { textDecoration: "underline" },
+                }}
+                onClick={() => {
+                  setShowCompanyDetails(true);
+                  setTimeout(() => {
+                    const el = document.getElementById("company-details");
+                    if (el) el.scrollIntoView({ behavior: "smooth" });
+                  }, 100);
+                }}
+              >
+                <Business fontSize="small" />
+                <Typography
+                  variant="body2"
+                  fontWeight={600}
+                  sx={{ fontSize: { xs: "0.75rem", sm: "1rem" } }}
+                >
+                  {company.name}
+                </Typography>
+              </Stack>
+            </Tooltip>
+          )}
+        </Stack>
+
+        {/* Footer */}
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          justifyContent="space-between"
+          alignItems={{ xs: "center", sm: "flex-end" }}
+          spacing={0.5}
+          sx={{ mt: 2, width: "100%" }}
+        >
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            <CalendarToday fontSize="small" color="primary" />
+            <Typography
+              variant="body2"
+              fontWeight={500}
+              sx={{ fontSize: { xs: "0.7rem", sm: "0.9rem" } }} 
+            >
+              Account Created: {formatUTCDateToLocal(profile.created_on)}
+            </Typography>
+          </Stack>
+        </Stack>
+      </Box>
+
+      {/* Divider (hidden on mobile) */}
+      <Box
+        sx={{
+          width: "1px",
+          backgroundColor: "divider",
+          display: { xs: "none", md: "block" },
+        }}
+      />
+
+      {/* Right: Editable Fields */}
+      <Box
+        sx={{
+          flex: 2,
+          p: { xs: 1.5, sm: 3 },
+          width: "100%",
+        }}
+      >
+        <Stack spacing={{ xs: 1.5, sm: 2 }}> 
+          {/* Header Row - Now properly aligned on one line */}
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            spacing={1}
+            sx={{
+              flexWrap: { xs: "wrap", sm: "nowrap" },
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={0.5}> 
+              <Avatar
+                sx={{
+                  bgcolor: "background.paper",
+                  color: "primary.main",
+                  width: { xs: 24, sm: 28 },
+                  height: { xs: 24, sm: 28 },
+                }}
+              >
+                <Person fontSize="small" />
+              </Avatar>
+              <Typography
+                variant="body2"
+                sx={{ fontSize: { xs: "0.75rem", sm: "1rem" } }}
+              >
+                <strong>Username:</strong> @{profile.username}
+              </Typography>
+            </Stack>
+            <Typography
+              variant="body2"
+              sx={{
+                whiteSpace: "nowrap",
+                fontSize: { xs: "0.7rem", sm: "1rem" },
+              }}
+            >
+              <strong>User ID:</strong> {profile.id}
+            </Typography>
+          </Stack>
+
+          <Divider sx={{ my: { xs: 0.5, sm: 1 } }} />
+
+          {/* Editable Fields */}
+          {renderEditableField("fullName", "Full Name", profile.full_name, <Person />)}
+          {renderEditableField("email", "Email", profile.email_id, <Email />)}
+          {renderEditableField("phoneNumber", "Phone", profile.phoneNumber, <Phone />)}
+          {renderEditableField(
+            "gender",
+            "Gender",
+            profile.gender,
+            profile.gender === "Male" ? (
+              <Male />
+            ) : profile.gender === "Female" ? (
+              <Female />
+            ) : (
+              <Transgender />
+            )
+          )}
+          {canManageOperator &&
+            renderEditableField(
+              "role",
+              "Role",
+              roles.find((r) => r.id === role)?.name ?? "",
+              <Diversity3Icon />
+            )}
+        </Stack>
+      </Box>
+    </Stack>
+
+    {/* Company Details */}
+    {company && showCompanyDetails && (
+      <Box id="company-details" sx={{ mt: 2 }}>
+        <CompanyDetailsCard companyId={company.id} />
+      </Box>
+    )}
+  </Box>
+);
 };
 
 export default ProfilePage;
