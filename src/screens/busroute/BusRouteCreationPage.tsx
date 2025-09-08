@@ -20,6 +20,7 @@ import IconButton from "@mui/material/IconButton";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import DirectionsIcon from "@mui/icons-material/Directions";
+import HelpIcon from "@mui/icons-material/Help";
 import {
   routeCreationApi,
   routeLandmarkCreationApi,
@@ -31,6 +32,7 @@ import {
   showSuccessToast,
 } from "../../common/toastMessageHelper";
 import { SelectedLandmark } from "../../types/type";
+import RouteRulesModal from "./RouteRules";
 interface BusRouteCreationProps {
   landmarks: SelectedLandmark[];
   onLandmarkRemove: (id: number) => void;
@@ -72,7 +74,7 @@ const BusRouteCreation = ({
     setValue,
     formState: { errors },
   } = useForm<BusRouteFormInputs>();
-
+  const [showRules, setShowRules] = useState(false);
   // Convert local time to UTC time string
   const convertLocalToUTC = (
     hour: number,
@@ -297,6 +299,9 @@ const BusRouteCreation = ({
     return timeStr;
   }
 
+  const handleShowRules = () => {
+    setShowRules(true);
+  };
   return (
     <Box
       sx={{
@@ -327,10 +332,22 @@ const BusRouteCreation = ({
           flexDirection: "column",
         }}
       >
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Route Creation
-        </Typography>
-
+        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Route Creation
+          </Typography>
+          <Tooltip title="Route Creation Guidelines">
+            <IconButton onClick={handleShowRules} color="primary" size="large">
+              <HelpIcon />
+            </IconButton>
+          </Tooltip>
+          {showRules && (
+            <RouteRulesModal
+              open={showRules}
+              onClose={() => setShowRules(false)}
+            />
+          )}
+        </Box>
         <TextField
           margin="normal"
           fullWidth
@@ -409,249 +426,256 @@ const BusRouteCreation = ({
             </FormControl>
           </Box>
         </Tooltip>
-<Typography variant="subtitle1" sx={{ mt: 3, mb: 1 }}>
-  Route Landmark List
-</Typography>
+        <Typography variant="subtitle1" sx={{ mt: 3, mb: 1 }}>
+          Route Landmark List
+        </Typography>
 
-{landmarks.length === 0 ? (
-  <Box
-    sx={{
-      flex: 1,
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      alignItems: "center",
-      textAlign: "center",
-      p: { xs: 2, sm: 4 },
-      backgroundColor: "action.hover",
-      borderRadius: 1,
-      my: 2,
-      border: "1px dashed",
-      borderColor: "divider",
-    }}
-  >
-    <Typography
-      variant="body1"
-      color="text.secondary"
-      sx={{ mb: 1, fontWeight: 500, fontSize: { xs: "0.9rem", sm: "1rem" } }}
-    >
-      No landmarks selected
-    </Typography>
-    <Typography 
-      variant="body2" 
-      color="text.secondary" 
-      sx={{ mb: 1, fontSize: { xs: "0.8rem", sm: "0.875rem" } }}
-    >
-      Please select landmarks from the map to create your route
-    </Typography>
-  </Box>
-) : (
-  <List
-    sx={{ width: "100%", maxHeight: 400, overflow: "auto", flex: 1 }}
-  >
-    {landmarks
-      .slice()
-      .sort(
-        (a, b) =>
-          (a.distance_from_start || 0) - (b.distance_from_start || 0)
-      )
-      .map((landmark, index) => {
-        const isFirstLandmark = index === 0;
-        const isLastLandmark = index === landmarks.length - 1;
-
-        return (
-          <Box key={`${landmark.id}-${index}`}>
-            <ListItem
+        {landmarks.length === 0 ? (
+          <Box
+            sx={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              textAlign: "center",
+              p: { xs: 2, sm: 4 },
+              backgroundColor: "action.hover",
+              borderRadius: 1,
+              my: 2,
+              border: "1px dashed",
+              borderColor: "divider",
+            }}
+          >
+            <Typography
+              variant="body1"
+              color="text.secondary"
               sx={{
-                display: "flex",
-                alignItems: "flex-start",
-                py: { xs: 0.75, sm: 1 },
-                px: { xs: 0.5, sm: 1 },
-                backgroundColor: isFirstLandmark
-                  ? "#dbf1d9ff"
-                  : isLastLandmark
-                  ? "#ebcacaff"
-                  : index % 2 === 0
-                  ? "action.hover"
-                  : "background.paper",
-                borderRadius: 1,
-                gap: { xs: 0.75, sm: 1 },
+                mb: 1,
+                fontWeight: 500,
+                fontSize: { xs: "0.9rem", sm: "1rem" },
               }}
             >
-              <Chip
-                label={index + 1}
-                color="primary"
-                size="small"
-                sx={{
-                  minWidth: { xs: 24, sm: 28 },
-                  height: { xs: 24, sm: 28 },
-                  fontSize: { xs: "0.7rem", sm: "0.75rem" },
-                  fontWeight: 600,
-                  mt: 0.5,
-                }}
-              />
+              No landmarks selected
+            </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mb: 1, fontSize: { xs: "0.8rem", sm: "0.875rem" } }}
+            >
+              Please select landmarks from the map to create your route
+            </Typography>
+          </Box>
+        ) : (
+          <List
+            sx={{ width: "100%", maxHeight: 400, overflow: "auto", flex: 1 }}
+          >
+            {landmarks
+              .slice()
+              .sort(
+                (a, b) =>
+                  (a.distance_from_start || 0) - (b.distance_from_start || 0)
+              )
+              .map((landmark, index) => {
+                const isFirstLandmark = index === 0;
+                const isLastLandmark = index === landmarks.length - 1;
 
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: { xs: "column", sm: "row" },
-                    justifyContent: "space-between",
-                    alignItems: { xs: "flex-start", sm: "center" },
-                    gap: { xs: 0.5, sm: 0 },
-                  }}
-                >
-                  <Box sx={{ minWidth: 0, flex: 1 }}>
-                    <Typography
-                      variant="subtitle2"
-                      fontWeight={600}
-                      sx={{
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        fontSize: { xs: "0.8rem", sm: "0.875rem" },
-                      }}
-                    >
-                      {landmark.name}
-                    </Typography>
-
-                    {landmark.distance_from_start !== undefined && (
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          mt: 0.5,
-                          fontSize: { xs: "0.65rem", sm: "0.7rem" },
-                          fontWeight: 600,
-                          color: "primary.main",
-                        }}
-                      >
-                        <DirectionsIcon
-                          sx={{ fontSize: { xs: "0.7rem", sm: "0.8rem" }, mr: 0.5 }}
-                        />
-                        {landmark.distance_from_start >= 1000
-                          ? `${Math.round(
-                              landmark.distance_from_start / 1000
-                            )}km`
-                          : `${landmark.distance_from_start}m`}
-                      </Box>
-                    )}
-                  </Box>
-
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: { xs: "column", sm: "row" },
-                      alignItems: { xs: "flex-start", sm: "center" },
-                      gap: { xs: 0.5, sm: 1 },
-                      ml: { xs: 0, sm: 2 },
-                      minWidth: { xs: "100%", sm: "auto" },
-                    }}
-                  >
-                    <Box
+                return (
+                  <Box key={`${landmark.id}-${index}`}>
+                    <ListItem
                       sx={{
                         display: "flex",
-                        flexDirection: { xs: "column", sm: "row" },
-                        gap: { xs: 0.25, sm: 1 },
-                        minWidth: { xs: "100%", sm: 200 },
-                        justifyContent: "flex-end",
+                        alignItems: "flex-start",
+                        py: { xs: 0.75, sm: 1 },
+                        px: { xs: 0.5, sm: 1 },
+                        backgroundColor: isFirstLandmark
+                          ? "#dbf1d9ff"
+                          : isLastLandmark
+                          ? "#ebcacaff"
+                          : index % 2 === 0
+                          ? "action.hover"
+                          : "background.paper",
+                        borderRadius: 1,
+                        gap: { xs: 0.75, sm: 1 },
                       }}
                     >
-                      {/* Arrival Time - show for all except first */}
-                      <Box
+                      <Chip
+                        label={index + 1}
+                        color="primary"
+                        size="small"
                         sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          minWidth: { xs: "auto", sm: 100 },
-                          visibility: isFirstLandmark
-                            ? "hidden"
-                            : "visible",
-                          fontSize: { xs: "0.75rem", sm: "0.8rem" },
-                          order: { xs: 1, sm: 0 },
+                          minWidth: { xs: 24, sm: 28 },
+                          height: { xs: 24, sm: 28 },
+                          fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                          fontWeight: 600,
+                          mt: 0.5,
                         }}
-                      >
-                        <ArrowDownwardIcon
-                          sx={{
-                            fontSize: { xs: "0.7rem", sm: "0.8rem" },
-                            mr: 0.5,
-                            color: "error.main",
-                          }}
-                        />
-                        <span>
-                          Arr:{" "}
-                          {formatTimeForDisplayIST(
-                            landmark.arrivalTime.fullTime
-                          )}
-                        </span>
-                      </Box>
+                      />
 
-                      {/* Departure Time - show for all except last */}
-                      <Box
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexDirection: { xs: "column", sm: "row" },
+                            justifyContent: "space-between",
+                            alignItems: { xs: "flex-start", sm: "center" },
+                            gap: { xs: 0.5, sm: 0 },
+                          }}
+                        >
+                          <Box sx={{ minWidth: 0, flex: 1 }}>
+                            <Typography
+                              variant="subtitle2"
+                              fontWeight={600}
+                              sx={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                              }}
+                            >
+                              {landmark.name}
+                            </Typography>
+
+                            {landmark.distance_from_start !== undefined && (
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  mt: 0.5,
+                                  fontSize: { xs: "0.65rem", sm: "0.7rem" },
+                                  fontWeight: 600,
+                                  color: "primary.main",
+                                }}
+                              >
+                                <DirectionsIcon
+                                  sx={{
+                                    fontSize: { xs: "0.7rem", sm: "0.8rem" },
+                                    mr: 0.5,
+                                  }}
+                                />
+                                {landmark.distance_from_start >= 1000
+                                  ? `${Math.round(
+                                      landmark.distance_from_start / 1000
+                                    )}km`
+                                  : `${landmark.distance_from_start}m`}
+                              </Box>
+                            )}
+                          </Box>
+
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexDirection: { xs: "column", sm: "row" },
+                              alignItems: { xs: "flex-start", sm: "center" },
+                              gap: { xs: 0.5, sm: 1 },
+                              ml: { xs: 0, sm: 2 },
+                              minWidth: { xs: "100%", sm: "auto" },
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexDirection: { xs: "column", sm: "row" },
+                                gap: { xs: 0.25, sm: 1 },
+                                minWidth: { xs: "100%", sm: 200 },
+                                justifyContent: "flex-end",
+                              }}
+                            >
+                              {/* Arrival Time - show for all except first */}
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  minWidth: { xs: "auto", sm: 100 },
+                                  visibility: isFirstLandmark
+                                    ? "hidden"
+                                    : "visible",
+                                  fontSize: { xs: "0.75rem", sm: "0.8rem" },
+                                  order: { xs: 1, sm: 0 },
+                                }}
+                              >
+                                <ArrowDownwardIcon
+                                  sx={{
+                                    fontSize: { xs: "0.7rem", sm: "0.8rem" },
+                                    mr: 0.5,
+                                    color: "error.main",
+                                  }}
+                                />
+                                <span>
+                                  Arr:{" "}
+                                  {formatTimeForDisplayIST(
+                                    landmark.arrivalTime.fullTime
+                                  )}
+                                </span>
+                              </Box>
+
+                              {/* Departure Time - show for all except last */}
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  minWidth: { xs: "auto", sm: 100 },
+                                  visibility: isLastLandmark
+                                    ? "hidden"
+                                    : "visible",
+                                  fontSize: { xs: "0.75rem", sm: "0.8rem" },
+                                  order: { xs: 2, sm: 0 },
+                                }}
+                              >
+                                <ArrowUpwardIcon
+                                  sx={{
+                                    fontSize: { xs: "0.7rem", sm: "0.8rem" },
+                                    mr: 0.5,
+                                    color: "success.main",
+                                  }}
+                                />
+                                <span>
+                                  Dep:{" "}
+                                  {formatTimeForDisplayIST(
+                                    landmark.departureTime.fullTime
+                                  )}
+                                </span>
+                              </Box>
+                            </Box>
+
+                            <IconButton
+                              onClick={() => onLandmarkRemove(landmark.id)}
+                              aria-label="delete"
+                              color="error"
+                              size="small"
+                              sx={{
+                                width: { xs: 20, sm: 24 },
+                                height: { xs: 20, sm: 24 },
+                                fontSize: { xs: "0.7rem", sm: "0.875rem" },
+                                alignSelf: { xs: "flex-end", sm: "center" },
+                                order: { xs: 0, sm: 1 },
+                              }}
+                            >
+                              <DeleteIcon fontSize="inherit" />
+                            </IconButton>
+                          </Box>
+                        </Box>
+                      </Box>
+                    </ListItem>
+
+                    {index < landmarks.length - 1 && (
+                      <Divider
+                        component="li"
                         sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          minWidth: { xs: "auto", sm: 100 },
-                          visibility: isLastLandmark
-                            ? "hidden"
-                            : "visible",
-                          fontSize: { xs: "0.75rem", sm: "0.8rem" },
-                          order: { xs: 2, sm: 0 },
+                          borderLeftWidth: 2,
+                          borderLeftStyle: "dashed",
+                          borderColor: "divider",
+                          height: 16,
+                          ml: { xs: 2.5, sm: 3.5 },
+                          listStyle: "none",
                         }}
-                      >
-                        <ArrowUpwardIcon
-                          sx={{
-                            fontSize: { xs: "0.7rem", sm: "0.8rem" },
-                            mr: 0.5,
-                            color: "success.main",
-                          }}
-                        />
-                        <span>
-                          Dep:{" "}
-                          {formatTimeForDisplayIST(
-                            landmark.departureTime.fullTime
-                          )}
-                        </span>
-                      </Box>
-                    </Box>
-
-                    <IconButton
-                      onClick={() => onLandmarkRemove(landmark.id)}
-                      aria-label="delete"
-                      color="error"
-                      size="small"
-                      sx={{ 
-                        width: { xs: 20, sm: 24 }, 
-                        height: { xs: 20, sm: 24 },
-                        fontSize: { xs: "0.7rem", sm: "0.875rem" },
-                        alignSelf: { xs: "flex-end", sm: "center" },
-                        order: { xs: 0, sm: 1 },
-                      }}
-                    >
-                      <DeleteIcon fontSize="inherit" />
-                    </IconButton>
+                      />
+                    )}
                   </Box>
-                </Box>
-              </Box>
-            </ListItem>
-
-            {index < landmarks.length - 1 && (
-              <Divider
-                component="li"
-                sx={{
-                  borderLeftWidth: 2,
-                  borderLeftStyle: "dashed",
-                  borderColor: "divider",
-                  height: 16,
-                  ml: { xs: 2.5, sm: 3.5 },
-                  listStyle: "none",
-                }}
-              />
-            )}
-          </Box>
-        );
-      })}
-  </List>
-)}
+                );
+              })}
+          </List>
+        )}
 
         <Box sx={{ mt: "auto", pt: 2 }}>
           <Stack direction="row" spacing={2} justifyContent="flex-end">
