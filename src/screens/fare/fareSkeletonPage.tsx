@@ -309,7 +309,6 @@ const CompanyFareSkeletonPage = ({
       setLoading(false);
     }
   };
-
   const [showEditor, setShowEditor] = useState(false);
   return (
     <Box
@@ -538,44 +537,68 @@ const CompanyFareSkeletonPage = ({
           {mode === "view" ? (
             <>
               {canDeleteFare && (
-                <Button
-                  variant="contained"
-                  color="error"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteFare(fareToEdit!.id);
-                  }}
-                  sx={{
-                    "&.Mui-disabled": {
-                      backgroundColor: "#e57373 !important",
-                      color: "#ffffff99",
-                    },
-                    fontSize: { xs: "0.7rem", sm: "0.875rem" },
-                    py: { xs: 0.5, sm: 1 },
-                    px: { xs: 1, sm: 2 },
-                  }}
-                >
-                  Delete
-                </Button>
-              )}
-              {canUpdateFare && (
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={handleSubmit(handleFareUpdate)}
-                  sx={{
-                    "&.Mui-disabled": {
-                      backgroundColor: "#81c784 !important",
-                      color: "#ffffff99",
-                    },
-                    fontSize: { xs: "0.7rem", sm: "0.875rem" },
-                    py: { xs: 0.5, sm: 1 },
-                    px: { xs: 1, sm: 2 },
-                  }}
-                >
-                  Update
-                </Button>
-              )}
+  <Tooltip
+    title={
+      fareToEdit?.scope === 1
+        ? "Global fare cannot be Deleted"
+        : ""
+    }
+  >
+    <span>
+      <Button
+        variant="contained"
+        color="error"
+        disabled={fareToEdit?.scope === 1 || loading}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleDeleteFare(fareToEdit!.id);
+        }}
+        sx={{
+          "&.Mui-disabled": {
+            backgroundColor: "#e57373 !important",
+            color: "#ffffff99",
+          },
+          fontSize: { xs: "0.7rem", sm: "0.875rem" },
+          py: { xs: 0.5, sm: 1 },
+          px: { xs: 1, sm: 2 },
+        }}
+      >
+        Delete
+      </Button>
+    </span>
+  </Tooltip>
+)}
+
+{canUpdateFare && (
+  <Tooltip
+    title={
+      fareToEdit?.scope === 1
+        ? "Global fare cannot be updated"
+        : ""
+    }
+  >
+    <span>
+      <Button
+        variant="contained"
+        color="success"
+        disabled={fareToEdit?.scope === 1 || loading}
+        onClick={handleSubmit(handleFareUpdate)}
+        sx={{
+          "&.Mui-disabled": {
+            backgroundColor: "#81c784 !important",
+            color: "#ffffff99",
+          },
+          fontSize: { xs: "0.7rem", sm: "0.875rem" },
+          py: { xs: 0.5, sm: 1 },
+          px: { xs: 1, sm: 2 },
+        }}
+      >
+        Update
+      </Button>
+    </span>
+  </Tooltip>
+)}
+
             </>
           ) : (
             <Button
