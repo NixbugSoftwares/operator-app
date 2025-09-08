@@ -357,7 +357,9 @@ return (
                         },
                         "& .MuiInputBase-input": {
                           textAlign: "center",
+                          
                         },
+                        minWidth: { xs: 80, sm: "100%" },
                       }}
                     />
                   )}

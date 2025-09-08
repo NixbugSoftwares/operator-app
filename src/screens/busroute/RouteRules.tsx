@@ -41,7 +41,7 @@ const rules = [
       maxWidth="sm"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: 3, p: 1 },
+        sx: { borderRadius: 0, p: 1 },
       }}
     >
       <DialogTitle
@@ -75,10 +75,10 @@ const rules = [
         </List>
       </DialogContent>
 
-      <DialogActions sx={{ justifyContent: "center", p: 2 }}>
+      <DialogActions sx={{ justifyContent: "left", p: 2 }}>
         <Button
           onClick={onClose}
-          variant="contained"
+          variant="outlined"
           color="primary"
           sx={{  px: 3 }}
         >

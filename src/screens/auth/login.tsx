@@ -266,10 +266,10 @@ const LoginPage: React.FC = () => {
               alignItems: "center",
             }}
           >
-            <Avatar sx={{ m: 1, bgcolor: "darkblue" }}>
+            <Avatar sx={{ m: 2, bgcolor: "darkblue" }}>
               <LockOutlinedIcon />
             </Avatar>
-            <Typography component="h1" variant="h5">
+            <Typography sx={{ mb: 4 }} component="h1" variant="h5">
               Sign In
             </Typography>
             <Box

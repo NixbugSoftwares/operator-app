@@ -425,6 +425,8 @@ const ScheduleListingTable = () => {
                             textAlign: "center",
                             fontSize: selectedSchedule ? "0.8rem" : "1rem",
                           },
+                          
+                        minWidth: { xs: 80, sm: "100%" },
                         }}
                       />
                     )}
@@ -522,7 +524,7 @@ const ScheduleListingTable = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} align="center">
-                    No schedule found.
+                    No Schedule Found.
                   </TableCell>
                 </TableRow>
               )}

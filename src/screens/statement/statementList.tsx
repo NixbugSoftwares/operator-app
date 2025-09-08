@@ -342,155 +342,176 @@ const StatementListingPage = () => {
 
   return (
     <Box
-    sx={{
-      p: { xs: 1.5, sm: 2, md: 3 },
-      display: "flex",
-      flexDirection: "column",
-      height: "100vh",
-      gap: 2,
-    }}
-  >
-    {!(activeTab === "statement") && (
-      <Stack
-      direction={{ xs: "column", md: "row" }}
-      spacing={2}
-      alignItems={{ xs: "stretch", md: "center" }}
-      justifyContent="space-between"
+      sx={{
+        mt: { xs: 4, sm: 0 },
+        p: { xs: 1.5, sm: 2, md: 3 },
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        minHeight: 0,
+        gap: 2,
+      }}
     >
+      {!(activeTab === "statement") && (
         <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        alignItems={{ xs: "stretch", sm: "center" }}
-        flex={1}
-      >
-          <FormControl sx={{ minWidth: { xs: "100%", sm: 200 } }}>
-            <InputLabel id="bus-select-label">Select Bus</InputLabel>
-            <Select
-              labelId="bus-select-label"
-              value={selectedBus || ""}
-              label="Select Bus"
-              onChange={handleBusChange}
-              disabled={isLoading}
-            >
-              {busList.map((bus) => (
-                <MenuItem key={bus.id} value={bus.id}>
-                  {bus.name} ({bus.registrationNumber})
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <Button
-            variant="outlined"
-            onClick={() => fetchServices()}
-            disabled={isLoading}
+          direction={{ xs: "column", md: "row" }}
+          spacing={2}
+          alignItems={{ xs: "stretch", md: "center" }}
+          justifyContent="space-between"
+        >
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2}
+            alignItems={{ xs: "stretch", sm: "center" }}
+            flex={1}
           >
-            Refresh
-          </Button>
-        </Stack>
+            <FormControl
+              size="small"
+              sx={{ minWidth: { xs: "100%", sm: 200 } }}
+            >
+              <InputLabel id="bus-select-label">Select Bus</InputLabel>
+              <Select
+                labelId="bus-select-label"
+                value={selectedBus || ""}
+                label="Select Bus"
+                onChange={handleBusChange}
+                disabled={isLoading}
+              >
+                {busList.map((bus) => (
+                  <MenuItem key={bus.id} value={bus.id}>
+                    {bus.name} ({bus.registrationNumber})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            {selectedBus && (
+              <Button
+                variant="outlined"
+                onClick={() => fetchServices()}
+                disabled={isLoading}
+              >
+                Refresh
+              </Button>
+            )}
+          </Stack>
 
-        {/* Date range filters */}
-         <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        flex={1}
-        justifyContent="flex-end"
-      >
-          <TextField
-            label="From"
-          type="date"
-          value={fromDate}
-          onChange={handleFromDateChange}
-          InputLabelProps={{ shrink: true }}
-          size="small"
-          sx={{ minWidth: { xs: "100%", sm: 150 } }}
-          />
+          {/* Date range filters */}
+          <Stack
+            direction="row" // Always row, even on mobile
+            spacing={1} // Reduced spacing for mobile
+            flex={1}
+            justifyContent="flex-end"
+            sx={{
+              mt: { xs: 2, sm: 0 },
+              width: "100%",
+              minWidth: 0,
+            }}
+          >
+            <TextField
+              label="From"
+              type="date"
+              value={fromDate}
+              onChange={handleFromDateChange}
+              InputLabelProps={{ shrink: true }}
+              sx={{
+                minWidth: 90,
+                fontSize: "0.85rem",
+                "& input": { fontSize: "0.85rem", py: 0.5 },
+                "& label": { fontSize: "0.85rem" },
+              }}
+            />
 
-          <TextField
-           label="To"
-          type="date"
-          value={toDate}
-          onChange={handleToDateChange}
-          InputLabelProps={{ shrink: true }}
-          size="small"
-          sx={{ minWidth: { xs: "100%", sm: 150 } }}
-          />
+            <TextField
+              label="To"
+              type="date"
+              value={toDate}
+              onChange={handleToDateChange}
+              InputLabelProps={{ shrink: true }}
+              sx={{
+                minWidth: 90,
+                fontSize: "0.85rem",
+                "& input": { fontSize: "0.85rem", py: 0.5 },
+                "& label": { fontSize: "0.85rem" },
+              }}
+            />
+          </Stack>
         </Stack>
-      </Stack>
-    
-    )}
-{!(activeTab === "statement") && (
-      <Divider sx={{ my: 2 }} />)}
+      )}
+      {!(activeTab === "statement") && <Divider sx={{ my: 2 }} />}
 
       {selectedBus && (
         <>
           <Box
             display="flex"
-          flexDirection={{ xs: "column", sm: "row" }}
-          justifyContent="space-between"
-          gap={2}
+            flexDirection={{ xs: "column", sm: "row" }}
+            justifyContent="space-between"
+            gap={2}
           >
-             <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1}>
               {activeTab === "statement" && (
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => setActiveTab("services")}
-            >
-              Services
-            </Button>)}
-          </Stack>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setActiveTab("services")}
+                >
+                  Services
+                </Button>
+              )}
+            </Stack>
             {activeTab === "services" &&
-            selectedServices.filter((s) => s.isSelected).length > 0 && (
-              <Button
-                variant="contained"
-                size="small"
-                onClick={generateStatement}
-                disabled={isGeneratingStatement}
-                sx={{
-                  backgroundColor: "darkblue",
-                  color: "white",
-                  alignSelf: { xs: "stretch", sm: "center" },
-                }}
-                startIcon={
-                  isGeneratingStatement ? <CircularProgress size={18} /> : null
-                }
-              >
-                Generate Statement
-              </Button>
-            )}
-        </Box>
+              selectedServices.filter((s) => s.isSelected).length > 0 && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={generateStatement}
+                  disabled={isGeneratingStatement}
+                  sx={{
+                    backgroundColor: "darkblue",
+                    color: "white",
+                    alignSelf: { xs: "stretch", sm: "center" },
+                  }}
+                  startIcon={
+                    isGeneratingStatement ? (
+                      <CircularProgress size={18} />
+                    ) : null
+                  }
+                >
+                  Generate Statement
+                </Button>
+              )}
+          </Box>
           {activeTab === "services" ? (
             /* Services Table with fixed pagination */
             <Box
-            sx={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              minHeight: 0,
-            }}
-          >
-              <TableContainer
               sx={{
                 flex: 1,
-                maxHeight: { xs: "60vh", md: "calc(100vh - 200px)" },
-                overflowY: "auto",
-                borderRadius: 2,
-                border: "1px solid #e0e0e0",
-                position: "relative",
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 0,
               }}
             >
+              <TableContainer
+                sx={{
+                  flex: 1,
+                  maxHeight: { xs: "60vh", md: "calc(100vh - 200px)" },
+                  overflowY: "auto",
+                  borderRadius: 2,
+                  border: "1px solid #e0e0e0",
+                  position: "relative",
+                }}
+              >
                 {isLoading && (
                   <Box
-                  sx={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    backgroundColor: "rgba(255, 255, 255, 0.7)",
-                    zIndex: 1,
-                  }}
-                >
+                    sx={{
+                      position: "absolute",
+                      inset: 0,
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      backgroundColor: "rgba(255, 255, 255, 0.7)",
+                      zIndex: 1,
+                    }}
+                  >
                     <CircularProgress />
                   </Box>
                 )}
@@ -504,6 +525,9 @@ const StatementListingPage = () => {
                           fontWeight: 600,
                           fontSize: "0.875rem",
                           borderBottom: "1px solid #ddd",
+                          width: 60,
+                          textAlign: "center", // <-- Add this
+                          p: 0, // <-- Remove default padding
                         }}
                       >
                         <Checkbox
@@ -526,6 +550,7 @@ const StatementListingPage = () => {
                                 service.status === "Ended"
                             )
                           }
+                          sx={{ m: 0 }} // <-- Remove margin
                         />
                       </TableCell>
                       <TableCell
@@ -534,6 +559,8 @@ const StatementListingPage = () => {
                           fontWeight: 600,
                           fontSize: "0.875rem",
                           borderBottom: "1px solid #ddd",
+                          minWidth: 160,
+                          width: 180,
                         }}
                       >
                         Service Name
@@ -544,6 +571,9 @@ const StatementListingPage = () => {
                           fontWeight: 600,
                           fontSize: "0.875rem",
                           borderBottom: "1px solid #ddd",
+                          minWidth: 100,
+                          width: 140,
+                          // pl: 2, // <-- Remove this for better alignment
                         }}
                       >
                         Route
@@ -554,6 +584,8 @@ const StatementListingPage = () => {
                           fontWeight: 600,
                           fontSize: "0.875rem",
                           borderBottom: "1px solid #ddd",
+                          width: 110,
+                          textAlign: "center",
                         }}
                       >
                         Status
@@ -582,43 +614,44 @@ const StatementListingPage = () => {
                           const cannotSelectTooltip =
                             "Cannot generate statement for services in Started or Created state";
 
-                          return (
-                            <TableRow
-                              key={service.id}
-                              hover
-                              sx={{ cursor: canSelect ? "pointer" : "default" }}
-                              onClick={() =>
-                                canSelect && handleServiceSelection(service.id)
-                              }
-                            >
-                              <TableCell padding="checkbox">
-                                {canSelect ? (
-                                  <Checkbox
-                                    checked={isSelected}
-                                    onChange={() =>
-                                      handleServiceSelection(service.id)
-                                    }
-                                  />
-                                ) : (
-                                  <Tooltip title={cannotSelectTooltip} arrow>
-                                    <span>
-                                      <Checkbox
-                                        checked={false}
-                                        disabled
-                                        sx={{ opacity: 0.5 }}
-                                      />
-                                    </span>
-                                  </Tooltip>
-                                )}
+                          const rowContent = (
+                            <>
+                              <TableCell
+                                padding="checkbox"
+                                sx={{ textAlign: "center", width: 60, p: 0 }} // <-- Match header
+                              >
+                                <Checkbox
+                                  checked={canSelect ? isSelected : false}
+                                  onChange={() =>
+                                    canSelect &&
+                                    handleServiceSelection(service.id)
+                                  }
+                                  disabled={!canSelect}
+                                  sx={{ opacity: canSelect ? 1 : 0.5, m: 0 }} // <-- Remove margin
+                                />
                               </TableCell>
-                              <TableCell>{service.name}</TableCell>
-                              <TableCell>{service.routeName}</TableCell>
-                              <TableCell>
+                              <TableCell
+                                align="left"
+                                sx={{
+                                  minWidth: 160,
+                                  width: 180,
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {service.name}
+                              </TableCell>
+                              <TableCell
+                                align="left"
+                                sx={{ minWidth: 100, width: 140 }}
+                              >
+                                {service.routeName}
+                              </TableCell>
+                              <TableCell align="center" sx={{ width: 110 }}>
                                 <Chip
                                   label={service.status}
                                   size="small"
                                   sx={{
-                                    width: 100,
+                                    width: 90,
                                     backgroundColor:
                                       service.status === "Created"
                                         ? "rgba(33, 150, 243, 0.12)"
@@ -641,7 +674,35 @@ const StatementListingPage = () => {
                                   }}
                                 />
                               </TableCell>
+                            </>
+                          );
+
+                          return canSelect ? (
+                            <TableRow
+                              key={service.id}
+                              hover
+                              sx={{ cursor: "pointer" }}
+                              onClick={() => handleServiceSelection(service.id)}
+                            >
+                              {rowContent}
                             </TableRow>
+                          ) : (
+                            <Tooltip
+                              title={cannotSelectTooltip}
+                              arrow
+                              placement="top"
+                            >
+                              <TableRow
+                                key={service.id}
+                                sx={{
+                                  cursor: "not-allowed",
+                                  backgroundColor: "#f9f9f9",
+                                  "&:hover": { backgroundColor: "#f0f0f0" },
+                                }}
+                              >
+                                {rowContent}
+                              </TableRow>
+                            </Tooltip>
                           );
                         })
                     )}
@@ -657,7 +718,7 @@ const StatementListingPage = () => {
               </TableContainer>
 
               {/* Fixed Pagination at bottom */}
-               <Box sx={{ p: 1.5, borderTop: 1, borderColor: "divider" }}>
+              <Box sx={{ p: 1.5, borderTop: 1, borderColor: "divider" }}>
                 <PaginationControls
                   page={page}
                   onPageChange={(newPage) => handleChangePage(null, newPage)}
@@ -668,26 +729,26 @@ const StatementListingPage = () => {
             </Box>
           ) : (
             <Card sx={{ p: 2 }}>
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={2}
-              alignItems={{ xs: "stretch", sm: "center" }}
-              justifyContent="space-between"
-              mb={2}
-            >
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={2}
+                alignItems={{ xs: "stretch", sm: "center" }}
+                justifyContent="space-between"
+                mb={2}
+              >
                 <Alert severity="info" sx={{ flex: 1 }}>
                   Total Collection:{" "}
                   <strong>₹{totalCollection.toFixed(2)}</strong>
                 </Alert>
                 <Button
-                variant="contained"
-                onClick={() => setIsOperatorWise((prev) => !prev)}
-                sx={{ backgroundColor: "darkblue" }}
-                size="small"
-              >
-                {isOperatorWise ? "Duty wise" : "Operator wise"}
-              </Button>
-            </Stack>
+                  variant="contained"
+                  onClick={() => setIsOperatorWise((prev) => !prev)}
+                  sx={{ backgroundColor: "darkblue" }}
+                  size="small"
+                >
+                  {isOperatorWise ? "Duty wise" : "Operator wise"}
+                </Button>
+              </Stack>
 
               {isOperatorWise ? (
                 <Box sx={{ display: "flex", justifyContent: "center" }}>
@@ -714,13 +775,14 @@ const StatementListingPage = () => {
                               {op.name}
                             </TableCell>
                             <TableCell sx={{ textAlign: "center" }}>
-  <b>
-    {op.total !== null && op.total !== undefined && !isNaN(op.total)
-      ? op.total.toFixed(2)
-      : "Duty Not Finished"}
-  </b>
-</TableCell>
-
+                              <b>
+                                {op.total !== null &&
+                                op.total !== undefined &&
+                                !isNaN(op.total)
+                                  ? op.total.toFixed(2)
+                                  : "Duty Not Finished"}
+                              </b>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -830,13 +892,14 @@ const StatementListingPage = () => {
                             {item.date}
                           </TableCell>
                           <TableCell sx={{ textAlign: "center" }} align="right">
-  <b>
-    {item.collection !== null && item.collection !== undefined && !isNaN(item.collection)
-      ? item.collection.toFixed(2)
-      : "Duty Not Finished"}
-  </b>
-</TableCell>
-
+                            <b>
+                              {item.collection !== null &&
+                              item.collection !== undefined &&
+                              !isNaN(item.collection)
+                                ? item.collection.toFixed(2)
+                                : "Duty Not Finished"}
+                            </b>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -858,28 +921,32 @@ const StatementListingPage = () => {
       {/*************************************************************when no bus is selected*************************************/}
       {!selectedBus && (
         <Box
-        flex={1}
-        display="flex"
-        flexDirection="column"
-        justifyContent="center"
-        alignItems="center"
-        textAlign="center"
-        p={3}
-      >
-        <Box mb={2}>
-          <img
-            src={nodataimage}
-            alt="No data"
-            style={{ width: 120, height: 120, opacity: 0.7 }}
-          />
+          flex={1}
+          display="flex"
+          flexDirection="column"
+          justifyContent="center"
+          alignItems="center"
+          textAlign="center"
+          p={3}
+        >
+          <Box mb={2}>
+            <img
+              src={nodataimage}
+              alt="No data"
+              style={{ width: 120, height: 120, opacity: 0.7 }}
+            />
+          </Box>
+          <Typography variant="h6" gutterBottom>
+            No Statement Available
+          </Typography>
+          <Typography
+            variant="body2"
+            color="textSecondary"
+            sx={{ maxWidth: 400 }}
+          >
+            Please select a bus and date range to generate a statement.
+          </Typography>
         </Box>
-        <Typography variant="h6" gutterBottom>
-          No Statement Available
-        </Typography>
-        <Typography variant="body2" color="textSecondary" sx={{ maxWidth: 400 }}>
-          Please select a bus and date range to generate a statement.
-        </Typography>
-      </Box>
       )}
     </Box>
   );

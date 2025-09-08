@@ -272,13 +272,13 @@ const DutyCreationForm: React.FC<IOperatorCreationFormProps> = ({
       <CssBaseline />
       <Box
         sx={{
-          mt: 4,
-          mb: 4,
-          px: 2,
-          py: 3,
-          borderRadius: 2,
-          backgroundColor: "#f9f9f9",
-          boxShadow: 3,
+          mt: 4
+        //   mb: 4,
+        //   px: 2,
+        //   py: 3,
+        //   borderRadius: 2,
+        //   backgroundColor: "#f9f9f9",
+        //   boxShadow: 3,
         }}
       >
         <Typography component="h1" variant="h5" align="center" gutterBottom>

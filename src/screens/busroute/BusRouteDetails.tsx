@@ -32,7 +32,7 @@ import {
   ArrowDownward,
 } from "@mui/icons-material";
 import AddIcon from "@mui/icons-material/Add";
-import ReportIcon from '@mui/icons-material/Report';
+import ReportIcon from "@mui/icons-material/Report";
 import {
   busRouteLandmarkListApi,
   landmarkListApi,
@@ -581,38 +581,33 @@ const BusRouteDetailsPage = ({
       sx={{ p: 3, display: "flex", flexDirection: "column", height: "100%" }}
     >
       <Stack
-  direction="row"
-  alignItems="center"
-  justifyContent="space-between"
-  sx={{ mb: 2 }}
->
-  {/* Left: Back Button */}
-  <Button variant="outlined" onClick={onBack}>
-    Back
-  </Button>
-
-  {/* Right: Report Icon */}
-  {routeStatus === "Invalid" && (
-    <Tooltip title="View Route Guidelines">
-      <IconButton
-        onClick={handleShowRules}
-        color="error"
-        size="large"
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        sx={{ mb: 2 }}
       >
-        <ReportIcon />
-      </IconButton>
-    </Tooltip>
-  )}
+        {/* Left: Back Button */}
+        <Button variant="outlined" onClick={onBack}>
+          Back
+        </Button>
 
-  {/* Rules Modal */}
-  {showRules && (
-    <RouteRulesModal
-      open={showRules}
-      onClose={() => setShowRules(false)}
-    />
-  )}
-</Stack>
+        {/* Right: Report Icon */}
+        {routeStatus === "Invalid" && (
+          <Tooltip title="View Route Guidelines">
+            <IconButton onClick={handleShowRules} color="error" size="large">
+              <ReportIcon />
+            </IconButton>
+          </Tooltip>
+        )}
 
+        {/* Rules Modal */}
+        {showRules && (
+          <RouteRulesModal
+            open={showRules}
+            onClose={() => setShowRules(false)}
+          />
+        )}
+      </Stack>
 
       <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
         <Stack direction="column" alignItems="center" spacing={1}>
@@ -976,11 +971,11 @@ const BusRouteDetailsPage = ({
                                   }
                                   aria-label="edit"
                                   color="primary"
-                                  size="small"
+                                  size="medium"
                                   sx={{
-                                    width: { xs: 20, sm: 24 },
-                                    height: { xs: 20, sm: 24 },
-                                    fontSize: { xs: "0.7rem", sm: "0.875rem" },
+                                    width: { xs: 32, sm: 40 },
+                                    height: { xs: 32, sm: 40 },
+                                    fontSize: { xs: "1.2rem", sm: "1.5rem" },
                                   }}
                                   disabled={isFirstLandmark}
                                 >
@@ -990,11 +985,11 @@ const BusRouteDetailsPage = ({
                                   onClick={() => handleDeleteClick(landmark)}
                                   aria-label="delete"
                                   color="error"
-                                  size="small"
+                                  size="medium"
                                   sx={{
-                                    width: { xs: 20, sm: 24 },
-                                    height: { xs: 20, sm: 24 },
-                                    fontSize: { xs: "0.7rem", sm: "0.875rem" },
+                                    width: { xs: 32, sm: 40 },
+                                    height: { xs: 32, sm: 40 },
+                                    fontSize: { xs: "1.2rem", sm: "1.5rem" },
                                   }}
                                   disabled={isFirstLandmark}
                                 >

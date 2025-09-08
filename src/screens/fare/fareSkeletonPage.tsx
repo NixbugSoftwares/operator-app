@@ -333,9 +333,11 @@ const CompanyFareSkeletonPage = ({
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
-          borderRight: { sm: "1px solid #e0e0e0" }, // Border only on larger screens
           p: { xs: 2, sm: 3 },
           zIndex: 1,
+          boxShadow: "none",
+          borderRadius: 0,
+          border: "none",
         }}
       >
         <Box sx={{ flex: 1, overflowY: "auto", mb: 2 }}>
@@ -385,61 +387,72 @@ const CompanyFareSkeletonPage = ({
             )}
           />
 
-          <Typography variant="h6" gutterBottom>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
             Attributes
           </Typography>
 
-          <Stack spacing={2} sx={{ mb: 3 }}>
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <Controller
-                name="attributes.currency_type"
-                control={control}
-                render={({ field }) => (
-                  <TextField {...field} select label="Currency Type" fullWidth>
-                    {["INR"].map((currency) => (
-                      <MenuItem key={currency} value={currency}>
-                        {currency}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-              <Controller
-                name="attributes.distance_unit"
-                control={control}
-                render={({ field }) => (
-                  <TextField {...field} select label="Distance Unit" fullWidth>
-                    {["m"].map((unit) => (
-                      <MenuItem key={unit} value={unit}>
-                        {unit}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-            </Stack>
+          <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+            <Controller
+              name="attributes.currency_type"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Currency"
+                  fullWidth
+                  size="small"
+                >
+                  {["INR"].map((currency) => (
+                    <MenuItem key={currency} value={currency}>
+                      {currency}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+
+            <Controller
+              name="attributes.distance_unit"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Unit"
+                  fullWidth
+                  size="small"
+                >
+                  {["m"].map((unit) => (
+                    <MenuItem key={unit} value={unit}>
+                      {unit}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
 
             <Controller
               name="attributes.df_version"
               control={control}
-              defaultValue={1} // Always 1
+              defaultValue={1}
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="DF Version"
+                  label="Version"
                   type="number"
                   fullWidth
-                  value={1} // Force value to always be 1
+                  size="small"
+                  value={1}
                   InputProps={{
-                    readOnly: true, // Prevent typing
+                    readOnly: true,
                   }}
                 />
               )}
             />
           </Stack>
 
-          <Divider sx={{ my: 2 }} />
-
+          <Divider sx={{ my: 1 }} />
           <Box
             sx={{
               display: "flex",
@@ -525,80 +538,84 @@ const CompanyFareSkeletonPage = ({
 
         <Box
           sx={{
-            mt: "auto",
+            mt: { xs: 0, sm: "auto" },
             display: "flex",
             justifyContent: "left",
             gap: 1,
             pt: 2,
-            flexWrap: "wrap", // Helps buttons wrap on smaller screens
+            flexWrap: "wrap",
+            position: { xs: "sticky", sm: "static" }, // Sticky on mobile
+            bottom: { xs: 0, sm: "auto" }, // Stick to bottom on mobile
+            bgcolor: { xs: "background.paper", sm: "inherit" }, // Background for sticky
+            zIndex: { xs: 10, sm: "auto" }, // Ensure above other content
+            pb: { xs: 2, sm: 0 }, // Padding bottom for mobile
           }}
         >
           {/* View Mode */}
           {mode === "view" ? (
             <>
               {canDeleteFare && (
-  <Tooltip
-    title={
-      fareToEdit?.scope === 1
-        ? "Global fare cannot be Deleted"
-        : ""
-    }
-  >
-    <span>
-      <Button
-        variant="contained"
-        color="error"
-        disabled={fareToEdit?.scope === 1 || loading}
-        onClick={(e) => {
-          e.stopPropagation();
-          handleDeleteFare(fareToEdit!.id);
-        }}
-        sx={{
-          "&.Mui-disabled": {
-            backgroundColor: "#e57373 !important",
-            color: "#ffffff99",
-          },
-          fontSize: { xs: "0.7rem", sm: "0.875rem" },
-          py: { xs: 0.5, sm: 1 },
-          px: { xs: 1, sm: 2 },
-        }}
-      >
-        Delete
-      </Button>
-    </span>
-  </Tooltip>
-)}
+                <Tooltip
+                  title={
+                    fareToEdit?.scope === 1
+                      ? "Global fare cannot be Deleted"
+                      : ""
+                  }
+                >
+                  <span>
+                    <Button
+                      variant="contained"
+                      color="error"
+                      disabled={fareToEdit?.scope === 1 || loading}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteFare(fareToEdit!.id);
+                      }}
+                      sx={{
+                        "&.Mui-disabled": {
+                          backgroundColor: "#e57373 !important",
+                          color: "#ffffff99",
+                        },
+                        fontSize: { xs: "0.7rem", sm: "0.875rem" },
+                        py: { xs: 0.5, sm: 1 },
+                        px: { xs: 1, sm: 2 },
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </span>
+                </Tooltip>
+              )}
 
-{canUpdateFare && (
-  <Tooltip
-    title={
-      fareToEdit?.scope === 1
-        ? "Global fare cannot be updated"
-        : ""
-    }
-  >
-    <span>
-      <Button
-        variant="contained"
-        color="success"
-        disabled={fareToEdit?.scope === 1 || loading}
-        onClick={handleSubmit(handleFareUpdate)}
-        sx={{
-          "&.Mui-disabled": {
-            backgroundColor: "#81c784 !important",
-            color: "#ffffff99",
-          },
-          fontSize: { xs: "0.7rem", sm: "0.875rem" },
-          py: { xs: 0.5, sm: 1 },
-          px: { xs: 1, sm: 2 },
-        }}
-      >
-        Update
-      </Button>
-    </span>
-  </Tooltip>
-)}
-
+              {canUpdateFare && (
+                <Tooltip
+                  title={
+                    fareToEdit?.scope === 1
+                      ? "Global fare cannot be updated"
+                      : ""
+                  }
+                >
+                  <span>
+                    <Button
+                      variant="contained"
+                      color="success"
+                      disabled={fareToEdit?.scope === 1 || loading}
+                      onClick={handleSubmit(handleFareUpdate)}
+                      sx={{
+                        "&.Mui-disabled": {
+                          backgroundColor: "#81c784 !important",
+                          color: "#ffffff99",
+                        },
+                        fontSize: { xs: "0.7rem", sm: "0.875rem" },
+                        py: { xs: 0.5, sm: 1 },
+                        px: { xs: 1, sm: 2 },
+                      }}
+                    >
+                      Update
+                    </Button>
+                  </span>
+                </Tooltip>
+              )}
             </>
           ) : (
             <Button
@@ -610,7 +627,7 @@ const CompanyFareSkeletonPage = ({
                 fontSize: { xs: "0.7rem", sm: "0.875rem" },
                 py: { xs: 0.5, sm: 1 },
                 px: { xs: 1, sm: 2 },
-                backgroundColor:"darkblue"
+                backgroundColor: "darkblue",
               }}
             >
               {loading ? "Saving..." : "Save Fare"}
@@ -653,6 +670,9 @@ const CompanyFareSkeletonPage = ({
           width: "100%",
           zIndex: 2,
           bgcolor: "background.paper",
+          boxShadow: "none",
+          borderRadius: 0,
+          border: "none",
         }}
       >
         <Box
