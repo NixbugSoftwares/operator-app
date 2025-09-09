@@ -82,7 +82,6 @@ return (
         bgcolor: "background.paper",
         boxShadow: 24,
         p: 2,
-        borderRadius: 2,
         display: "flex",
         flexDirection: "column",
       };

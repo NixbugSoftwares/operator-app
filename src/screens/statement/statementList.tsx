@@ -354,88 +354,76 @@ const StatementListingPage = () => {
     >
       {!(activeTab === "statement") && (
         <Stack
-          direction={{ xs: "column", md: "row" }}
-          spacing={2}
-          alignItems={{ xs: "stretch", md: "center" }}
-          justifyContent="space-between"
-        >
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={2}
-            alignItems={{ xs: "stretch", sm: "center" }}
-            flex={1}
-          >
-            <FormControl
-              size="small"
-              sx={{ minWidth: { xs: "100%", sm: 200 } }}
-            >
-              <InputLabel id="bus-select-label">Select Bus</InputLabel>
-              <Select
-                labelId="bus-select-label"
-                value={selectedBus || ""}
-                label="Select Bus"
-                onChange={handleBusChange}
-                disabled={isLoading}
-              >
-                {busList.map((bus) => (
-                  <MenuItem key={bus.id} value={bus.id}>
-                    {bus.name} ({bus.registrationNumber})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            {selectedBus && (
-              <Button
-                variant="outlined"
-                onClick={() => fetchServices()}
-                disabled={isLoading}
-              >
-                Refresh
-              </Button>
-            )}
-          </Stack>
+  direction={{ xs: "column", md: "row" }}
+  spacing={2}
+  alignItems={{ xs: "stretch", md: "center" }}
+  justifyContent="space-between"
+>
+  {/* Bus select + refresh */}
+  <Stack
+    direction={{ xs: "column", sm: "row" }}
+    spacing={2}
+    alignItems={{ xs: "stretch", sm: "center" }}
+    flex={1}
+  >
+    <FormControl size="small" fullWidth>
+      <InputLabel id="bus-select-label">Select Bus</InputLabel>
+      <Select
+        labelId="bus-select-label"
+        value={selectedBus || ""}
+        label="Select Bus"
+        onChange={handleBusChange}
+        disabled={isLoading}
+      >
+        {busList.map((bus) => (
+          <MenuItem key={bus.id} value={bus.id}>
+            {bus.name} ({bus.registrationNumber})
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
 
-          {/* Date range filters */}
-          <Stack
-            direction="row" // Always row, even on mobile
-            spacing={1} // Reduced spacing for mobile
-            flex={1}
-            justifyContent="flex-end"
-            sx={{
-              mt: { xs: 2, sm: 0 },
-              width: "100%",
-              minWidth: 0,
-            }}
-          >
-            <TextField
-              label="From"
-              type="date"
-              value={fromDate}
-              onChange={handleFromDateChange}
-              InputLabelProps={{ shrink: true }}
-              sx={{
-                minWidth: 90,
-                fontSize: "0.85rem",
-                "& input": { fontSize: "0.85rem", py: 0.5 },
-                "& label": { fontSize: "0.85rem" },
-              }}
-            />
+    {selectedBus && (
+      <Button
+        variant="outlined"
+        onClick={() => fetchServices()}
+        disabled={isLoading}
+      >
+        Refresh
+      </Button>
+    )}
+  </Stack>
 
-            <TextField
-              label="To"
-              type="date"
-              value={toDate}
-              onChange={handleToDateChange}
-              InputLabelProps={{ shrink: true }}
-              sx={{
-                minWidth: 90,
-                fontSize: "0.85rem",
-                "& input": { fontSize: "0.85rem", py: 0.5 },
-                "& label": { fontSize: "0.85rem" },
-              }}
-            />
-          </Stack>
-        </Stack>
+  {/* Date range filters */}
+  <Stack
+    direction="row"
+    spacing={1}
+    flex={1}
+    justifyContent="flex-end"
+    sx={{ mt: { xs: 2, sm: 0 } }}
+  >
+    <TextField
+      fullWidth
+      size="small"
+      label="From"
+      type="date"
+      value={fromDate}
+      onChange={handleFromDateChange}
+      InputLabelProps={{ shrink: true }}
+    />
+
+    <TextField
+      fullWidth
+      size="small"
+      label="To"
+      type="date"
+      value={toDate}
+      onChange={handleToDateChange}
+      InputLabelProps={{ shrink: true }}
+    />
+  </Stack>
+</Stack>
+
       )}
       {!(activeTab === "statement") && <Divider sx={{ my: 2 }} />}
 
