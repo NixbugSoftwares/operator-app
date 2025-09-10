@@ -63,6 +63,7 @@ const BusRouteListing = () => {
     id: number;
     name: string;
     start_time: string;
+    status: string;
   } | null>(null);
 
   const mapRef = useRef<{
@@ -303,35 +304,34 @@ const BusRouteListing = () => {
       .padStart(2, "0")} ${period}`;
   };
 
-
-
   return (
     <Box
-       sx={{
-      display: "flex",
-      flexDirection: { xs: "column", md: "row" },
-      width: "100%",
-      height: "100vh",
-      gap: 2,
-    }}
+      sx={{
+        display: "flex",
+        flexDirection: { xs: "column", md: "row" },
+        width: "100%",
+        height: "100vh",
+        gap: 2,
+      }}
     >
       {/* Left Side: Table or Creation Form or Details */}
       <Box
         sx={{
-        flex: { xs: "0 0 100%", md: "50%" },
-        maxWidth: { xs: "100%", md: "50%" },
-        transition: "all 0.3s ease",
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        position: "relative",
-      }}
+          flex: { xs: "0 0 100%", md: "50%" },
+          maxWidth: { xs: "100%", md: "50%" },
+          transition: "all 0.3s ease",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          height: "100vh",
+          position: "relative",
+        }}
       >
         {selectedRoute ? (
           <BusRouteDetailsPage
             routeId={selectedRoute.id}
             routeName={selectedRoute.name}
+            routeStatus={selectedRoute.status}
             routeStartingTime={formatStartTimeToIST(selectedRoute.start_time)}
             refreshList={(value: any) => refreshList(value)}
             onBack={() => {
@@ -392,18 +392,18 @@ const BusRouteListing = () => {
               {canCreateRoutes && (
                 <Button
                   sx={{
-                flexShrink: 0,
-                minWidth: "fit-content",
-                px: 1.5, // Reduce horizontal padding
-                py: 0.5, // Reduce vertical padding
-                fontSize: "0.75rem", // Smaller font
-                height: 36, // Match Select height
-                backgroundColor: "#00008B",
-                color: "white !important",
-                "&.Mui-disabled": {
-                  color: "#fff !important",
-                },
-              }}
+                    flexShrink: 0,
+                    minWidth: "fit-content",
+                    px: 1.5, // Reduce horizontal padding
+                    py: 0.5, // Reduce vertical padding
+                    fontSize: "0.75rem", // Smaller font
+                    height: 36, // Match Select height
+                    backgroundColor: "#00008B",
+                    color: "white !important",
+                    "&.Mui-disabled": {
+                      color: "#fff !important",
+                    },
+                  }}
                   variant="contained"
                   onClick={toggleCreationForm}
                   disabled={!canCreateRoutes}
@@ -492,6 +492,9 @@ const BusRouteListing = () => {
                               height: 40,
                               padding: "4px",
                             },
+                            width: "100%",
+                            minWidth: { xs: 80, sm: "100%" }, // Ensures enough space on mobile
+                            mt: 1,
                           }}
                         />
                       </TableCell>
@@ -532,6 +535,7 @@ const BusRouteListing = () => {
                                 id: row.id,
                                 name: row.name,
                                 start_time: row.start_time,
+                                status: row.status,
                               })
                             }
                           >
@@ -601,7 +605,7 @@ const BusRouteListing = () => {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={3} align="center">
+                        <TableCell colSpan={4} align="center">
                           No Routes found.
                         </TableCell>
                       </TableRow>
@@ -633,88 +637,92 @@ const BusRouteListing = () => {
 
       {/* Right Side: Map */}
       <Box
-      sx={{
-        flex: { xs: "0 0 100%", md: "50%" },
-        height: "100vh",
-        maxWidth: { xs: "100%", md: "50%" },
-        display: { xs: "none", md: "flex" }, // ❌ Hide map on mobile
-        flexDirection: "column",
-        gap: 2,
-      }}
-    >
-      <MapComponent
-        onAddLandmark={isEditingRoute ? handleAddLandmarkEdit : handleAddLandmark}
-        ref={mapRef}
-        landmarks={selectedRoute ? mapLandmarks : landmarks}
-        mode={selectedRoute ? "view" : showCreationForm ? "create" : "list"}
-        isEditing={isEditingRoute || showCreationForm}
-        selectedLandmarks={isEditingRoute ? newRouteLandmarks : landmarks}
-        startingTime={routeStartingTime}
-        routeId={selectedRoute?.id}
-        selectedRouteStartingTime={formatStartTimeToIST(
-          selectedRoute?.start_time || ""
-        )}
-        onLandmarkAdded={() => setNewLandmarkTrigger(true)}
-      />
-    </Box>
-
-     {/* Mobile: Floating "Show Map" Button */}
-    {!showMapMobile && (
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={() => setShowMapMobile(true)}
         sx={{
-          position: "fixed",
-          bottom: 16,
-          right: 16,
-          borderRadius: "50%",
-          minWidth: 56,
-          height: 56,
-          zIndex: 1500,
-          display: { xs: "flex", md: "none" }, // Only mobile
+          flex: { xs: "0 0 100%", md: "50%" },
+          height: "100vh",
+          maxWidth: { xs: "100%", md: "50%" },
+          display: { xs: "none", md: "flex" }, // ❌ Hide map on mobile
+          flexDirection: "column",
+          gap: 2,
         }}
       >
-        <MapIcon />
-      </Button>
-    )}
+        <MapComponent
+          onAddLandmark={
+            isEditingRoute ? handleAddLandmarkEdit : handleAddLandmark
+          }
+          ref={mapRef}
+          landmarks={selectedRoute ? mapLandmarks : landmarks}
+          mode={selectedRoute ? "view" : showCreationForm ? "create" : "list"}
+          isEditing={isEditingRoute || showCreationForm}
+          selectedLandmarks={isEditingRoute ? newRouteLandmarks : landmarks}
+          startingTime={routeStartingTime}
+          routeId={selectedRoute?.id}
+          selectedRouteStartingTime={formatStartTimeToIST(
+            selectedRoute?.start_time || ""
+          )}
+          onLandmarkAdded={() => setNewLandmarkTrigger(true)}
+        />
+      </Box>
 
-    {/* Mobile: Fullscreen Map Dialog */}
-    <Dialog
-      fullScreen
-      open={showMapMobile}
-      onClose={() => setShowMapMobile(false)}
-    >
-      <AppBar sx={{ position: "relative" }}>
-        <Toolbar>
-          <IconButton
-            edge="start"
-            color="inherit"
-            onClick={() => setShowMapMobile(false)}
-          >
-            <CloseIcon />
-          </IconButton>
-          <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
-            Map View
-          </Typography>
-        </Toolbar>
-      </AppBar>
+      {/* Mobile: Floating "Show Map" Button */}
+      {!showMapMobile && (
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => setShowMapMobile(true)}
+          sx={{
+            position: "fixed",
+            bottom: 16,
+            right: 16,
+            borderRadius: "50%",
+            minWidth: 56,
+            height: 56,
+            zIndex: 1500,
+            display: { xs: "flex", md: "none" }, // Only mobile
+          }}
+        >
+          <MapIcon />
+        </Button>
+      )}
 
-      <MapComponent
-        onAddLandmark={isEditingRoute ? handleAddLandmarkEdit : handleAddLandmark}
-        ref={mapRef}
-        landmarks={selectedRoute ? mapLandmarks : landmarks}
-        mode={selectedRoute ? "view" : showCreationForm ? "create" : "list"}
-        isEditing={isEditingRoute || showCreationForm}
-        selectedLandmarks={isEditingRoute ? newRouteLandmarks : landmarks}
-        startingTime={routeStartingTime}
-        routeId={selectedRoute?.id}
-        selectedRouteStartingTime={formatStartTimeToIST(
-          selectedRoute?.start_time || ""
-        )}
-        onLandmarkAdded={() => setNewLandmarkTrigger(true)}
-      />
-    </Dialog>
+      {/* Mobile: Fullscreen Map Dialog */}
+      <Dialog
+        fullScreen
+        open={showMapMobile}
+        onClose={() => setShowMapMobile(false)}
+      >
+        <AppBar sx={{ position: "relative" }}>
+          <Toolbar>
+            <IconButton
+              edge="start"
+              color="inherit"
+              onClick={() => setShowMapMobile(false)}
+            >
+              <CloseIcon />
+            </IconButton>
+            <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
+              Map View
+            </Typography>
+          </Toolbar>
+        </AppBar>
+
+        <MapComponent
+          onAddLandmark={
+            isEditingRoute ? handleAddLandmarkEdit : handleAddLandmark
+          }
+          ref={mapRef}
+          landmarks={selectedRoute ? mapLandmarks : landmarks}
+          mode={selectedRoute ? "view" : showCreationForm ? "create" : "list"}
+          isEditing={isEditingRoute || showCreationForm}
+          selectedLandmarks={isEditingRoute ? newRouteLandmarks : landmarks}
+          startingTime={routeStartingTime}
+          routeId={selectedRoute?.id}
+          selectedRouteStartingTime={formatStartTimeToIST(
+            selectedRoute?.start_time || ""
+          )}
+          onLandmarkAdded={() => setNewLandmarkTrigger(true)}
+        />
+      </Dialog>
 
       <Dialog
         open={deleteConfirmOpen}
@@ -727,8 +735,8 @@ const BusRouteListing = () => {
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Are you sure you want to delete the route "<b>{routeToDelete?.name}</b>"?
-            This action cannot be undone.
+            Are you sure you want to delete the route "
+            <b>{routeToDelete?.name}</b>"? This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

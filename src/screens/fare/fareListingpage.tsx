@@ -210,316 +210,321 @@ const CompanyFareListingPage = () => {
     );
   }
 
-return (
-  <>
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column", // Mobile first
-        width: "100%",
-        minHeight: "100vh",
-        height: "100vh",
-        p: { xs: 1, sm: 2 }, // Small padding on mobile
-      }}
-    >
+  return (
+    <>
       <Box
         sx={{
-          flex: "1 1 auto",
-          width: "100%",
-          height: "100%",
           display: "flex",
-          flexDirection: "column",
-          borderRight: "1px solid #e0e0e0",
-          borderRadius: 2,
-          overflow: "hidden",
-          backgroundColor: "#fff",
+          flexDirection: "column", // Mobile first
+          width: "100%",
+          minHeight: "100vh",
+          height: "100vh",
+          p: { xs: 1, sm: 2 }, // Small padding on mobile
         }}
       >
-        {/* Top Action Bar */}
         <Box
           sx={{
-            p: 2,
-            display: "flex",
-            justifyContent: "flex-end",
-            alignItems: "center",
-            gap: 2,
-            flexWrap: "wrap", // Allow wrapping on mobile
+            flex: "1 1 auto",
             width: "100%",
-          }}
-        >
-          {1 > 100 && (
-            <Select
-              multiple
-              value={Object.keys(visibleColumns).filter(
-                (key) => visibleColumns[key]
-              )}
-              onChange={handleColumnChange}
-              renderValue={(selected) =>
-                `Selected Columns (${selected.length})`
-              }
-              sx={{
-                minWidth: { xs: "100%", sm: 200 },
-                height: 40,
-                ".MuiSelect-select": { py: 1.2 },
-              }}
-            >
-              {columnConfig.map((column) => (
-                <MenuItem
-                  key={column.id}
-                  value={column.id}
-                  disabled={column.fixed}
-                >
-                  <Checkbox
-                    checked={visibleColumns[column.id]}
-                    disabled={column.fixed}
-                  />
-                  <ListItemText
-                    primary={column.label}
-                    secondary={
-                      column.fixed ? "(Always visible)" : undefined
-                    }
-                  />
-                </MenuItem>
-              ))}
-            </Select>
-          )}
-
-          {canCreateFare && (
-            <Button
-              variant="contained"
-              onClick={() => setViewMode("create")}
-              disabled={!canCreateFare}
-              sx={{
-                ml: "auto",
-                px: 1.5,
-                py: 0.5,
-                fontSize: "0.75rem",
-                height: 36,
-                backgroundColor: canCreateFare
-                  ? "#00008B"
-                  : "#6c87b7 !important",
-                color: "white",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Add New Fare
-            </Button>
-          )}
-        </Box>
-
-        {/* Table */}
-        <TableContainer
-          sx={{
-            flex: 1,
-            overflowY: "auto",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            borderRight: "1px solid #e0e0e0",
             borderRadius: 2,
-            border: "1px solid #e0e0e0",
-            "& .MuiTableCell-root": { padding: "8px 12px" },
-            "& .MuiTableCell-head": {
-              textAlign: "center",
-              padding: "8px 12px",
-              "& > *": { justifyContent: "center", margin: "0 auto" },
-            },
+            overflow: "hidden",
+            backgroundColor: "#fff",
           }}
         >
-          <Table stickyHeader size="small">
-            <TableHead>
-              <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                {visibleColumns.id && (
-                  <TableCell sx={{ width: "10%" }}>
-                    <b>ID</b>
-                  </TableCell>
+          {/* Top Action Bar */}
+          <Box
+            sx={{
+              p: 2,
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              gap: 2,
+              flexWrap: "wrap", // Allow wrapping on mobile
+              width: "100%",
+            }}
+          >
+            {1 > 100 && (
+              <Select
+                multiple
+                value={Object.keys(visibleColumns).filter(
+                  (key) => visibleColumns[key]
                 )}
-                {visibleColumns.name && (
-                  <TableCell sx={{ width: "25%" }}>
-                    <b>Name</b>
-                  </TableCell>
-                )}
-                {visibleColumns.ticket_types && (
-                  <TableCell>
-                    <b>Ticket Types</b>
-                  </TableCell>
-                )}
-                {visibleColumns.created_at && (
-                  <TableCell>
-                    <b>Created On</b>
-                  </TableCell>
-                )}
-              </TableRow>
-              <TableRow>
-                {visibleColumns.id && (
-                  <TableCell>
-                    <TextField
-                      type="number"
-                      size="small"
-                      placeholder="Search"
-                      value={search.id}
-                      onChange={(e) => handleSearchChange(e, "id")}
-                      sx={{ width: "100%", mt: 1 }}
+                onChange={handleColumnChange}
+                renderValue={(selected) =>
+                  `Selected Columns (${selected.length})`
+                }
+                sx={{
+                  minWidth: { xs: "100%", sm: 200 },
+                  height: 40,
+                  ".MuiSelect-select": { py: 1.2 },
+                }}
+              >
+                {columnConfig.map((column) => (
+                  <MenuItem
+                    key={column.id}
+                    value={column.id}
+                    disabled={column.fixed}
+                  >
+                    <Checkbox
+                      checked={visibleColumns[column.id]}
+                      disabled={column.fixed}
                     />
-                  </TableCell>
-                )}
-                {visibleColumns.name && (
-                  <TableCell>
-                    <TextField
-                      size="small"
-                      placeholder="Search"
-                      value={search.name}
-                      onChange={(e) => handleSearchChange(e, "name")}
-                      sx={{ width: "100%", mt: 1 }}
+                    <ListItemText
+                      primary={column.label}
+                      secondary={column.fixed ? "(Always visible)" : undefined}
                     />
-                  </TableCell>
-                )}
-                {visibleColumns.ticket_types && <TableCell />}
-                {visibleColumns.created_at && <TableCell />}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {fareList.length > 0 ? (
-                fareList.map((fare) => {
-                  const isSelected = selectedFare?.id === fare.id;
-                  return (
-                    <TableRow
-                      key={fare.id}
-                      hover
-                      selected={isSelected}
-                      onClick={() => {
-                        setSelectedFare(fare);
-                        setViewMode("view");
-                      }}
-                      sx={{
-                        cursor: "pointer",
-                        backgroundColor: isSelected
-                          ? "#E3F2FD !important"
-                          : "inherit",
-                        "&:hover": { backgroundColor: "#E3F2FD" },
-                      }}
-                    >
-                      {visibleColumns.id && (
-                        <TableCell sx={{ textAlign: "center" }}>
-                          {fare.id}
-                        </TableCell>
-                      )}
-                      {visibleColumns.name && (
-                        <TableCell>
-                          <Tooltip title={fare.name}>
-                            <Typography noWrap>
-                              {fare.name.length > 30
-                                ? `${fare.name.substring(0, 30)}...`
-                                : fare.name}
-                            </Typography>
-                          </Tooltip>
-                        </TableCell>
-                      )}
-                      {visibleColumns.ticket_types && (
-                        <TableCell sx={{ maxWidth: 300 }}>
-                          {fare.attributes.ticket_types?.length > 0 ? (
-                            <Box
-                              sx={{
-                                display: "grid",
-                                gridTemplateColumns: {
-                                  xs: "1fr",
-                                  sm: "repeat(2, 1fr)",
-                                },
-                                gap: 1,
-                              }}
-                            >
-                              {fare.attributes.ticket_types.map(
-                                (type, index) => {
-                                  const typeName =
-                                    type.name?.toLowerCase() || "";
-                                  const typeConfig = {
-                                    adult: {
-                                      bg: "rgba(25,118,210,0.1)",
-                                      color: "#1565c0",
-                                      icon: <PersonIcon fontSize="small" />,
-                                    },
-                                    child: {
-                                      bg: "rgba(255,152,0,0.1)",
-                                      color: "#ef6c00",
-                                      icon: <ChildCareIcon fontSize="small" />,
-                                    },
-                                    student: {
-                                      bg: "rgba(76,175,80,0.1)",
-                                      color: "#2e7d32",
-                                      icon: <SchoolIcon fontSize="small" />,
-                                    },
-                                    other: {
-                                      bg: "#554e4e3f",
-                                      color: "#080000ff",
-                                      icon: <BoyIcon fontSize="small" />,
-                                    },
-                                  };
-                                  let typeKey: keyof typeof typeConfig = "other";
-                                  if (typeName.includes("adult")) typeKey = "adult";
-                                  else if (typeName.includes("child"))
-                                    typeKey = "child";
-                                  else if (typeName.includes("student"))
-                                    typeKey = "student";
+                  </MenuItem>
+                ))}
+              </Select>
+            )}
 
-                                  return (
-                                    <Chip
-                                      key={index}
-                                      size="small"
-                                      icon={typeConfig[typeKey].icon}
-                                      label={type.name || `Type ${index + 1}`}
-                                      sx={{
-                                        borderRadius: "4px",
-                                        backgroundColor:
-                                          typeConfig[typeKey].bg,
-                                        color: typeConfig[typeKey].color,
-                                        "& .MuiChip-icon": {
-                                          color: typeConfig[typeKey].color,
-                                          opacity: 0.8,
-                                        },
-                                      }}
-                                    />
-                                  );
-                                }
-                              )}
-                            </Box>
-                          ) : (
-                            <Tooltip title="No ticket types">
-                              <ErrorIcon color="disabled" />
-                            </Tooltip>
-                          )}
-                        </TableCell>
-                      )}
-                      {visibleColumns.created_at && (
-                        <TableCell align="center">
-                          {moment(fare.created_on)
-                            .local()
-                            .format("DD-MM-YYYY, hh:mm A")}
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  );
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                    <Typography color="textSecondary">
-                      No fares found
-                    </Typography>
-                  </TableCell>
+            {canCreateFare && (
+              <Button
+                variant="contained"
+                onClick={() => setViewMode("create")}
+                disabled={!canCreateFare}
+                sx={{
+                  ml: "auto",
+                  px: 1.5,
+                  py: 0.5,
+                  fontSize: "0.75rem",
+                  height: 36,
+                  backgroundColor: canCreateFare
+                    ? "#00008B"
+                    : "#6c87b7 !important",
+                  color: "white",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Add New Fare
+              </Button>
+            )}
+          </Box>
+
+          {/* Table */}
+          <TableContainer
+            sx={{
+              flex: 1,
+              overflowY: "auto",
+              borderRadius: 2,
+              border: "1px solid #e0e0e0",
+              "& .MuiTableCell-root": { padding: "8px 12px" },
+              "& .MuiTableCell-head": {
+                textAlign: "center",
+                padding: "8px 12px",
+                "& > *": { justifyContent: "center", margin: "0 auto" },
+              },
+            }}
+          >
+            <Table stickyHeader size="small">
+              <TableHead>
+                <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                  {visibleColumns.id && (
+                    <TableCell sx={{ width: "10%" }}>
+                      <b>ID</b>
+                    </TableCell>
+                  )}
+                  {visibleColumns.name && (
+                    <TableCell sx={{ width: "25%" }}>
+                      <b>Name</b>
+                    </TableCell>
+                  )}
+                  {visibleColumns.ticket_types && (
+                    <TableCell>
+                      <b>Ticket Types</b>
+                    </TableCell>
+                  )}
+                  {visibleColumns.created_at && (
+                    <TableCell>
+                      <b>Created On</b>
+                    </TableCell>
+                  )}
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                <TableRow>
+                  {visibleColumns.id && (
+                    <TableCell>
+                      <TextField
+                        type="number"
+                        size="small"
+                        placeholder="Search"
+                        value={search.id}
+                        onChange={(e) => handleSearchChange(e, "id")}
+                        sx={{
+                          width: "100%",
+                          minWidth: { xs: 80, sm: "100%" }, // Ensures enough space on mobile
+                          mt: 1,
+                        }}
+                      />
+                    </TableCell>
+                  )}
+                  {visibleColumns.name && (
+                    <TableCell>
+                      <TextField
+                        size="small"
+                        placeholder="Search"
+                        value={search.name}
+                        onChange={(e) => handleSearchChange(e, "name")}
+                        sx={{ width: "100%", mt: 1 }}
+                      />
+                    </TableCell>
+                  )}
+                  {visibleColumns.ticket_types && <TableCell />}
+                  {visibleColumns.created_at && <TableCell />}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {fareList.length > 0 ? (
+                  fareList.map((fare) => {
+                    const isSelected = selectedFare?.id === fare.id;
+                    return (
+                      <TableRow
+                        key={fare.id}
+                        hover
+                        selected={isSelected}
+                        onClick={() => {
+                          setSelectedFare(fare);
+                          setViewMode("view");
+                        }}
+                        sx={{
+                          cursor: "pointer",
+                          backgroundColor: isSelected
+                            ? "#E3F2FD !important"
+                            : "inherit",
+                          "&:hover": { backgroundColor: "#E3F2FD" },
+                        }}
+                      >
+                        {visibleColumns.id && (
+                          <TableCell sx={{ textAlign: "center" }}>
+                            {fare.id}
+                          </TableCell>
+                        )}
+                        {visibleColumns.name && (
+                          <TableCell>
+                            <Tooltip title={fare.name}>
+                              <Typography noWrap>
+                                {fare.name.length > 30
+                                  ? `${fare.name.substring(0, 30)}...`
+                                  : fare.name}
+                              </Typography>
+                            </Tooltip>
+                          </TableCell>
+                        )}
+                        {visibleColumns.ticket_types && (
+                          <TableCell sx={{ maxWidth: 300 }}>
+                            {fare.attributes.ticket_types?.length > 0 ? (
+                              <Box
+                                sx={{
+                                  display: "grid",
+                                  gridTemplateColumns: {
+                                    xs: "1fr",
+                                    sm: "repeat(2, 1fr)",
+                                  },
+                                  gap: 1,
+                                }}
+                              >
+                                {fare.attributes.ticket_types.map(
+                                  (type, index) => {
+                                    const typeName =
+                                      type.name?.toLowerCase() || "";
+                                    const typeConfig = {
+                                      adult: {
+                                        bg: "rgba(25,118,210,0.1)",
+                                        color: "#1565c0",
+                                        icon: <PersonIcon fontSize="small" />,
+                                      },
+                                      child: {
+                                        bg: "rgba(255,152,0,0.1)",
+                                        color: "#ef6c00",
+                                        icon: (
+                                          <ChildCareIcon fontSize="small" />
+                                        ),
+                                      },
+                                      student: {
+                                        bg: "rgba(76,175,80,0.1)",
+                                        color: "#2e7d32",
+                                        icon: <SchoolIcon fontSize="small" />,
+                                      },
+                                      other: {
+                                        bg: "#554e4e3f",
+                                        color: "#080000ff",
+                                        icon: <BoyIcon fontSize="small" />,
+                                      },
+                                    };
+                                    let typeKey: keyof typeof typeConfig =
+                                      "other";
+                                    if (typeName.includes("adult"))
+                                      typeKey = "adult";
+                                    else if (typeName.includes("child"))
+                                      typeKey = "child";
+                                    else if (typeName.includes("student"))
+                                      typeKey = "student";
 
-        {/* Pagination */}
-        <PaginationControls
-          page={page}
-          onPageChange={(newPage) => handleChangePage(null, newPage)}
-          isLoading={isLoading}
-          hasNextPage={hasNextPage}
-        />
+                                    return (
+                                      <Chip
+                                        key={index}
+                                        size="small"
+                                        icon={typeConfig[typeKey].icon}
+                                        label={type.name || `Type ${index + 1}`}
+                                        sx={{
+                                          borderRadius: "4px",
+                                          backgroundColor:
+                                            typeConfig[typeKey].bg,
+                                          color: typeConfig[typeKey].color,
+                                          "& .MuiChip-icon": {
+                                            color: typeConfig[typeKey].color,
+                                            opacity: 0.8,
+                                          },
+                                        }}
+                                      />
+                                    );
+                                  }
+                                )}
+                              </Box>
+                            ) : (
+                              <Tooltip title="No ticket types">
+                                <ErrorIcon color="disabled" />
+                              </Tooltip>
+                            )}
+                          </TableCell>
+                        )}
+                        {visibleColumns.created_at && (
+                          <TableCell align="center">
+                            {moment(fare.created_on)
+                              .local()
+                              .format("DD-MM-YYYY, hh:mm A")}
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                      <Typography color="textSecondary">
+                        No fares found
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          {/* Pagination */}
+          <PaginationControls
+            page={page}
+            onPageChange={(newPage) => handleChangePage(null, newPage)}
+            isLoading={isLoading}
+            hasNextPage={hasNextPage}
+          />
+        </Box>
       </Box>
-    </Box>
-  </>
-);
-
+    </>
+  );
 };
 
 export default CompanyFareListingPage;

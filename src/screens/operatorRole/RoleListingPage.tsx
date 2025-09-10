@@ -345,6 +345,9 @@ const RoleListingTable = () => {
                                 sx={{
                                   "& .MuiInputBase-root": { height: 40 },
                                   "& .MuiInputBase-input": { textAlign: "center" },
+                                    width: "100%",
+    minWidth: { xs: 80, sm: "100%" }, // Ensures enough space on mobile
+    mt: 1,
                                 }}
                               />
                             ) : (

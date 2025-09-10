@@ -319,6 +319,8 @@ const fetchDutyList = useCallback(
                     sx={{
                       "& .MuiInputBase-root": { height: 40 },
                       "& .MuiInputBase-input": { textAlign: "center" },
+                      
+                        minWidth: { xs: 80, sm: "100%" },
                     }}
                   />
                 </TableCell>

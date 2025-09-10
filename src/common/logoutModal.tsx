@@ -45,7 +45,7 @@ const LogoutConfirmationModal: React.FC<LogoutConfirmationModalProps> = ({
       boxShadow: 24,
       p: { xs: 2, sm: 3 },
       borderRadius: 2,
-      width: { xs: "90%", sm: 400, md: 450 }, // Responsive width
+      width: { xs: "80%", sm: 400, md: 450 },
       maxWidth: "95%",
       textAlign: "center",
     }}
@@ -62,7 +62,7 @@ const LogoutConfirmationModal: React.FC<LogoutConfirmationModalProps> = ({
     <Box
       sx={{
         display: "flex",
-        flexDirection: { xs: "column", sm: "row" }, // Stack buttons on small screens
+        flexDirection: { xs: "row", sm: "row" },
         justifyContent: "flex-end",
         gap: 2,
       }}
@@ -70,7 +70,7 @@ const LogoutConfirmationModal: React.FC<LogoutConfirmationModalProps> = ({
       <Button
         variant="outlined"
         onClick={onClose}
-        fullWidth={true} // Full width on mobile
+        fullWidth={true}
         sx={{ flex: 1 }}
       >
         Cancel

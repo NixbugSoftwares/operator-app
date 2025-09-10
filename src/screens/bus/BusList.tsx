@@ -534,6 +534,9 @@ const BusListingTable = () => {
                     sx={{
                       "& .MuiInputBase-root": { height: 40 },
                       "& .MuiInputBase-input": { textAlign: "center" },
+                      width: "100%",
+                      minWidth: { xs: 80, sm: "100%" }, // Ensures enough space on mobile
+                      mt: 1,
                     }}
                   />
                 </TableCell>
@@ -778,7 +781,7 @@ const BusListingTable = () => {
         open={Boolean(selectedBus)}
         onClose={() => setSelectedBus(null)}
         fullScreen
-        sx={{ display: { xs: "block", lg: "none" } }} 
+        sx={{ display: { xs: "block", lg: "none" } }}
       >
         {selectedBus && (
           <Box sx={{ p: 2 }}>

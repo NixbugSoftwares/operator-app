@@ -540,6 +540,7 @@ return (
       width: "100%",
       px: { xs: 0.5, sm: 2, md: 3 },
       py: { xs: 1, sm: 2 },
+      mt: { xs: 3, sm: 0 },
     }}
   >
     <Stack

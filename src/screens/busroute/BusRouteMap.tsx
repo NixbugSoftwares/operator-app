@@ -5,7 +5,7 @@ import TileLayer from "ol/layer/Tile";
 import VectorLayer from "ol/layer/Vector";
 import { OSM, XYZ } from "ol/source";
 import { Select as OlSelect } from "ol/interaction";
-import { Polygon, LineString } from "ol/geom";
+import { LineString } from "ol/geom";
 import { fromLonLat, toLonLat } from "ol/proj";
 import { Vector as VectorSource } from "ol/source";
 import {
@@ -40,10 +40,9 @@ import { Style, Stroke, Fill, Circle } from "ol/style";
 import { Coordinate } from "ol/coordinate";
 import Feature from "ol/Feature";
 import Point from "ol/geom/Point";
-import { getCenter } from "ol/extent";
 import Text from "ol/style/Text";
 import { Landmark, SelectedLandmark } from "../../types/type";
-
+import { Circle as CircleGeom } from "ol/geom";
 interface MapComponentProps {
   onAddLandmark?: (landmark: SelectedLandmark) => void;
   onClearRoute?: () => void;
@@ -151,13 +150,11 @@ const MapComponent = React.forwardRef(
 
       return map;
     };
-
     useEffect(() => {
       if (!mapInstance.current) {
         mapInstance.current = initializeMap();
       }
     }, []);
-
     const fetchLandmark = async (
       locationaskey: string,
       idList: number[] = [],
@@ -252,7 +249,6 @@ const MapComponent = React.forwardRef(
         showErrorToast(err || "Failed to fetch landmarks");
       }
     };
-
     useEffect(() => {
       if (!mapInstance.current) return;
 
@@ -295,6 +291,28 @@ const MapComponent = React.forwardRef(
       };
     }, [mode, isEditing, selectedLandmarks, propLandmarks]);
 
+    const rectangleToCircle = (coordinates: number[][]): CircleGeom => {
+      const first = coordinates[0];
+      const opposite = coordinates[2]; // diagonally opposite corner
+
+      // center in lon/lat
+      const centerLon = (first[0] + opposite[0]) / 2;
+      const centerLat = (first[1] + opposite[1]) / 2;
+
+      // convert to map projection
+      const center = fromLonLat([centerLon, centerLat]);
+
+      // diagonal length
+      const dx = opposite[0] - first[0];
+      const dy = opposite[1] - first[1];
+      const diagonal = Math.sqrt(dx * dx + dy * dy);
+
+      // crude radius: degrees → meters
+      const radius = (diagonal / 2) * 111000;
+
+      return new CircleGeom(center, radius);
+    };
+
     const handleViewModeLandmarks = (landmarksData: Landmark[]) => {
       selectedLandmarksSource.current.clear();
       routePathSource.current.clear();
@@ -312,11 +330,11 @@ const MapComponent = React.forwardRef(
           try {
             const coordinates = lm.boundary
               .split(",")
-              .map((coord: string) => coord.trim().split(" ").map(Number))
-              .map((coord: Coordinate) => fromLonLat(coord));
+              .map((coord: string) => coord.trim().split(" ").map(Number));
 
-            const polygon = new Polygon([coordinates]);
-            const feature = new Feature(polygon);
+            // ✅ make circle instead of polygon
+            const circle = rectangleToCircle(coordinates);
+            const feature = new Feature(circle);
             feature.set("id", lm.id);
 
             feature.setStyle(
@@ -339,8 +357,9 @@ const MapComponent = React.forwardRef(
             );
 
             selectedLandmarksSource.current.addFeature(feature);
-            const center = getCenter(polygon.getExtent());
-            routeCoordsRef.current.push(center);
+
+            // use circle center as route coord
+            routeCoordsRef.current.push(circle.getCenter());
           } catch (error) {
             console.error("Error processing landmark boundary:", error);
           }
@@ -364,7 +383,7 @@ const MapComponent = React.forwardRef(
         routePathSource.current.addFeature(routeFeature);
       }
 
-      // Only fit view to selected landmarks in view mode, not edit mode
+      // Only fit view to selected landmarks in view mode
       if (
         routeCoordsRef.current.length > 0 &&
         mapInstance.current &&
@@ -468,11 +487,11 @@ const MapComponent = React.forwardRef(
             try {
               const coordinates = landmark.boundary
                 .split(",")
-                .map((coord: string) => coord.trim().split(" ").map(Number))
-                .map((coord: Coordinate) => fromLonLat(coord));
+                .map((coord: string) => coord.trim().split(" ").map(Number));
 
-              const polygon = new Polygon([coordinates]);
-              const feature = new Feature(polygon);
+              // ✅ make circle instead of polygon
+              const circle = rectangleToCircle(coordinates);
+              const feature = new Feature(circle);
               feature.set("id", landmark.id);
 
               // Check if this landmark is selected
@@ -503,21 +522,8 @@ const MapComponent = React.forwardRef(
                 );
                 features.push(feature);
 
-                // Calculate centroid of the polygon
-                const getCentroid = (coords: Coordinate[]): Coordinate => {
-                  let x = 0;
-                  let y = 0;
-                  const numPoints = coords.length;
-
-                  for (const point of coords) {
-                    x += point[0];
-                    y += point[1];
-                  }
-
-                  return [x / numPoints, y / numPoints];
-                };
-
-                const centroid = getCentroid(coordinates);
+                // Use circle center for label placement
+                const centroid = circle.getCenter();
                 const labelFeature = new Feature(new Point(centroid));
                 labelFeature.set("id", `label-${landmark.id}`);
                 labelFeature.setStyle(
@@ -547,88 +553,6 @@ const MapComponent = React.forwardRef(
       }
     }, [showAllBoundaries, landmarks, selectedLandmarks, isEditing, mode]);
 
-    useEffect(() => {
-      console.log("mode", mode);
-      if (isEditing !== undefined) {
-        setIsAddingLandmark(isEditing);
-        setShowAllBoundaries(isEditing);
-
-        // When entering edit mode, fetch all landmarks
-        if (isEditing && mapInstance.current) {
-          const centerRaw = mapInstance.current.getView().getCenter();
-          if (centerRaw) {
-            const center = toLonLat(centerRaw);
-            const locationaskey = `POINT(${center[0]} ${center[1]})`;
-            fetchLandmark(locationaskey, []);
-          }
-        }
-      }
-    }, [isEditing]);
-
-    const handleSearch = async () => {
-      if (!searchQuery || !mapInstance.current) return;
-
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-            searchQuery
-          )}`
-        );
-        const data = await response.json();
-
-        if (data.length > 0) {
-          const { lat, lon } = data[0];
-          const coordinates = fromLonLat([parseFloat(lon), parseFloat(lat)]);
-          mapInstance.current.getView().animate({
-            center: coordinates,
-            zoom: 14,
-          });
-        } else {
-          showErrorToast("Location not found.");
-        }
-      } catch (error: any) {
-        showErrorToast(error);
-      }
-    };
-
-    const changeMapType = (type: "osm" | "satellite" | "hybrid") => {
-      if (!mapInstance.current) return;
-
-      const baseLayer = mapInstance.current
-        .getLayers()
-        .getArray()
-        .find((layer) => layer instanceof TileLayer) as TileLayer;
-
-      if (baseLayer) {
-        switch (type) {
-          case "osm":
-            baseLayer.setSource(new OSM());
-            break;
-          case "satellite":
-            baseLayer.setSource(
-              new XYZ({
-                url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-              })
-            );
-            break;
-          case "hybrid":
-            baseLayer.setSource(
-              new XYZ({
-                url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-              })
-            );
-            const labelLayer = new TileLayer({
-              source: new XYZ({
-                url: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
-              }),
-            });
-            mapInstance.current.addLayer(labelLayer);
-            break;
-        }
-        setMapType(type);
-      }
-    };
-
     const highlightSelectedLandmark = (landmarkId: string) => {
       const feature = selectedLandmarksSource.current
         .getFeatures()
@@ -650,9 +574,28 @@ const MapComponent = React.forwardRef(
     };
 
     useEffect(() => {
+      console.log("mode", mode);
+      if (isEditing !== undefined) {
+        setIsAddingLandmark(isEditing);
+        setShowAllBoundaries(isEditing);
+
+        // When entering edit mode, fetch all landmarks
+        if (isEditing && mapInstance.current) {
+          const centerRaw = mapInstance.current.getView().getCenter();
+          if (centerRaw) {
+            const center = toLonLat(centerRaw);
+            const locationaskey = `POINT(${center[0]} ${center[1]})`;
+            fetchLandmark(locationaskey, []);
+          }
+        }
+      }
+    }, [isEditing]);
+
+    useEffect(() => {
       selectedLandmarksSource.current.clear();
       routePathSource.current.clear();
       routeCoordsRef.current = [];
+
       const landmarksToProcess =
         mode === "create" ? selectedLandmarks : propLandmarks;
       if (!landmarksToProcess || landmarksToProcess.length === 0) return;
@@ -667,14 +610,14 @@ const MapComponent = React.forwardRef(
           try {
             const coordinates = lm.boundary
               .split(",")
-              .map((coord: string) => coord.trim().split(" ").map(Number))
-              .map((coord: Coordinate) => fromLonLat(coord));
+              .map((coord: string) => coord.trim().split(" ").map(Number));
 
-            const polygon = new Polygon([coordinates]);
-            const polygonFeature = new Feature(polygon);
-            polygonFeature.set("id", lm.id);
+            // ✅ Circle boundary polygon
+            const circle = rectangleToCircle(coordinates);
+            const circleFeature = new Feature(circle);
+            circleFeature.set("id", lm.id);
 
-            polygonFeature.setStyle(
+            circleFeature.setStyle(
               new Style({
                 stroke: new Stroke({
                   color: "rgba(0, 150, 0, 0.7)",
@@ -682,6 +625,22 @@ const MapComponent = React.forwardRef(
                 }),
                 fill: new Fill({
                   color: "rgba(0, 150, 0, 0.1)",
+                }),
+              })
+            );
+
+            selectedLandmarksSource.current.addFeature(circleFeature);
+
+            // ✅ Add center point
+            const center = circle.getCenter();
+            const centerFeature = new Feature(new Point(center));
+            centerFeature.set("id", `center-${lm.id}`);
+            centerFeature.setStyle(
+              new Style({
+                image: new Circle({
+                  radius: 5,
+                  fill: new Fill({ color: "rgba(180, 64, 11, 0.9)" }),
+                  stroke: new Stroke({ color: "white", width: 2 }),
                 }),
                 text: new Text({
                   text: (index + 1).toString(),
@@ -692,10 +651,9 @@ const MapComponent = React.forwardRef(
                 }),
               })
             );
+            selectedLandmarksSource.current.addFeature(centerFeature);
 
-            selectedLandmarksSource.current.addFeature(polygonFeature);
-
-            const center = getCenter(polygon.getExtent());
+            // ✅ Use center for route line
             routeCoordsRef.current.push(center);
           } catch (error) {
             console.error("Error processing landmark boundary:", error);
@@ -703,6 +661,7 @@ const MapComponent = React.forwardRef(
         }
       });
 
+      // ✅ draw route connecting landmark centers
       if (routeCoordsRef.current.length > 1) {
         const routeFeature = new Feature({
           geometry: new LineString(routeCoordsRef.current),
@@ -718,30 +677,6 @@ const MapComponent = React.forwardRef(
         );
         routePathSource.current.addFeature(routeFeature);
       }
-
-      routeCoordsRef.current.forEach((coord, index) => {
-        const numberFeature = new Feature({
-          geometry: new Point(coord),
-        });
-
-        numberFeature.setStyle(
-          new Style({
-            text: new Text({
-              text: (index + 1).toString(),
-              font: "bold 14px Arial",
-              fill: new Fill({ color: "white" }),
-              stroke: new Stroke({ color: "black", width: 2 }),
-              offsetY: -20,
-            }),
-            image: new Circle({
-              radius: 5,
-              fill: new Fill({ color: "rgba(128, 0, 117, 0.9)" }),
-              stroke: new Stroke({ color: "white", width: 2 }),
-            }),
-          })
-        );
-        routePathSource.current.addFeature(numberFeature);
-      });
     }, [propLandmarks, landmarks, selectedLandmarks, mode]);
 
     const clearRoutePath = () => {
@@ -761,6 +696,7 @@ const MapComponent = React.forwardRef(
         setIsAddingLandmark(false);
       },
     }));
+
     const handleAddLandmark = async () => {
       // 🎯 Scenario 2: Editing existing route
       if (isEditing && routeId) {
@@ -910,8 +846,6 @@ const MapComponent = React.forwardRef(
       const paddedMinutes = String(minutes).padStart(2, "0");
       return `1970-01-01 ${adjustedHours}:${paddedMinutes} ${ampm}`;
     };
-
-    // console.log("selectedroutestartingtime.....",selectedRouteStartingTime);
 
     const saveLandmarkToDatabase = async (
       landmark: SelectedLandmark & { arrivalTS?: number; departureTS?: number }
@@ -1118,6 +1052,7 @@ const MapComponent = React.forwardRef(
         setDepartureDayOffset(0);
       }
     }, [selectedLandmarks.length, startingTime, mode]);
+
     const validateTimes = () => {
       return (
         arrivalHour !== null &&
@@ -1152,7 +1087,8 @@ const MapComponent = React.forwardRef(
       return date.getTime();
     };
 
-    // ✅ Directly get timestamp from landmark fields (in IST)
+ 
+    //Directly get timestamp from landmark fields (in IST)
     const getTimestamp = (
       hour: number,
       minute: number,
@@ -1180,7 +1116,7 @@ const MapComponent = React.forwardRef(
       setIsModalOpen(false);
     };
 
-    //for update the landmark add form modal with previous landmark time
+    //************************for update the landmark add form modal with previous landmark time********************
     useEffect(() => {
       if (!selectedLandmark) return;
 
@@ -1228,15 +1164,87 @@ const MapComponent = React.forwardRef(
       }
     }, [selectedLandmark]);
 
-    // Watch for changes in arrival time when isLastLandmark is true
-useEffect(() => {
-  if (isLastLandmark) {
-    setDepartureHour(arrivalHour);
-    setDepartureMinute(arrivalMinute);
-    setDepartureAmPm(arrivalAmPm);
-    setDepartureDayOffset(arrivalDayOffset);
-  }
-}, [isLastLandmark, arrivalHour, arrivalMinute, arrivalAmPm, arrivalDayOffset]);
+    //***************************Watch for changes in arrival time when isLastLandmark is true**********************
+    useEffect(() => {
+      if (isLastLandmark) {
+        setDepartureHour(arrivalHour);
+        setDepartureMinute(arrivalMinute);
+        setDepartureAmPm(arrivalAmPm);
+        setDepartureDayOffset(arrivalDayOffset);
+      }
+    }, [
+      isLastLandmark,
+      arrivalHour,
+      arrivalMinute,
+      arrivalAmPm,
+      arrivalDayOffset,
+    ]);
+
+
+    //*************************************** map search and map type change **********************************
+    const handleSearch = async () => {
+      if (!searchQuery || !mapInstance.current) return;
+
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+            searchQuery
+          )}`
+        );
+        const data = await response.json();
+
+        if (data.length > 0) {
+          const { lat, lon } = data[0];
+          const coordinates = fromLonLat([parseFloat(lon), parseFloat(lat)]);
+          mapInstance.current.getView().animate({
+            center: coordinates,
+            zoom: 14,
+          });
+        } else {
+          showErrorToast("Location not found.");
+        }
+      } catch (error: any) {
+        showErrorToast(error);
+      }
+    };
+
+    const changeMapType = (type: "osm" | "satellite" | "hybrid") => {
+      if (!mapInstance.current) return;
+
+      const baseLayer = mapInstance.current
+        .getLayers()
+        .getArray()
+        .find((layer) => layer instanceof TileLayer) as TileLayer;
+
+      if (baseLayer) {
+        switch (type) {
+          case "osm":
+            baseLayer.setSource(new OSM());
+            break;
+          case "satellite":
+            baseLayer.setSource(
+              new XYZ({
+                url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+              })
+            );
+            break;
+          case "hybrid":
+            baseLayer.setSource(
+              new XYZ({
+                url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+              })
+            );
+            const labelLayer = new TileLayer({
+              source: new XYZ({
+                url: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+              }),
+            });
+            mapInstance.current.addLayer(labelLayer);
+            break;
+        }
+        setMapType(type);
+      }
+    };
     return (
       <Box height="100%" display="flex" flexDirection="column">
         <Box
@@ -1397,10 +1405,10 @@ useEffect(() => {
                     }}
                   >
                     <Checkbox
-                       sx={{ scale: 0.8 }}
-  checked={isLastLandmark}
-  onChange={(e) => setIsLastLandmark(e.target.checked)}
-  disabled={isFirstLandmark}
+                      sx={{ scale: 0.8 }}
+                      checked={isLastLandmark}
+                      onChange={(e) => setIsLastLandmark(e.target.checked)}
+                      disabled={isFirstLandmark}
                     />
                     <Typography variant="body2" fontSize={12}>
                       Ending Landmark?
