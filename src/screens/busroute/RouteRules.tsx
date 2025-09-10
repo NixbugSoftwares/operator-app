@@ -27,8 +27,9 @@ const RouteRulesModal: React.FC<RouteRulesModalProps> = ({ open, onClose }) => {
 
 const rules = [
   "Every route must include at least two landmarks.",
-  "The first landmark should always start at distance 0, with both Arrival Time and Departure Time set to 0.",
+  "The first landmark should always start at distance 0, and both Arrival Time and Departure Time should match the starting time.",
   "For all middle landmarks, the Departure Time must be later than the Arrival Time.",
+  "Make sure that Distance, Arrival Time, and Departure Time are in increasing order as you progress through the landmarks.",
   "For the last landmark, the Arrival Time and Departure Time must be the same.",
 ];
 

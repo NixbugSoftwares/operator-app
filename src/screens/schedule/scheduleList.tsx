@@ -588,6 +588,7 @@ const ScheduleListingTable = () => {
       <FormModal
         open={openCreateModal}
         onClose={() => setOpenCreateModal(false)}
+        title="Create Schedule"
       >
         <ScheduleCreationForm
           refreshList={refreshList}
