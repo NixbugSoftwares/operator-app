@@ -64,7 +64,6 @@ const Sidebar: React.FC = () => {
           path: "/duty",
           icon: <AssignmentTurnedInRoundedIcon />,
         },
-        // {label:"Ticket",path:"/ticket",icon:<ConfirmationNumberIcon/>},
         { label: "Statement", path: "/statement", icon: <ReceiptLongIcon /> },
       ],
     },
