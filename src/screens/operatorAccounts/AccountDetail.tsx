@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardActions,
@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Tooltip,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -25,7 +26,7 @@ import DateRangeOutlinedIcon from "@mui/icons-material/DateRangeOutlined";
 import ToggleOnIcon from "@mui/icons-material/ToggleOn";
 import ToggleOffIcon from "@mui/icons-material/ToggleOff";
 import { useAppDispatch } from "../../store/Hooks";
-import { accountDeleteApi } from "../../slices/appSlice";
+import { accountDeleteApi, dutyListingApi } from "../../slices/appSlice";
 import localStorageHelper from "../../utils/localStorageHelper";
 import {
   showErrorToast,
@@ -78,6 +79,7 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
   const canDeleteOperator = useSelector((state: RootState) =>
     state.app.permissions.includes("delete_operator")
   );
+  const [isOperatorInDuty, setIsOperatorInDuty] = useState(false);
   const getGenderValue = (genderText: string): number | undefined => {
     const option = genderOptions.find((opt) => opt.label === genderText);
     return option?.value;
@@ -102,6 +104,24 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
       showErrorToast(error.message || "Account deletion failed. Please try again.");
     }
   };
+
+    const fetchServiceList = async () => {
+    try {
+      const response = await dispatch(
+        dutyListingApi({ limit: 100, offset: 0, operator_id: Number(account.id) })
+      ).unwrap();
+
+      if (response.data) {
+        setIsOperatorInDuty(response.data.length > 0);
+      }
+    } catch (error: any) {
+      console.error(error.message);
+    }
+  };
+  useEffect(() => {
+    fetchServiceList();
+  }, [account.id]);
+
 
   return (
     <>
@@ -266,22 +286,32 @@ const AccountDetailsCard: React.FC<AccountCardProps> = ({
             )}
 
             {canDeleteOperator && !isLoggedInUser && (
-              <Button
-                variant="contained"
-                color="error"
-                size="small"
-                onClick={() => setDeleteConfirmOpen(true)}
-                startIcon={<DeleteIcon />}
-                sx={{
-                  minWidth: 100,
-                  "&:disabled": {
-                    backgroundColor: "#e57373 !important",
-                    color: "#ffffff99",
-                  },
-                }}
+             <Tooltip
+                title={
+                  isOperatorInDuty
+                    ? "Operator is Assigned to duty, cannot be deleted"
+                    : "Click to delete the operator"
+                }
               >
-                Delete
-              </Button>
+                <span>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    size="small"
+                    onClick={() => setDeleteConfirmOpen(true)}
+                    startIcon={<DeleteIcon />}
+                    disabled={isOperatorInDuty}
+                    sx={{
+                      "&.Mui-disabled": {
+                        backgroundColor: "#e57373 !important",
+                        color: "#ffffff99",
+                      },
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </span>
+              </Tooltip>
             )}
           </Box>
         </CardActions>

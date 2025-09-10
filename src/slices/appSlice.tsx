@@ -128,6 +128,7 @@ interface DutyListParams {
   service_id?: number;
   status_list?: number[];
   service_id_list?: number[];
+  operator_id?: number;
 }
 
 interface paperTicketListParams {
@@ -1380,7 +1381,7 @@ export const scheduleDeleteApi = createAsyncThunk(
 export const dutyListingApi = createAsyncThunk(
   "/duty",
   async (params: DutyListParams, { rejectWithValue }) => {
-    const { limit, offset, id, name, status, status_list, type, service_id, service_id_list } = params;
+    const { limit, offset, id, name, status, status_list, type, service_id, service_id_list, operator_id } = params;
     const queryParams = {
       limit,
       offset,
@@ -1391,6 +1392,7 @@ export const dutyListingApi = createAsyncThunk(
       ...(type && { type }),
       ...(service_id && { service_id }),
       ...(service_id_list && { service_id_list }),
+      ...(operator_id && { operator_id }),
     };
     try {
       const response = await commonApi.apiCall(

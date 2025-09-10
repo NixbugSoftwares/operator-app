@@ -800,6 +800,7 @@ const BusListingTable = () => {
       <FormModal
         open={openCreateModal}
         onClose={() => setOpenCreateModal(false)}
+        title="Create Bus"
       >
         <BusCreationForm
           refreshList={refreshList}

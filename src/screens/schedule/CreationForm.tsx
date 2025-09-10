@@ -4,7 +4,6 @@ import {
   Box,
   TextField,
   Button,
-  Typography,
   Container,
   CssBaseline,
   CircularProgress,
@@ -346,9 +345,6 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
           alignItems: "center",
         }}
       >
-        <Typography component="h1" variant="h5">
-          Schedule Creation
-        </Typography>
         <Box
           component="form"
           noValidate

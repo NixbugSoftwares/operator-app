@@ -6,7 +6,6 @@ import {
   Box,
   TextField,
   Button,
-  Typography,
   Container,
   CssBaseline,
   CircularProgress,
@@ -115,9 +114,6 @@ const BusCreationForm: React.FC<IOperatorCreationFormProps> = ({
           alignItems: "center",
         }}
       >
-        <Typography component="h1" variant="h5">
-          Bus Creation
-        </Typography>
         <Box
           component="form"
           noValidate
