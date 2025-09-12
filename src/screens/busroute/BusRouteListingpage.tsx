@@ -26,7 +26,9 @@ import {
 import VerifiedIcon from "@mui/icons-material/Verified";
 import ErrorIcon from "@mui/icons-material/Error";
 import CloseIcon from "@mui/icons-material/Close";
-import MapIcon from "@mui/icons-material/Map";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMapLocationDot } from '@fortawesome/free-solid-svg-icons';
+
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store/Store";
 import {
@@ -667,9 +669,9 @@ const BusRouteListing = () => {
       {!showMapMobile && (
         <Button
           variant="contained"
-          color="primary"
           onClick={() => setShowMapMobile(true)}
           sx={{
+            bgcolor: "darkblue",
             position: "fixed",
             bottom: 16,
             right: 16,
@@ -680,7 +682,7 @@ const BusRouteListing = () => {
             display: { xs: "flex", md: "none" }, // Only mobile
           }}
         >
-          <MapIcon />
+          <FontAwesomeIcon size="xl" icon={faMapLocationDot} />
         </Button>
       )}
 
