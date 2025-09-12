@@ -118,7 +118,7 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
           limit: rowsPerPage,
           offset,
           name: searchText,
-          status:1
+          status: 1,
         })
       )
         .unwrap()
@@ -144,7 +144,7 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
           showErrorToast(error.message || "Failed to fetch Bus list");
         });
     },
-    [dispatch ]
+    [dispatch]
   );
 
   const fetchFareList = useCallback(
@@ -177,7 +177,7 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
         showErrorToast(error.message || "Failed to fetch Fare list");
       }
     },
-    [dispatch, rowsPerPage ]
+    [dispatch, rowsPerPage]
   );
 
   const fetchRouteList = useCallback(
@@ -188,7 +188,7 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
           limit: rowsPerPage,
           offset,
           name: searchText,
-          status:1
+          status: 1,
         })
       )
         .unwrap()
@@ -249,9 +249,11 @@ const ScheduleCreationForm: React.FC<IOperatorCreationFormProps> = ({
         showErrorToast("Schedule creation failed. Please try again.");
       }
     } catch (error: any) {
-      showErrorToast(
-        error.message || "Something went wrong. Please try again."
-      );
+      if (error.status === 409) {
+        showErrorToast("Schedule already exists");
+      } else {
+        showErrorToast(error.message || "Schedule creation failed");
+      }
     } finally {
       setLoading(false);
     }

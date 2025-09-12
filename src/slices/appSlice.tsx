@@ -473,7 +473,6 @@ export const operatorRoleUpdationApi = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      console.error("Backend Error Response:", error.response?.data);
       return rejectWithValue({
         message: error.error || " operator role updation failed",
         status: error.status,

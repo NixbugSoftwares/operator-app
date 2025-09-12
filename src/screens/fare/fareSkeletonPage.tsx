@@ -257,8 +257,11 @@ const CompanyFareSkeletonPage = ({
       refreshList("refresh");
       showSuccessToast("Fare created successfully");
     } catch (error: any) {
-      console.error("Error creating fare:", error);
-      showErrorToast(error.message || "Error creating fare");
+       if (error.status === 409) {
+              showErrorToast("Fare already exists");
+            } else {
+              showErrorToast(error.message || "Fare creation failed");
+            }
     } finally {
       setLoading(false);
     }
@@ -280,8 +283,11 @@ const CompanyFareSkeletonPage = ({
       refreshList("refresh");
       showSuccessToast("Fare updated successfully");
     } catch (error: any) {
-      console.error("Error updating fare:", error);
-      showErrorToast(error.message || "Error updating fare");
+       if (error.status === 409) {
+              showErrorToast("Fare name already exists");
+            } else {
+              showErrorToast(error.message || "Fare Updation failed");
+            }
     } finally {
       setLoading(false);
     }
