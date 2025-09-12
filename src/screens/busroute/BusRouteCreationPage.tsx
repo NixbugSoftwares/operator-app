@@ -265,7 +265,11 @@ const BusRouteCreation = ({
         onSuccess();
         if (onClose) onClose();
       } else {
-        showErrorToast(error.message || "Failed to create route and landmarks");
+        if (error.status === 409) {
+                showErrorToast("Route already exists");
+              } else {
+                showErrorToast(error.message || "Route creation failed");
+              }
       }
     } finally {
       setIsSubmitting(false);

@@ -263,6 +263,12 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
           <Controller
             name="phoneNumber"
             control={control}
+            rules={{
+              validate: (value) =>
+                !value || value.length === 10
+                  ? true
+                  : "Phone number must be exactly 10 digits",
+            }}
             render={({ field }) => (
               <TextField
                 margin="normal"
@@ -282,7 +288,6 @@ const AccountUpdateForm: React.FC<IAccountUpdateFormProps> = ({
               />
             )}
           />
-
           <TextField
             margin="normal"
             placeholder="example@gmail.com"

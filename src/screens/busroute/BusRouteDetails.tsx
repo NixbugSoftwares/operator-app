@@ -419,7 +419,11 @@ const BusRouteDetailsPage = ({
       showSuccessToast("Route details updated successfully");
       onBack();
     } catch (error: any) {
-      showErrorToast(error.message || "Failed to update route details");
+      if (error.status === 409) {
+        showErrorToast("Route name already exists");
+      } else {
+        showErrorToast(error.message || "Route details update failed");
+      }
     }
   };
 
