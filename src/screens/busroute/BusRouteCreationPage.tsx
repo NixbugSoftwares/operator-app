@@ -716,7 +716,7 @@ const BusRouteCreation = ({
             bottom: 0,
           }}
         >
-          <Stack direction="row" spacing={2} justifyContent="flex-end">
+          <Stack direction="row" spacing={2} justifyContent="flex-start">
             <Button variant="outlined" onClick={onCancel}>
               Cancel
             </Button>
