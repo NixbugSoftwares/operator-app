@@ -125,12 +125,12 @@ const TicketDetailsCard: React.FC<TicketDetailsCardProps> = ({
         <Box
           sx={{
             position: "absolute",
-            right: 16,
+            right: 10,
             top: "50%",
             transform: "translateY(-50%)",
           }}
         >
-          <BusIcon sx={{ color: "darkblue" }} fontSize="large" />
+          <BusIcon sx={{ color: "darkblue", mb: 2 }} fontSize="large" />
         </Box>
       </Stack>
     </Box>
@@ -169,18 +169,18 @@ const TicketDetailsCard: React.FC<TicketDetailsCardProps> = ({
         PASSENGER DETAILS
       </Typography>
       <Divider sx={{ mb: 2 }} />
-      <Stack direction="row" spacing={1} flexWrap="wrap">
-        {ticket.ticket_types?.map((type, index) => (
-          <Chip
-            key={index}
-            icon={<PassengerIcon />}
-            label={`${type.count} x ${type.name}`}
-            color={getTicketTypeColor(type.name)}
-            variant="outlined"
-            sx={{ fontWeight: "medium", mb: 1 }}
-          />
-        ))}
-      </Stack>
+      <Stack direction="row" spacing={1} flexWrap="wrap" rowGap={1} justifyContent="flex-start" alignItems="center">
+  {ticket.ticket_types?.map((type, index) => (
+    <Chip
+      key={index}
+      icon={<PassengerIcon />}
+      label={`${type.count} x ${type.name}`}
+      color={getTicketTypeColor(type.name)}
+      variant="outlined"
+      sx={{ fontWeight: "medium", mb: 1 }}
+    />
+  ))}
+</Stack>
     </Box>
 
     {/* Total Amount */}

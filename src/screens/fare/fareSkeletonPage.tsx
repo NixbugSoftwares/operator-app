@@ -100,7 +100,7 @@ const CompanyFareSkeletonPage = ({
     state.app.permissions.includes("delete_fare")
   );
 
-  const [distanceKm, setDistanceKm] = useState(5);
+  const [distanceKm, setDistanceKm] = useState<number | "">(5);
   const [fareResults, setFareResults] = useState<{
     distance: number;
     results: { type: string; fare: number }[];
@@ -202,7 +202,7 @@ const CompanyFareSkeletonPage = ({
       // Test the fare function for the specified distance
       const singleResults = currentTicketTypes.map((ticket: TicketType) => {
         try {
-          const fare = getFare(ticket.name, distanceKm * 1000, {}); // distance in meters
+          const fare = getFare(ticket.name, Number(distanceKm) * 1000, {}); // distance in meters
           return { type: ticket.name, fare };
         } catch (err: any) {
           return { type: ticket.name, fare: -1 };
@@ -211,7 +211,7 @@ const CompanyFareSkeletonPage = ({
 
       // Test the fare function for all distances up to the specified km
       const rangeResults = [];
-      for (let km = 1; km <= distanceKm; km++) {
+      for (let km = 1; km <= Number(distanceKm); km++) {
         const rangeFares: Record<string, number> = {};
         currentTicketTypes.forEach((ticket: TicketType) => {
           try {
@@ -227,7 +227,7 @@ const CompanyFareSkeletonPage = ({
       }
 
       setFareResults({
-        distance: distanceKm,
+        distance: Number(distanceKm),
         results: singleResults,
         rangeResults,
       });
@@ -257,11 +257,11 @@ const CompanyFareSkeletonPage = ({
       refreshList("refresh");
       showSuccessToast("Fare created successfully");
     } catch (error: any) {
-       if (error.status === 409) {
-              showErrorToast("Fare already exists");
-            } else {
-              showErrorToast(error.message || "Fare creation failed");
-            }
+      if (error.status === 409) {
+        showErrorToast("Fare already exists");
+      } else {
+        showErrorToast(error.message || "Fare creation failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -283,11 +283,11 @@ const CompanyFareSkeletonPage = ({
       refreshList("refresh");
       showSuccessToast("Fare updated successfully");
     } catch (error: any) {
-       if (error.status === 409) {
-              showErrorToast("Fare name already exists");
-            } else {
-              showErrorToast(error.message || "Fare Updation failed");
-            }
+      if (error.status === 409) {
+        showErrorToast("Fare name already exists");
+      } else {
+        showErrorToast(error.message || "Fare Updation failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -324,7 +324,7 @@ const CompanyFareSkeletonPage = ({
         width: "100%",
         height: "100vh",
         overflow: "hidden",
-        maxWidth: { sm: "1200px" }, // Limit max width on larger screens
+        maxWidth: { sm: "1200px", md: "1400px" }, // Limit max width on larger screens
         margin: "0 auto",
       }}
     >
@@ -542,19 +542,22 @@ const CompanyFareSkeletonPage = ({
           )}
         </Box>
 
+        {/* Sticky Button Bar */}
         <Box
           sx={{
-            mt: { xs: 0, sm: "auto" },
+            position: "sticky",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            bgcolor: "background.paper",
+            zIndex: 10,
+            boxShadow: "0 -2px 8px rgba(0,0,0,0.04)",
             display: "flex",
             justifyContent: "left",
             gap: 1,
             pt: 2,
+            pb: 2,
             flexWrap: "wrap",
-            position: { xs: "sticky", sm: "static" }, // Sticky on mobile
-            bottom: { xs: 0, sm: "auto" }, // Stick to bottom on mobile
-            bgcolor: { xs: "background.paper", sm: "inherit" }, // Background for sticky
-            zIndex: { xs: 10, sm: "auto" }, // Ensure above other content
-            pb: { xs: 2, sm: 0 }, // Padding bottom for mobile
           }}
         >
           {/* View Mode */}
@@ -704,9 +707,19 @@ const CompanyFareSkeletonPage = ({
               type="number"
               size="small"
               value={distanceKm}
-              onChange={(e) =>
-                setDistanceKm(Math.max(1, Number(e.target.value)))
-              }
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === "") {
+                  setDistanceKm("");
+                } else {
+                  setDistanceKm(Number(val));
+                }
+              }}
+              onBlur={() => {
+                if (distanceKm === "" || Number(distanceKm) < 1) {
+                  setDistanceKm(1);
+                }
+              }}
               sx={{ width: 120 }}
               inputProps={{ min: 1 }}
             />

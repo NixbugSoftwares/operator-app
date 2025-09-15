@@ -24,6 +24,13 @@ import PersonIcon from "@mui/icons-material/Person";
 import ChildCareIcon from "@mui/icons-material/ChildCare";
 import SchoolIcon from "@mui/icons-material/School";
 import BoyIcon from "@mui/icons-material/Boy";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
+import { useMediaQuery, useTheme } from "@mui/material";
 import { fareListApi } from "../../slices/appSlice";
 import type { AppDispatch } from "../../store/Store";
 import { showErrorToast } from "../../common/toastMessageHelper";
@@ -61,6 +68,10 @@ const CompanyFareListingPage = () => {
   const canCreateFare = useSelector((state: RootState) =>
     state.app.permissions.includes("create_fare")
   );
+  const theme = useTheme();
+  const isMobileView = useMediaQuery(theme.breakpoints.down("sm"));
+  const [warningOpen, setWarningOpen] = useState(false);
+
   const columnConfig: ColumnConfig[] = [
     { id: "id", label: "ID", width: "80px", minWidth: "80px", fixed: true },
     {
@@ -115,6 +126,7 @@ const CompanyFareListingPage = () => {
             limit: rowsPerPage,
             offset,
             ...searchParams,
+            scope: 2,
           })
         ).unwrap();
 
@@ -125,7 +137,7 @@ const CompanyFareListingPage = () => {
         const localFares = localRes.data || [];
         const globalFares = globalRes.data || [];
 
-        const allFares = [...localFares, ...globalFares].filter(
+        const allFares = [...globalFares, ...localFares].filter(
           (fare, index, self) =>
             index === self.findIndex((f) => f.id === fare.id)
         );
@@ -147,7 +159,10 @@ const CompanyFareListingPage = () => {
         }));
 
         setFareList(formattedFares);
-        setHasNextPage(allFares.length === rowsPerPage);
+        setHasNextPage(
+          (localRes.data?.length ?? 0) === rowsPerPage ||
+            (globalRes.data?.length ?? 0) === rowsPerPage
+        );
       } catch (error: any) {
         showErrorToast(
           error.message || "Failed to fetch fare list. Please try again."
@@ -229,7 +244,6 @@ const CompanyFareListingPage = () => {
             height: "100%",
             display: "flex",
             flexDirection: "column",
-            borderRight: "1px solid #e0e0e0",
             borderRadius: 2,
             overflow: "hidden",
             backgroundColor: "#fff",
@@ -285,7 +299,13 @@ const CompanyFareListingPage = () => {
             {canCreateFare && (
               <Button
                 variant="contained"
-                onClick={() => setViewMode("create")}
+                onClick={() => {
+                  if (isMobileView) {
+                    setWarningOpen(true);
+                  } else {
+                    setViewMode("create");
+                  }
+                }}
                 disabled={!canCreateFare}
                 sx={{
                   ml: "auto",
@@ -386,8 +406,12 @@ const CompanyFareListingPage = () => {
                         hover
                         selected={isSelected}
                         onClick={() => {
-                          setSelectedFare(fare);
-                          setViewMode("view");
+                          if (isMobileView) {
+                            setWarningOpen(true);
+                          } else {
+                            setSelectedFare(fare);
+                            setViewMode("view");
+                          }
                         }}
                         sx={{
                           cursor: "pointer",
@@ -522,6 +546,25 @@ const CompanyFareListingPage = () => {
             hasNextPage={hasNextPage}
           />
         </Box>
+        <Dialog
+          open={warningOpen}
+          onClose={() => setWarningOpen(false)}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle>Mobile View Restricted</DialogTitle>
+          <DialogContent>
+            <Typography>
+              You can’t open this page in mobile view. Please use a larger
+              screen.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button variant="contained" onClick={() => setWarningOpen(false)}>
+              OK
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </>
   );
