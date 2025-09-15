@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build, Push, and Deploy
 
 on:
   push:
@@ -7,13 +7,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_and_push:
+  build_and_deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
 
-    steps:
+    steps:         
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -30,11 +30,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set image name
+      - name: Set image vars
         id: vars
         run: |
+          BRANCH=$(echo "${GITHUB_REF_NAME}" | tr '[:upper:]' '[:lower:]' | tr '/' '-')
+          SHORT_SHA=${GITHUB_SHA::7}
           echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/operator-app" >> $GITHUB_ENV
-          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -42,5 +45,23 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.IMAGE }}:${{ env.SHORT_SHA }}
-            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ env.BRANCH }}-${{ env.SHORT_SHA }}
+            ${{ env.IMAGE }}:${{ env.BRANCH }}-latest
+
+      - name: Install kubectl
+        run: |
+          VERSION=v1.30.0
+          echo "Installing kubectl $VERSION"
+          curl -LO "https://dl.k8s.io/${VERSION}/bin/linux/amd64/kubectl"
+          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+          
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_DATA }}" > ~/.kube/config
+
+      - name: Deploy to K8s
+        run: |
+          kubectl -n entebus-frontend set image deployment/operator-app \
+            operator-app=${{ env.IMAGE }}:${{ env.BRANCH }}-${{ env.SHORT_SHA }}
+          kubectl -n entebus-frontend rollout status deployment/operator-app
