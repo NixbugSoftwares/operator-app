@@ -18,7 +18,7 @@ import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined
 import Diversity3Icon from "@mui/icons-material/Diversity3";
 import RouteIcon from "@mui/icons-material/Route";
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
-import ScheduleIcon from "@mui/icons-material/Schedule";
+// import ScheduleIcon from "@mui/icons-material/Schedule";
 import PowerSettingsNewIcon from "@mui/icons-material/PowerSettingsNew";
 import AssignmentIndRoundedIcon from "@mui/icons-material/AssignmentIndRounded";
 import AssignmentTurnedInRoundedIcon from "@mui/icons-material/AssignmentTurnedInRounded";
@@ -58,7 +58,7 @@ const Sidebar: React.FC = () => {
           path: "/service",
           icon: <AssignmentIndRoundedIcon />,
         },
-        { label: "Schedule", path: "/schedule", icon: <ScheduleIcon /> },
+        // { label: "Schedule", path: "/schedule", icon: <ScheduleIcon /> },
         {
           label: "Duty",
           path: "/duty",
@@ -260,7 +260,7 @@ const Sidebar: React.FC = () => {
           >
             &copy; {new Date().getFullYear()} EnteBus. All rights reserved.
             <br />
-            Version 0.1.0
+            Version 0.1.3
           </Typography>
         </Box>
       </Drawer>
