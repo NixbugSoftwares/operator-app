@@ -294,7 +294,7 @@ const AccountListingTable = () => {
     <Box
       sx={{
         display: "flex",
-        flexDirection: { xs: "column", md: "row" },
+        flexDirection: { xs: "column", lg: "row" },
         width: "100%",
         height: "100%",
         gap: 2,
@@ -320,7 +320,7 @@ const AccountListingTable = () => {
             alignItems: "center",
             mb: 2,
             gap: 1,
-            flexWrap: "nowrap", // Force one line
+            flexWrap: { xs: "wrap", sm: "nowrap" },
           }}
         >
           <Box
@@ -391,6 +391,7 @@ const AccountListingTable = () => {
             borderRadius: 2,
             border: "1px solid #e0e0e0",
             position: "relative",
+            minHeight: 0, 
           }}
         >
           {isLoading && (

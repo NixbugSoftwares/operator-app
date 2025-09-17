@@ -213,7 +213,7 @@ const RoleListingTable = () => {
             alignItems: "center",
             mb: 2,
             gap: 1,
-            flexWrap: "nowrap", // Force one line
+            flexWrap: { xs: "wrap", sm: "nowrap" }, // Force one line
           }}
         >
           <Box
@@ -289,6 +289,7 @@ const RoleListingTable = () => {
             borderRadius: 2,
             border: "1px solid #e0e0e0",
             position: "relative",
+             minHeight: 0, // ✅ ensures flex container doesn't push out
           }}
                 >
                   {isLoading && (

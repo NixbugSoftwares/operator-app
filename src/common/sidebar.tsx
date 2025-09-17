@@ -102,7 +102,7 @@ const Sidebar: React.FC = () => {
             boxSizing: "border-box",
             display: "flex",
             flexDirection: "column",
-            height: "100vh",
+            height: "100dvh", // ✅ fixes mobile height issue
           },
         }}
       >
@@ -126,7 +126,7 @@ const Sidebar: React.FC = () => {
         <Divider />
 
         {/* Navigation Items */}
-        <Box sx={{ overflow: "auto", p: 2 }}>
+        <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
           {sections.map((section, index) => (
             <Box key={index} sx={{ mb: 3 }}>
               <Typography
@@ -170,10 +170,9 @@ const Sidebar: React.FC = () => {
             </Box>
           ))}
         </Box>
-        {/* *******************************************************logout section******************************************************** */}
-        <Box
-          sx={{ px: 2, pt: 1, pb: 0, borderTop: "1px solid #eee", mt: "auto" }}
-        >
+
+        {/* Logout Section */}
+        <Box sx={{ px: 2, pt: 1, pb: 0, borderTop: "1px solid #eee" }}>
           <List>
             <ListItem disablePadding>
               <ListItemButton
@@ -248,7 +247,9 @@ const Sidebar: React.FC = () => {
             </Collapse>
           </List>
         </Box>
-        <Box sx={{ width: "100%", pb: 1, pt: 0 }}>
+
+        {/* Footer */}
+        <Box sx={{ width: "100%", p: 1 }}>
           <Typography
             variant="caption"
             sx={{
@@ -264,6 +265,7 @@ const Sidebar: React.FC = () => {
           </Typography>
         </Box>
       </Drawer>
+
       <LogoutConfirmationModal
         open={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}

@@ -7,7 +7,7 @@ const RolePage: React.FC = () => {
     <Box
       sx={{
         display: "flex",
-        height: "100vh",
+        height: "100dvh",
         width: "100%",
         scrollBehavior: "auto",
       }}
