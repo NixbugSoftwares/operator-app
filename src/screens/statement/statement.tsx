@@ -5,6 +5,15 @@ import StatementsPage from "./statementList";
 
 
 const StatementPage: React.FC = () => {
+
+const [isStatementGenerated, setIsStatementGenerated] = React.useState(false);
+
+const handleStatementGenerated = () => {
+  setIsStatementGenerated(true);
+}
+  const handleBackToServices = () => {
+    setIsStatementGenerated(false); // 👈 Reset when going back
+  };
   return (
     <Box
       sx={{
@@ -14,9 +23,10 @@ const StatementPage: React.FC = () => {
         scrollBehavior: "auto",
       }}
     >
-      <Sidebar />
+      {!isStatementGenerated && (<Sidebar />)}
       <Box sx={{ width: "100%", p: 3 }}>
-        <StatementsPage/>
+        <StatementsPage onStatementGenerated={handleStatementGenerated} 
+        onBackToServices={handleBackToServices} />
       </Box>
 
 

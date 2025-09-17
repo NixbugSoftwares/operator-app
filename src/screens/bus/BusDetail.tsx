@@ -228,7 +228,7 @@ const BusDetailsCard: React.FC<BusCardProps> = ({
             sx={{
               display: "flex",
               gap: 1,
-              justifyContent: "space-between",
+              justifyContent: "left",
               width: "100%",
             }}
           >

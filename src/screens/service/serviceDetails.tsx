@@ -313,7 +313,7 @@ const ServiceDetailsCard: React.FC<ServiceCardProps> = ({
             sx={{
               display: "flex",
               gap: 1,
-              justifyContent: "space-between",
+              justifyContent: "left",
               width: "100%",
             }}
           >
