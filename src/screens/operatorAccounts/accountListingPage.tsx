@@ -290,14 +290,15 @@ const AccountListingTable = () => {
     }
   };
 
- return (
+return (
   <Box
     sx={{
       display: "flex",
-      flexDirection: { xs: "column", lg: "row" }, // ✅ same as bus page
+      flexDirection: { xs: "column", lg: "row" },
       width: "100%",
       height: "100%",
       gap: 2,
+      overflow: "hidden", // Prevent entire page from scrolling
     }}
   >
     {/* 📌 Table section */}
@@ -312,86 +313,98 @@ const AccountListingTable = () => {
         overflow: "hidden",
       }}
     >
+      {/* Header with controls - stays fixed at top */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "flex-end",
+          alignItems: "center",
+          mb: 2,
+          gap: 1,
+          flexWrap: { xs: "wrap", sm: "nowrap" },
+          flexShrink: 0, // Prevent this from growing
+        }}
+      >
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "flex-end",
-            alignItems: "center",
-            mb: 2,
-            gap: 1,
-            flexWrap: { xs: "wrap", sm: "nowrap" },
+            flexShrink: 0,
+            width: { xs: "50%", md: "auto" },
           }}
         >
-          <Box
+          <Select
+            multiple
+            value={Object.keys(visibleColumns).filter(
+              (key) => visibleColumns[key]
+            )}
+            onChange={handleColumnChange}
+            renderValue={(selected) => `Columns (${selected.length})`}
+            size="small"
             sx={{
-              flexShrink: 0,
-              width: { xs: "50%", md: "auto" },
+              minWidth: { xs: "120px", sm: "160px", md: "200px" },
+              height: 36,
+              fontSize: "0.75rem",
+              "& .MuiSelect-select": { py: 0.5 },
             }}
           >
-            <Select
-              multiple
-              value={Object.keys(visibleColumns).filter(
-                (key) => visibleColumns[key]
-              )}
-              onChange={handleColumnChange}
-              renderValue={(selected) => `Columns (${selected.length})`}
-              size="small" // 👈 Makes Select compact
-              sx={{
-                minWidth: { xs: "120px", sm: "160px", md: "200px" },
-                height: 36,
-                fontSize: "0.75rem",
-                "& .MuiSelect-select": { py: 0.5 },
-              }}
-            >
-              {columnConfig.map((column) => (
-                <MenuItem
-                  key={column.id}
-                  value={column.id}
+            {columnConfig.map((column) => (
+              <MenuItem
+                key={column.id}
+                value={column.id}
+                disabled={column.fixed}
+              >
+                <Checkbox
+                  checked={visibleColumns[column.id]}
                   disabled={column.fixed}
-                >
-                  <Checkbox
-                    checked={visibleColumns[column.id]}
-                    disabled={column.fixed}
-                  />
-                  <ListItemText primary={column.label} />
-                </MenuItem>
-              ))}
-            </Select>
-          </Box>
-
-          {canCreateOperator && (
-            <Button
-              variant="contained"
-              onClick={() => setOpenCreateModal(true)}
-              sx={{
-                flexShrink: 0,
-                minWidth: "fit-content",
-                px: 1.5, // Reduce horizontal padding
-                py: 0.5, // Reduce vertical padding
-                fontSize: "0.75rem", // Smaller font
-                height: 36, // Match Select height
-                backgroundColor: "#00008B",
-                color: "white !important",
-                "&.Mui-disabled": {
-                  color: "#fff !important",
-                },
-              }}
-            >
-              Add Operator
-            </Button>
-          )}
+                />
+                <ListItemText primary={column.label} />
+              </MenuItem>
+            ))}
+          </Select>
         </Box>
 
+        {canCreateOperator && (
+          <Button
+            variant="contained"
+            onClick={() => setOpenCreateModal(true)}
+            sx={{
+              flexShrink: 0,
+              minWidth: "fit-content",
+              px: 1.5,
+              py: 0.5,
+              fontSize: "0.75rem",
+              height: 36,
+              backgroundColor: "#00008B",
+              color: "white !important",
+              "&.Mui-disabled": {
+                color: "#fff !important",
+              },
+            }}
+          >
+            Add Operator
+          </Button>
+        )}
+      </Box>
+
+      {/* Table container with fixed height and internal scrolling */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          flex: 1, // Take remaining space
+          minHeight: 0, // Important for proper scrolling in flex containers
+          overflow: "hidden",
+        }}
+      >
         <TableContainer
-  sx={{
-    flex: 1, // fill remaining height
-    overflowY: "auto",
-    borderRadius: 2,
-    border: "1px solid #e0e0e0",
-    position: "relative",
-    minHeight: 0, // important for flexbox scrolling
-  }}
->
+          sx={{
+            flex: 1,
+            overflow: "auto", // Enable scrolling
+            borderRadius: 2,
+            border: "1px solid #e0e0e0",
+            position: "relative",
+            maxHeight: "100%", // Constrain height
+          }}
+        >
           {isLoading && (
             <Box
               sx={{
@@ -411,8 +424,8 @@ const AccountListingTable = () => {
             </Box>
           )}
           <Table stickyHeader>
+            {/* Table Head */}
             <TableHead>
-              {/* Header Row */}
               <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
                 {visibleColumns.id && (
                   <TableCell
@@ -505,6 +518,7 @@ const AccountListingTable = () => {
                   </TableCell>
                 )}
               </TableRow>
+              
               {/* Search Row */}
               <TableRow>
                 {visibleColumns.id && (
@@ -521,7 +535,7 @@ const AccountListingTable = () => {
                         "& .MuiInputBase-root": { height: 40 },
                         "& .MuiInputBase-input": { textAlign: "center" },
                         width: "100%",
-    minWidth: { xs: 80, sm: "100%" },
+                        minWidth: { xs: 80, sm: "100%" },
                       }}
                     />
                   </TableCell>
@@ -711,19 +725,24 @@ const AccountListingTable = () => {
             </TableBody>
           </Table>
         </TableContainer>
-        <PaginationControls
-          page={page}
-          onPageChange={(newPage) => handleChangePage(null, newPage)}
-          isLoading={isLoading}
-          hasNextPage={hasNextPage}
-        />
+        
+        {/* Pagination controls - stays fixed at bottom */}
+        <Box sx={{ flexShrink: 0, mt: 1 }}>
+          <PaginationControls
+            page={page}
+            onPageChange={(newPage) => handleChangePage(null, newPage)}
+            isLoading={isLoading}
+            hasNextPage={hasNextPage}
+          />
+        </Box>
       </Box>
+    </Box>
 
-      {/* Right Side - Account Details Card */}
-      {selectedAccount && (
-        <Box
+    {/* Right Side - Account Details Card */}
+    {selectedAccount && (
+      <Box
         sx={{
-          display: { xs: "none", lg: "block" }, // ✅ only show on large screens
+          display: { xs: "none", lg: "block" },
           flex: "0 0 35%",
           maxWidth: "35%",
           transition: "all 0.3s ease",
@@ -733,6 +752,28 @@ const AccountListingTable = () => {
           height: "100%",
         }}
       >
+        <AccountDetailsCard
+          account={selectedAccount}
+          onUpdate={() => {}}
+          onDelete={() => {}}
+          onBack={() => setSelectedAccount(null)}
+          refreshList={(value: any) => refreshList(value)}
+          onCloseDetailCard={() => setSelectedAccount(null)}
+        />
+      </Box>
+    )}
+
+    {/* Mobile/Tablet View (Dialog) */}
+    <Dialog
+      open={Boolean(selectedAccount)}
+      onClose={() => setSelectedAccount(null)}
+      fullScreen
+      sx={{
+        display: { xs: "block", lg: "none" },
+      }}
+    >
+      {selectedAccount && (
+        <Box sx={{ p: 2 }}>
           <AccountDetailsCard
             account={selectedAccount}
             onUpdate={() => {}}
@@ -743,42 +784,20 @@ const AccountListingTable = () => {
           />
         </Box>
       )}
+    </Dialog>
 
-      {/* Mobile/Tablet View (Dialog) */}
-      <Dialog
-        open={Boolean(selectedAccount)}
-        onClose={() => setSelectedAccount(null)}
-        fullScreen
-        sx={{
-          display: { xs: "block", lg: "none" }, // ✅ Show on mobile + tablets
-        }}
-      >
-        {selectedAccount && (
-          <Box sx={{ p: 2 }}>
-            <AccountDetailsCard
-              account={selectedAccount}
-              onUpdate={() => {}}
-              onDelete={() => {}}
-              onBack={() => setSelectedAccount(null)}
-              refreshList={(value: any) => refreshList(value)}
-              onCloseDetailCard={() => setSelectedAccount(null)}
-            />
-          </Box>
-        )}
-      </Dialog>
-
-      {/* Create Account Modal */}
-      <FormModal
-        open={openCreateModal}
+    {/* Create Account Modal */}
+    <FormModal
+      open={openCreateModal}
+      onClose={() => setOpenCreateModal(false)}
+      title="Create Account"
+    >
+      <AccountForm
+        refreshList={refreshList}
         onClose={() => setOpenCreateModal(false)}
-        title="Create Account"
-      >
-        <AccountForm
-          refreshList={refreshList}
-          onClose={() => setOpenCreateModal(false)}
-        />
-      </FormModal>
-    </Box>
-  );
+      />
+    </FormModal>
+  </Box>
+);
 };
 export default AccountListingTable;

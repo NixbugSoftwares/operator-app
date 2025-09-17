@@ -358,13 +358,13 @@ const StatementListingPage = ( { onStatementGenerated, onBackToServices }: State
     window.print();
   };
 
-  const handleBack = () => {
-    if (activeTab === "statement") {
-      setActiveTab("services");
-      setIsFullScreen(false);
-      onBackToServices;
-    }
-  };
+const handleBack = () => {
+  if (activeTab === "statement" && onBackToServices) {
+    setActiveTab("services");
+    setIsFullScreen(false);
+    onBackToServices();
+  }
+};
 
   // Print styles
   const printStyles = `
@@ -414,7 +414,7 @@ const StatementListingPage = ( { onStatementGenerated, onBackToServices }: State
           <AppBar
             position="sticky"
             elevation={0}
-            color="default"
+            sx={{ backgroundColor: "white", color: "black" }}
             className="no-print"
           >
             <Toolbar>

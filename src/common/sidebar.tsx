@@ -261,7 +261,7 @@ const Sidebar: React.FC = () => {
           >
             &copy; {new Date().getFullYear()} EnteBus. All rights reserved.
             <br />
-            Version 0.1.3
+            Version 0.1.4
           </Typography>
         </Box>
       </Drawer>
