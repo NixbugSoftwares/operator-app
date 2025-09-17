@@ -1,0 +1,6 @@
+/* styles.css */
+@media print {
+  .sidebar {
+    display: none !important;
+  }
+}

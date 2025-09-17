@@ -102,7 +102,9 @@ const DutyDetailsCard: React.FC<DutyCardProps> = ({
       refreshList("refresh");
     } catch (error: any) {
       console.error("Delete error:", error);
-      showErrorToast(error.message || "Failed to delete duty. Please try again.");
+      showErrorToast(
+        error.message || "Failed to delete duty. Please try again."
+      );
     }
   };
 
@@ -198,7 +200,7 @@ const DutyDetailsCard: React.FC<DutyCardProps> = ({
             sx={{
               display: "flex",
               gap: 1,
-              justifyContent: "space-between",
+              justifyContent: "left",
               width: "100%",
             }}
           >
@@ -211,67 +213,70 @@ const DutyDetailsCard: React.FC<DutyCardProps> = ({
               Back
             </Button>
 
-           {canUpdateDuty&&(
-                <Button
-                  variant="contained"
-                  color="success"
-                  size="small"
-                  onClick={() => setUpdateFormOpen(true)}
-                  disabled={!canUpdateDuty}
-                  sx={{
-                    "&.Mui-disabled": {
-                      backgroundColor: "#81c784 !important",
-                      color: "#ffffff99",
-                    },
-                  }}
-                >
-                  Update
-                </Button>)}
-
-            {/* Delete Button with Tooltip */}
-            {canDeleteDuty&&(
-            <Tooltip
-              title={ duty.status === "Started"
-                  ? "You can't delete a started duty"
-                  : duty.status === "Ended"
-                  ? "You can't delete an ended duty"
-                  : duty.status === "Terminated"
-                  ? "You can't delete a terminated duty"
-                  : "Click to delete this duty"
-              }
-              arrow
-              placement="top-start"
-            >
-              <span
-                style={{
-                  cursor:
-                    !canDeleteDuty ||
-                    ["Started", "Ended", "Terminated"].includes(duty.status)
-                      ? "not-allowed"
-                      : "pointer",
+            {canUpdateDuty && (
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                onClick={() => setUpdateFormOpen(true)}
+                disabled={!canUpdateDuty}
+                sx={{
+                  "&.Mui-disabled": {
+                    backgroundColor: "#81c784 !important",
+                    color: "#ffffff99",
+                  },
                 }}
               >
-                <Button
-                  variant="contained"
-                  color="error"
-                  size="small"
-                  onClick={() => setDeleteConfirmOpen(true)}
-                  startIcon={<DeleteIcon />}
-                  disabled={
-                    !canDeleteDuty ||
-                    ["Started", "Ended", "Terminated"].includes(duty.status)
-                  }
-                  sx={{
-                    "&.Mui-disabled": {
-                      backgroundColor: "#e57373 !important",
-                      color: "#ffffff99",
-                    },
+                Update
+              </Button>
+            )}
+
+            {/* Delete Button with Tooltip */}
+            {canDeleteDuty && (
+              <Tooltip
+                title={
+                  duty.status === "Started"
+                    ? "You can't delete a started duty"
+                    : duty.status === "Ended"
+                    ? "You can't delete an ended duty"
+                    : duty.status === "Terminated"
+                    ? "You can't delete a terminated duty"
+                    : "Click to delete this duty"
+                }
+                arrow
+                placement="top-start"
+              >
+                <span
+                  style={{
+                    cursor:
+                      !canDeleteDuty ||
+                      ["Started", "Ended", "Terminated"].includes(duty.status)
+                        ? "not-allowed"
+                        : "pointer",
                   }}
                 >
-                  Delete
-                </Button>
-              </span>
-            </Tooltip>)}
+                  <Button
+                    variant="contained"
+                    color="error"
+                    size="small"
+                    onClick={() => setDeleteConfirmOpen(true)}
+                    startIcon={<DeleteIcon />}
+                    disabled={
+                      !canDeleteDuty ||
+                      ["Started", "Ended", "Terminated"].includes(duty.status)
+                    }
+                    sx={{
+                      "&.Mui-disabled": {
+                        backgroundColor: "#e57373 !important",
+                        color: "#ffffff99",
+                      },
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </span>
+              </Tooltip>
+            )}
           </Box>
         </CardActions>
       </Card>

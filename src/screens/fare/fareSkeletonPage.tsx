@@ -520,7 +520,7 @@ const CompanyFareSkeletonPage = ({
                     type="number"
                     fullWidth
                     onChange={(e) =>
-                      field.onChange(parseInt(e.target.value) || 0)
+                      field.onChange(parseInt(e.target.value) )
                     }
                     sx={{ flex: 2 }}
                     InputProps={{ inputProps: { min: 1 } }}
