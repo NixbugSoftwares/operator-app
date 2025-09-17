@@ -290,29 +290,28 @@ const AccountListingTable = () => {
     }
   };
 
-  return (
+ return (
+  <Box
+    sx={{
+      display: "flex",
+      flexDirection: { xs: "column", lg: "row" }, // ✅ same as bus page
+      width: "100%",
+      height: "100%",
+      gap: 2,
+    }}
+  >
+    {/* 📌 Table section */}
     <Box
       sx={{
-        display: "flex",
-        flexDirection: { xs: "column", lg: "row" },
-        width: "100%",
+        flex: selectedAccount ? { xs: "0 0 100%", lg: "0 0 65%" } : "0 0 100%",
+        maxWidth: selectedAccount ? { xs: "100%", lg: "65%" } : "100%",
+        transition: "all 0.3s ease",
         height: "100%",
-        gap: 2,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
       }}
     >
-      <Box
-        sx={{
-          flex: selectedAccount
-            ? { xs: "0 0 100%", md: "0 0 65%" }
-            : "0 0 100%",
-          maxWidth: selectedAccount ? { xs: "100%", md: "65%" } : "100%",
-          transition: "all 0.3s ease",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
         <Box
           sx={{
             display: "flex",
@@ -724,17 +723,17 @@ const AccountListingTable = () => {
       {/* Right Side - Account Details Card */}
       {selectedAccount && (
         <Box
-          sx={{
-            display: { xs: "none", lg: "block" }, // ✅ Show only on large screens
-            flex: "0 0 35%",
-            maxWidth: "35%",
-            transition: "all 0.3s ease",
-            bgcolor: "grey.100",
-            p: 2,
-            overflowY: "auto",
-            height: "100%",
-          }}
-        >
+        sx={{
+          display: { xs: "none", lg: "block" }, // ✅ only show on large screens
+          flex: "0 0 35%",
+          maxWidth: "35%",
+          transition: "all 0.3s ease",
+          bgcolor: "grey.100",
+          p: 2,
+          overflowY: "auto",
+          height: "100%",
+        }}
+      >
           <AccountDetailsCard
             account={selectedAccount}
             onUpdate={() => {}}
