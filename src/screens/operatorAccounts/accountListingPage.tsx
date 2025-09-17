@@ -383,16 +383,15 @@ const AccountListingTable = () => {
         </Box>
 
         <TableContainer
-          sx={{
-            flex: 1,
-            maxHeight: "calc(100vh - 100px)",
-            overflowY: "auto",
-            borderRadius: 2,
-            border: "1px solid #e0e0e0",
-            position: "relative",
-            minHeight: 0, 
-          }}
-        >
+  sx={{
+    flex: 1, // fill remaining height
+    overflowY: "auto",
+    borderRadius: 2,
+    border: "1px solid #e0e0e0",
+    position: "relative",
+    minHeight: 0, // important for flexbox scrolling
+  }}
+>
           {isLoading && (
             <Box
               sx={{
