@@ -182,111 +182,124 @@ const RoleListingTable = () => {
   };
   const selectedColumns = columnConfig.filter((col) => visibleColumns[col.id]);
 
-  return (
+return (
+  <Box
+    sx={{
+      display: "flex",
+      flexDirection: { xs: "column", lg: "row" },
+      width: "100%",
+      height: "100%",
+      gap: 2,
+      overflow: "hidden", // Prevent entire page from scrolling
+    }}
+  >
+    {/* Table Section */}
     <Box
       sx={{
-        display: "flex",
-        flexDirection: { xs: "column", lg: "row" }, // ✅ same as bus/account
-        width: "100%",
+        flex: selectedRole ? { xs: "0 0 100%", lg: "0 0 50%" } : "0 0 100%",
+        maxWidth: selectedRole ? { xs: "100%", lg: "50%" } : "100%",
+        transition: "all 0.3s ease",
         height: "100%",
-        gap: 2,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
       }}
     >
-      {/* Table Section */}
+      {/* Header with controls - stays fixed at top */}
       <Box
         sx={{
-          flex: selectedRole ? { xs: "0 0 100%", lg: "0 0 50%" } : "0 0 100%",
-          maxWidth: selectedRole ? { xs: "100%", lg: "50%" } : "100%",
-          transition: "all 0.3s ease",
-          height: "100%",
           display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
+          justifyContent: "flex-end",
+          alignItems: "center",
+          mb: 2,
+          gap: 1,
+          flexWrap: { xs: "wrap", sm: "nowrap" },
+          flexShrink: 0, // Prevent this from growing
         }}
       >
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "flex-end",
-            alignItems: "center",
-            mb: 2,
-            gap: 1,
-            flexWrap: { xs: "wrap", sm: "nowrap" }, // Force one line
+            flexShrink: 0,
+            width: { xs: "50%", md: "auto" },
           }}
         >
-          <Box
-            sx={{
-              flexShrink: 0,
-              width: { xs: "50%", md: "auto" },
-            }}
-          >
-            {1 > 100 && (
-              <Select
-                multiple
-                value={Object.keys(visibleColumns).filter(
-                  (key) => visibleColumns[key]
-                )}
-                onChange={handleColumnChange}
-                renderValue={(selected) => `Columns (${selected.length})`}
-                size="small"
-                sx={{
-                  minWidth: { xs: "120px", sm: "160px", md: "200px" },
-                  height: 36,
-                  fontSize: "0.75rem",
-                  "& .MuiSelect-select": { py: 0.5 },
-                }}
-              >
-                {columnConfig.map((column) => (
-                  <MenuItem
-                    key={column.id}
-                    value={column.id}
-                    disabled={column.fixed}
-                  >
-                    <Checkbox
-                      checked={visibleColumns[column.id]}
-                      disabled={column.fixed}
-                    />
-                    <ListItemText
-                      primary={column.label}
-                      secondary={column.fixed ? "(Always visible)" : undefined}
-                    />
-                  </MenuItem>
-                ))}
-              </Select>
-            )}
-          </Box>
-
-          {canCreateRole && (
-            <Button
-              variant="contained"
-              onClick={() => setOpenCreateModal(true)}
+          {1 > 100 && (
+            <Select
+              multiple
+              value={Object.keys(visibleColumns).filter(
+                (key) => visibleColumns[key]
+              )}
+              onChange={handleColumnChange}
+              renderValue={(selected) => `Columns (${selected.length})`}
+              size="small"
               sx={{
-                flexShrink: 0,
-                minWidth: "fit-content",
-                px: 1.5, // Reduce horizontal padding
-                py: 0.5, // Reduce vertical padding
-                fontSize: "0.75rem", // Smaller font
-                height: 36, // Match Select height
-                backgroundColor: "#00008B",
-                color: "white !important",
-                "&.Mui-disabled": {
-                  color: "#fff !important",
-                },
+                minWidth: { xs: "120px", sm: "160px", md: "200px" },
+                height: 36,
+                fontSize: "0.75rem",
+                "& .MuiSelect-select": { py: 0.5 },
               }}
             >
-              Add New Role
-            </Button>
+              {columnConfig.map((column) => (
+                <MenuItem
+                  key={column.id}
+                  value={column.id}
+                  disabled={column.fixed}
+                >
+                  <Checkbox
+                    checked={visibleColumns[column.id]}
+                    disabled={column.fixed}
+                  />
+                  <ListItemText
+                    primary={column.label}
+                    secondary={column.fixed ? "(Always visible)" : undefined}
+                  />
+                </MenuItem>
+              ))}
+            </Select>
           )}
         </Box>
 
+        {canCreateRole && (
+          <Button
+            variant="contained"
+            onClick={() => setOpenCreateModal(true)}
+            sx={{
+              flexShrink: 0,
+              minWidth: "fit-content",
+              px: 1.5,
+              py: 0.5,
+              fontSize: "0.75rem",
+              height: 36,
+              backgroundColor: "#00008B",
+              color: "white !important",
+              "&.Mui-disabled": {
+                color: "#fff !important",
+              },
+            }}
+          >
+            Add New Role
+          </Button>
+        )}
+      </Box>
+
+      {/* Table container with fixed height and internal scrolling */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          flex: 1, // Take remaining space
+          minHeight: 0, // Important for proper scrolling in flex containers
+          overflow: "hidden",
+        }}
+      >
         <TableContainer
           sx={{
-            flex: 1, // fill remaining height
-            overflowY: "auto",
+            flex: 1,
+            overflow: "auto", // Enable scrolling
             borderRadius: 2,
             border: "1px solid #e0e0e0",
             position: "relative",
-            minHeight: 0, // important for flexbox scrolling
+            maxHeight: "100%", // Constrain height
           }}
         >
           {isLoading && (
@@ -347,7 +360,7 @@ const RoleListingTable = () => {
                           "& .MuiInputBase-root": { height: 40 },
                           "& .MuiInputBase-input": { textAlign: "center" },
                           width: "100%",
-                          minWidth: { xs: 80, sm: "100%" }, // Ensures enough space on mobile
+                          minWidth: { xs: 80, sm: "100%" },
                           mt: 1,
                         }}
                       />
@@ -423,70 +436,74 @@ const RoleListingTable = () => {
           </Table>
         </TableContainer>
 
-        <PaginationControls
-          page={page}
-          onPageChange={(newPage) => handleChangePage(null, newPage)}
-          isLoading={isLoading}
-          hasNextPage={hasNextPage}
-        />
-      </Box>
-
-      {/* Side Panel for Role Details */}
-      {selectedRole && (
-        <Box
-          sx={{
-            display: { xs: "none", lg: "block" }, // ✅ Only show on large screens
-            flex: "0 0 50%",
-            maxWidth: "50%",
-            transition: "all 0.3s ease",
-            bgcolor: "grey.100",
-            p: 2,
-            overflowY: "auto",
-            height: "100%",
-          }}
-        >
-          <RoleDetailsCard
-            role={selectedRole}
-            onBack={() => setSelectedRole(null)}
-            onUpdate={() => {}}
-            onDelete={() => {}}
-            refreshList={(value: any) => refreshList(value)}
-            handleCloseDetailCard={() => setSelectedRole(null)}
-            onCloseDetailCard={() => setSelectedRole(null)}
+        {/* Pagination controls - stays fixed at bottom */}
+        <Box sx={{ flexShrink: 0, mt: 1 }}>
+          <PaginationControls
+            page={page}
+            onPageChange={(newPage) => handleChangePage(null, newPage)}
+            isLoading={isLoading}
+            hasNextPage={hasNextPage}
           />
         </Box>
-      )}
-
-      <Dialog
-        open={Boolean(selectedRole)}
-        onClose={() => setSelectedRole(null)}
-        fullScreen
-        sx={{ display: { xs: "block", lg: "none" } }} // ✅ Show on mobile + tablet
-      >
-        {selectedRole && (
-          <RoleDetailsCard
-            role={selectedRole}
-            onBack={() => setSelectedRole(null)}
-            onUpdate={() => {}}
-            onDelete={() => {}}
-            refreshList={(value: any) => refreshList(value)}
-            handleCloseDetailCard={() => setSelectedRole(null)}
-            onCloseDetailCard={() => setSelectedRole(null)}
-          />
-        )}
-      </Dialog>
-
-      <FormModal
-        open={openCreateModal}
-        onClose={() => setOpenCreateModal(false)}
-      >
-        <RoleCreatingForm
-          refreshList={refreshList}
-          onClose={() => setOpenCreateModal(false)}
-        />
-      </FormModal>
+      </Box>
     </Box>
-  );
+
+    {/* Side Panel for Role Details */}
+    {selectedRole && (
+      <Box
+        sx={{
+          display: { xs: "none", lg: "block" },
+          flex: "0 0 50%",
+          maxWidth: "50%",
+          transition: "all 0.3s ease",
+          bgcolor: "grey.100",
+          p: 2,
+          overflowY: "auto",
+          height: "100%",
+        }}
+      >
+        <RoleDetailsCard
+          role={selectedRole}
+          onBack={() => setSelectedRole(null)}
+          onUpdate={() => {}}
+          onDelete={() => {}}
+          refreshList={(value: any) => refreshList(value)}
+          handleCloseDetailCard={() => setSelectedRole(null)}
+          onCloseDetailCard={() => setSelectedRole(null)}
+        />
+      </Box>
+    )}
+
+    <Dialog
+      open={Boolean(selectedRole)}
+      onClose={() => setSelectedRole(null)}
+      fullScreen
+      sx={{ display: { xs: "block", lg: "none" } }}
+    >
+      {selectedRole && (
+        <RoleDetailsCard
+          role={selectedRole}
+          onBack={() => setSelectedRole(null)}
+          onUpdate={() => {}}
+          onDelete={() => {}}
+          refreshList={(value: any) => refreshList(value)}
+          handleCloseDetailCard={() => setSelectedRole(null)}
+          onCloseDetailCard={() => setSelectedRole(null)}
+        />
+      )}
+    </Dialog>
+
+    <FormModal
+      open={openCreateModal}
+      onClose={() => setOpenCreateModal(false)}
+    >
+      <RoleCreatingForm
+        refreshList={refreshList}
+        onClose={() => setOpenCreateModal(false)}
+      />
+    </FormModal>
+  </Box>
+);
 };
 
 export default RoleListingTable;

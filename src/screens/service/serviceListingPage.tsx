@@ -211,289 +211,305 @@ return (
       width: "100%",
       height: "100%",
       gap: 2,
+      overflow: "hidden", // Prevent entire page from scrolling
     }}
   >
     {/* 🔹 Left Panel - Table */}
     <Box
-  sx={{
-    flex: selectedService ? { xs: "0 0 100%", lg: "0 0 65%" } : "0 0 100%",
-    maxWidth: selectedService ? { xs: "100%", lg: "65%" } : "100%",
-    transition: "all 0.3s ease",
-    height: "100%",
-    display: "flex",
-    flexDirection: "column",
-    overflow: "hidden",
-  }}
->
-      {/* Add Service Button */}
+      sx={{
+        flex: selectedService ? { xs: "0 0 100%", lg: "0 0 65%" } : "0 0 100%",
+        maxWidth: selectedService ? { xs: "100%", lg: "65%" } : "100%",
+        transition: "all 0.3s ease",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
+      {/* Add Service Button - stays fixed at top */}
       {canCreateService && (
-        <Button
-          variant="contained"
-          sx={{
-            ml: "auto",
-            mr: 2,
-            mb: 2,
-            px: 1.5,
-            py: 0.5,
-            fontSize: "0.75rem",
-            height: 36,
-            backgroundColor: canCreateService ? "#00008B" : "#6c87b7 !important",
-            color: "white",
-          }}
-          onClick={() => setOpenCreateModal(true)}
-          disabled={!canCreateService}
-        >
-          Add New Service
-        </Button>
+        <Box sx={{ 
+          display: "flex", 
+          justifyContent: "flex-end", 
+          mb: 2,
+          flexShrink: 0 // Prevent this from growing
+        }}>
+          <Button
+            variant="contained"
+            sx={{
+              px: 1.5,
+              py: 0.5,
+              fontSize: "0.75rem",
+              height: 36,
+              backgroundColor: canCreateService ? "#00008B" : "#6c87b7 !important",
+              color: "white",
+            }}
+            onClick={() => setOpenCreateModal(true)}
+            disabled={!canCreateService}
+          >
+            Add New Service
+          </Button>
+        </Box>
       )}
 
-      {/* Table */}
-      <TableContainer
+      {/* Table container with fixed height and internal scrolling */}
+      <Box
         sx={{
-          flex: 1,
-          maxHeight: "calc(100vh - 100px)",
-          overflowY: "auto",
-          borderRadius: 2,
-          border: "1px solid #e0e0e0",
-          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          flex: 1, // Take remaining space
+          minHeight: 0, // Important for proper scrolling in flex containers
+          overflow: "hidden",
         }}
       >
-        {isLoading && (
-          <Box
-            sx={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              backgroundColor: "rgba(255, 255, 255, 0.7)",
-              zIndex: 1,
-            }}
-          >
-            <CircularProgress />
-          </Box>
-        )}
+        <TableContainer
+          sx={{
+            flex: 1,
+            overflow: "auto", // Enable scrolling
+            borderRadius: 2,
+            border: "1px solid #e0e0e0",
+            position: "relative",
+            maxHeight: "100%", // Constrain height
+          }}
+        >
+          {isLoading && (
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                zIndex: 1,
+              }}
+            >
+              <CircularProgress />
+            </Box>
+          )}
 
-        <Table stickyHeader>
-          <TableHead>
-            {/* Column Headers */}
-            <TableRow>
-              {[
-                { label: "ID", width: 80, key: "id" },
-                { label: "Name", width: 250, key: "name" },
-                { label: "Status", width: 100, key: "status" },
-                { label: "Ticket Mode", width: 100, key: "ticket_mode" },
-              ].map((col) => (
-                <TableCell
-                  key={col.key}
-                  sx={{
-                    textAlign: "center",
-                    width: col.width,
-                    minWidth: col.width,
-                    backgroundColor: "#fafafa",
-                    fontWeight: 600,
-                    fontSize: "0.875rem",
-                    borderBottom: "1px solid #ddd",
-                  }}
-                >
-                  {col.label}
-                </TableCell>
-              ))}
-            </TableRow>
-
-            {/* Search Filters */}
-            <TableRow>
-              {[
-                { key: "id", isNumber: true },
-                { key: "name", isNumber: false },
-                {
-                  key: "status",
-                  isSelect: true,
-                  options: ["Created", "Started", "Terminated", "Ended"],
-                },
-                {
-                  key: "ticket_mode",
-                  isSelect: true,
-                  options: ["Hybrid", "Digital", "Conventional"],
-                },
-              ].map(({ key, isNumber, isSelect, options }) => (
-                <TableCell key={key}>
-                  {isSelect ? (
-                    <Select
-                      value={search[key as keyof SearchFilter]}
-                      onChange={(e) =>
-                        handleSelectChange(e, key as keyof SearchFilter)
-                      }
-                      displayEmpty
-                      size="small"
-                      fullWidth
-                      sx={{ height: 40 }}
-                    >
-                      <MenuItem value="">All</MenuItem>
-                      {options?.map((option) => (
-                        <MenuItem key={option} value={option}>
-                          {option}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  ) : (
-                    <TextField
-                      variant="outlined"
-                      size="small"
-                      placeholder="Search"
-                      value={search[key as keyof SearchFilter]}
-                      onChange={(e) =>
-                        handleSearchChange(e, key as keyof SearchFilter)
-                      }
-                      fullWidth
-                      type={isNumber ? "number" : "text"}
-                      sx={{
-                        "& .MuiInputBase-root": {
-                          height: 40,
-                          padding: "4px",
-                        },
-                        "& .MuiInputBase-input": {
-                          textAlign: "center",
-                          
-                        },
-                        minWidth: { xs: 80, sm: "100%" },
-                      }}
-                    />
-                  )}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
-            {isLoading ? (
+          <Table stickyHeader>
+            <TableHead>
+              {/* Column Headers */}
               <TableRow>
-                <TableCell colSpan={6} align="center"></TableCell>
+                {[
+                  { label: "ID", width: 80, key: "id" },
+                  { label: "Name", width: 250, key: "name" },
+                  { label: "Status", width: 100, key: "status" },
+                  { label: "Ticket Mode", width: 100, key: "ticket_mode" },
+                ].map((col) => (
+                  <TableCell
+                    key={col.key}
+                    sx={{
+                      textAlign: "center",
+                      width: col.width,
+                      minWidth: col.width,
+                      backgroundColor: "#fafafa",
+                      fontWeight: 600,
+                      fontSize: "0.875rem",
+                      borderBottom: "1px solid #ddd",
+                    }}
+                  >
+                    {col.label}
+                  </TableCell>
+                ))}
               </TableRow>
-            ) : serviceList.length > 0 ? (
-              serviceList.map((row) => (
-                <TableRow
-                  key={row.id}
-                  hover
-                  onClick={() => handleRowClick(row)}
-                  sx={{
-                    cursor: "pointer",
-                    backgroundColor:
-                      selectedService?.id === row.id ? "#E3F2FD" : "inherit",
-                    "&:hover": { backgroundColor: "#E3F2FD" },
-                  }}
-                >
-                  <TableCell sx={{ textAlign: "center" }}>{row.id}</TableCell>
-                  <TableCell>
-                    <Tooltip title={row.name} placement="bottom">
-                      <Typography noWrap>
-                        {row.name.length > 60
-                          ? `${row.name.substring(0, 60)}...`
-                          : row.name}
-                      </Typography>
-                    </Tooltip>
+
+              {/* Search Filters */}
+              <TableRow>
+                {[
+                  { key: "id", isNumber: true },
+                  { key: "name", isNumber: false },
+                  {
+                    key: "status",
+                    isSelect: true,
+                    options: ["Created", "Started", "Terminated", "Ended"],
+                  },
+                  {
+                    key: "ticket_mode",
+                    isSelect: true,
+                    options: ["Hybrid", "Digital", "Conventional"],
+                  },
+                ].map(({ key, isNumber, isSelect, options }) => (
+                  <TableCell key={key}>
+                    {isSelect ? (
+                      <Select
+                        value={search[key as keyof SearchFilter]}
+                        onChange={(e) =>
+                          handleSelectChange(e, key as keyof SearchFilter)
+                        }
+                        displayEmpty
+                        size="small"
+                        fullWidth
+                        sx={{ height: 40 }}
+                      >
+                        <MenuItem value="">All</MenuItem>
+                        {options?.map((option) => (
+                          <MenuItem key={option} value={option}>
+                            {option}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    ) : (
+                      <TextField
+                        variant="outlined"
+                        size="small"
+                        placeholder="Search"
+                        value={search[key as keyof SearchFilter]}
+                        onChange={(e) =>
+                          handleSearchChange(e, key as keyof SearchFilter)
+                        }
+                        fullWidth
+                        type={isNumber ? "number" : "text"}
+                        sx={{
+                          "& .MuiInputBase-root": {
+                            height: 40,
+                            padding: "4px",
+                          },
+                          "& .MuiInputBase-input": {
+                            textAlign: "center",
+                          },
+                          minWidth: { xs: 80, sm: "100%" },
+                        }}
+                      />
+                    )}
                   </TableCell>
-                  <TableCell sx={{ textAlign: "center" }}>
-                    <Chip
-                      label={row.status}
-                      size="small"
-                      sx={{
-                        width: 100,
-                        backgroundColor:
-                          row.status === "Created"
-                            ? "rgba(33, 150, 243, 0.12)"
-                            : row.status === "Started"
-                            ? "rgba(76, 175, 80, 0.12)"
-                            : row.status === "Terminated"
-                            ? "rgba(244, 67, 54, 0.12)"
-                            : "rgba(158, 158, 158, 0.12)",
-                        color:
-                          row.status === "Created"
-                            ? "#1976D2"
-                            : row.status === "Started"
-                            ? "#388E3C"
-                            : row.status === "Terminated"
-                            ? "#D32F2F"
-                            : "#616161",
-                        fontWeight: 600,
-                        fontSize: "0.75rem",
-                        borderRadius: "8px",
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ textAlign: "center" }}>
-                    <Chip
-                      label={row.ticket_mode}
-                      size="small"
-                      sx={{
-                        width: 100,
-                        backgroundColor:
-                          row.ticket_mode === "Hybrid"
-                            ? "rgba(0, 150, 136, 0.15)"
-                            : row.ticket_mode === "Digital"
-                            ? "rgba(33, 150, 243, 0.15)"
-                            : "rgba(255, 87, 34, 0.15)",
-                        color:
-                          row.ticket_mode === "Hybrid"
-                            ? "#009688"
-                            : row.ticket_mode === "Digital"
-                            ? "#2196F3"
-                            : "#FF5722",
-                        fontWeight: 600,
-                        fontSize: "0.75rem",
-                        borderRadius: "8px",
-                      }}
-                    />
+                ))}
+              </TableRow>
+            </TableHead>
+
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center"></TableCell>
+                </TableRow>
+              ) : serviceList.length > 0 ? (
+                serviceList.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    hover
+                    onClick={() => handleRowClick(row)}
+                    sx={{
+                      cursor: "pointer",
+                      backgroundColor:
+                        selectedService?.id === row.id ? "#E3F2FD" : "inherit",
+                      "&:hover": { backgroundColor: "#E3F2FD" },
+                    }}
+                  >
+                    <TableCell sx={{ textAlign: "center" }}>{row.id}</TableCell>
+                    <TableCell>
+                      <Tooltip title={row.name} placement="bottom">
+                        <Typography noWrap>
+                          {row.name.length > 60
+                            ? `${row.name.substring(0, 60)}...`
+                            : row.name}
+                        </Typography>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell sx={{ textAlign: "center" }}>
+                      <Chip
+                        label={row.status}
+                        size="small"
+                        sx={{
+                          width: 100,
+                          backgroundColor:
+                            row.status === "Created"
+                              ? "rgba(33, 150, 243, 0.12)"
+                              : row.status === "Started"
+                              ? "rgba(76, 175, 80, 0.12)"
+                              : row.status === "Terminated"
+                              ? "rgba(244, 67, 54, 0.12)"
+                              : "rgba(158, 158, 158, 0.12)",
+                          color:
+                            row.status === "Created"
+                              ? "#1976D2"
+                              : row.status === "Started"
+                              ? "#388E3C"
+                              : row.status === "Terminated"
+                              ? "#D32F2F"
+                              : "#616161",
+                          fontWeight: 600,
+                          fontSize: "0.75rem",
+                          borderRadius: "8px",
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ textAlign: "center" }}>
+                      <Chip
+                        label={row.ticket_mode}
+                        size="small"
+                        sx={{
+                          width: 100,
+                          backgroundColor:
+                            row.ticket_mode === "Hybrid"
+                              ? "rgba(0, 150, 136, 0.15)"
+                              : row.ticket_mode === "Digital"
+                              ? "rgba(33, 150, 243, 0.15)"
+                              : "rgba(255, 87, 34, 0.15)",
+                          color:
+                            row.ticket_mode === "Hybrid"
+                              ? "#009688"
+                              : row.ticket_mode === "Digital"
+                              ? "#2196F3"
+                              : "#FF5722",
+                          fontWeight: 600,
+                          fontSize: "0.75rem",
+                          borderRadius: "8px",
+                        }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} align="center">
+                    No Service found.
                   </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={4} align="center">
-                  No Service found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-      {/* Pagination */}
-      <PaginationControls
-        page={page}
-        onPageChange={(newPage) => handleChangePage(null, newPage)}
-        isLoading={isLoading}
-        hasNextPage={hasNextPage}
-      />
+        {/* Pagination controls - stays fixed at bottom */}
+        <Box sx={{ flexShrink: 0, mt: 1 }}>
+          <PaginationControls
+            page={page}
+            onPageChange={(newPage) => handleChangePage(null, newPage)}
+            isLoading={isLoading}
+            hasNextPage={hasNextPage}
+          />
+        </Box>
+      </Box>
     </Box>
 
     {/* 🔹 Right Panel - Details Card (Desktop) */}
     {selectedService && (
-  <Box
-    sx={{
-      display: { xs: "none", lg: "block" },
-      flex: "0 0 35%",
-      maxWidth: "35%",
-      transition: "all 0.3s ease",
-      bgcolor: "grey.100",
-      p: 2,
-      overflowY: "auto",
-      height: "100%",
-    }}
-  >
-    <ServiceDetailsCard
-      service={selectedService}
-      onBack={() => setSelectedService(null)}
-      refreshList={refreshList}
-      onCloseDetailCard={() => setSelectedService(null)}
-      onUpdate={() => {}}
-      onDelete={() => {}}
-    />
-  </Box>
-)}
+      <Box
+        sx={{
+          display: { xs: "none", lg: "block" },
+          flex: "0 0 35%",
+          maxWidth: "35%",
+          transition: "all 0.3s ease",
+          bgcolor: "grey.100",
+          p: 2,
+          overflowY: "auto",
+          height: "100%",
+        }}
+      >
+        <ServiceDetailsCard
+          service={selectedService}
+          onBack={() => setSelectedService(null)}
+          refreshList={refreshList}
+          onCloseDetailCard={() => setSelectedService(null)}
+          onUpdate={() => {}}
+          onDelete={() => {}}
+        />
+      </Box>
+    )}
 
     {/* 🔹 Mobile Details Dialog */}
     <Dialog
@@ -505,7 +521,7 @@ return (
       {selectedService && (
         <Box sx={{ p: 2 }}>
           <ServiceDetailsCard
-           service={selectedService}
+            service={selectedService}
             onBack={() => setSelectedService(null)}
             refreshList={refreshList}
             onCloseDetailCard={() => setSelectedService(null)}
