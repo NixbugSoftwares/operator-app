@@ -184,27 +184,27 @@ const RoleListingTable = () => {
   const selectedColumns = columnConfig.filter(col => visibleColumns[col.id]);
 
   return (
-    <Box
+  <Box
+    sx={{
+      display: "flex",
+      flexDirection: { xs: "column", lg: "row" }, // ✅ same as bus/account
+      width: "100%",
+      height: "100%",
+      gap: 2,
+    }}
+  >
+      {/* Table Section */}
+       <Box
       sx={{
-        display: "flex",
-        flexDirection: { xs: "column", lg: "row" }, // ✅ Use lg for side panel
-        width: "100%",
+        flex: selectedRole ? { xs: "0 0 100%", lg: "0 0 50%" } : "0 0 100%",
+        maxWidth: selectedRole ? { xs: "100%", lg: "50%" } : "100%",
+        transition: "all 0.3s ease",
         height: "100%",
-        gap: 2,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
       }}
     >
-      {/* Table Section */}
-      <Box
-        sx={{
-          flex: selectedRole ? { xs: "0 0 100%", lg: "0 0 50%" } : "0 0 100%",
-          maxWidth: selectedRole ? { xs: "100%", lg: "50%" } : "100%",
-          transition: "all 0.3s ease",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
         
 <Box
           sx={{
