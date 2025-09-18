@@ -26,6 +26,7 @@ import {
   AppBar,
   Toolbar,
   IconButton,
+  OutlinedInput,
 } from "@mui/material";
 import PrintIcon from "@mui/icons-material/Print";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -44,8 +45,7 @@ import {
 } from "../../common/toastMessageHelper";
 import { Duty, Service, Account, Bus } from "../../types/type";
 import PaginationControls from "../../common/paginationControl";
-import nodataimage from "../../assets/svg/noData.svg";
-
+import CloseIcon from "@mui/icons-material/Close";
 interface SelectedService {
   id: number;
   name: string;
@@ -56,8 +56,10 @@ interface StatementListProps {
   onStatementGenerated: () => void;
   onBackToServices?: () => void;
 }
-const StatementListingPage = ( { onStatementGenerated, onBackToServices }: StatementListProps) => {
-
+const StatementListingPage = ({
+  onStatementGenerated,
+  onBackToServices,
+}: StatementListProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingStatement, setIsGeneratingStatement] = useState(false);
@@ -73,8 +75,13 @@ const StatementListingPage = ( { onStatementGenerated, onBackToServices }: State
   const [activeTab, setActiveTab] = useState<"services" | "statement">(
     "services"
   );
-  const [fromDate, setFromDate] = useState<string>("");
-  const [toDate, setToDate] = useState<string>("");
+  const getToday = () => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
+  };
+
+  const [fromDate, setFromDate] = useState<string>(getToday());
+  const [toDate, setToDate] = useState<string>(getToday());
   const [page, setPage] = useState(0);
   const [_hasNextPage, setHasNextPage] = useState(false);
   const rowsPerPage = 10;
@@ -124,22 +131,22 @@ const StatementListingPage = ( { onStatementGenerated, onBackToServices }: State
     fetchBusList();
   }, [dispatch]);
 
-  // Fetch services when a bus is selected or dates change
+  // Fetch services when bus or dates change
   const fetchServices = useCallback(async () => {
-    if (!selectedBus) return;
     try {
       setIsLoading(true);
       let allServices: Service[] = [];
       let offset = 0;
       let hasMore = true;
 
-      // Fetch ALL services in a loop
+      // Fetch ALL services (with or without bus filter)
       while (hasMore) {
         const res = await dispatch(
           serviceListingApi({
             limit: rowsPerPage,
             offset,
-            bus_id: selectedBus,
+            // 👇 only include bus_id if selected
+            bus_id: selectedBus || undefined,
             starting_at_ge: fromDate ? formatDateToUTC(fromDate) : undefined,
             starting_at_le: toDate ? formatDateToUTC(toDate, true) : undefined,
             order_by: 3,
@@ -173,7 +180,7 @@ const StatementListingPage = ( { onStatementGenerated, onBackToServices }: State
         offset += rowsPerPage;
       }
 
-      // 🔥 GLOBAL sort by status
+      // 🔥 Sort by status
       const statusOrder: Record<string, number> = {
         Terminated: 1,
         Ended: 2,
@@ -186,7 +193,7 @@ const StatementListingPage = ( { onStatementGenerated, onBackToServices }: State
       );
 
       setServiceList(allServices);
-      setHasNextPage(false); // Local pagination handles this now
+      setHasNextPage(false);
       setSelectedServices(
         allServices.map((service) => ({
           id: service.id,
@@ -203,6 +210,7 @@ const StatementListingPage = ( { onStatementGenerated, onBackToServices }: State
       setIsLoading(false);
     }
   }, [selectedBus, fromDate, toDate, dispatch]);
+
   useEffect(() => {
     fetchServices();
   }, [fetchServices, page]);
@@ -319,6 +327,10 @@ const StatementListingPage = ( { onStatementGenerated, onBackToServices }: State
           operatorId: duty.operator_id,
           operatorName: operator?.full_name || "Unknown",
           serviceId: duty.service_id,
+          serviceName:
+            serviceList.find((s) => s.id === duty.service_id)?.name || "",
+          routeName:
+            serviceList.find((s) => s.id === duty.service_id)?.routeName || "",
           date: duty.date || new Date().toISOString().split("T")[0],
         };
       });
@@ -354,17 +366,45 @@ const StatementListingPage = ( { onStatementGenerated, onBackToServices }: State
   );
   const operatorTotalsArray = Object.values(operatorTotals);
 
+  const serviceWiseTotals = statementData.reduce(
+    (
+      acc: Record<
+        number,
+        {
+          serviceName: string;
+          routeName: string;
+          date: string;
+          total: number;
+        }
+      >,
+      item
+    ) => {
+      if (!acc[item.serviceId]) {
+        acc[item.serviceId] = {
+          serviceName: item.serviceName,
+          routeName: item.routeName,
+          date: item.date,
+          total: 0,
+        };
+      }
+      acc[item.serviceId].total += item.collection || 0;
+      return acc;
+    },
+    {}
+  );
+  const serviceWiseArray = Object.values(serviceWiseTotals);
+
   const handlePrint = () => {
     window.print();
   };
 
-const handleBack = () => {
-  if (activeTab === "statement" && onBackToServices) {
-    setActiveTab("services");
-    setIsFullScreen(false);
-    onBackToServices();
-  }
-};
+  const handleBack = () => {
+    if (activeTab === "statement" && onBackToServices) {
+      setActiveTab("services");
+      setIsFullScreen(false);
+      onBackToServices();
+    }
+  };
 
   // Print styles
   const printStyles = `
@@ -453,9 +493,27 @@ const handleBack = () => {
                 <Select
                   labelId="bus-select-label"
                   value={selectedBus || ""}
-                  label="Select Bus"
                   onChange={handleBusChange}
-                  disabled={isLoading}
+                  IconComponent={() => null}
+                  input={
+                    <OutlinedInput
+                      label="Select Bus"
+                      endAdornment={
+                        selectedBus ? (
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation(); // prevent dropdown opening
+                              setSelectedBus(null);
+                            }}
+                            edge="end"
+                          >
+                            <CloseIcon fontSize="small" />
+                          </IconButton>
+                        ) : null
+                      }
+                    />
+                  }
                 >
                   {busList.length > 0 ? (
                     busList.map((bus) => (
@@ -468,16 +526,6 @@ const handleBack = () => {
                   )}
                 </Select>
               </FormControl>
-
-              {selectedBus && (
-                <Button
-                  variant="outlined"
-                  onClick={() => fetchServices()}
-                  disabled={isLoading}
-                >
-                  Refresh
-                </Button>
-              )}
             </Stack>
 
             {/* Date range filters */}
@@ -508,488 +556,375 @@ const handleBack = () => {
                 InputLabelProps={{ shrink: true }}
               />
             </Stack>
+            <Button
+              variant="outlined"
+              onClick={() => fetchServices()}
+              disabled={isLoading}
+            >
+              Refresh
+            </Button>
           </Stack>
         )}
         {!(activeTab === "statement") && (
           <Divider sx={{ my: 2 }} className={isFullScreen ? "no-print" : ""} />
         )}
 
-        {selectedBus && (
-          <>
+        <>
+          <Box
+            display="flex"
+            flexDirection={{ xs: "column", sm: "row" }}
+            justifyContent="space-between"
+            gap={2}
+            className={isFullScreen ? "no-print" : ""}
+          >
+            <Stack direction="row" spacing={1}>
+              {activeTab === "statement" && !isFullScreen && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setActiveTab("services")}
+                >
+                  Back
+                </Button>
+              )}
+            </Stack>
+            {activeTab === "services" &&
+              selectedServices.filter((s) => s.isSelected).length > 0 && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={generateStatement}
+                  disabled={isGeneratingStatement}
+                  sx={{
+                    backgroundColor: "darkblue",
+                    color: "white",
+                    alignSelf: { xs: "stretch", sm: "center" },
+                  }}
+                  startIcon={
+                    isGeneratingStatement ? (
+                      <CircularProgress size={18} />
+                    ) : null
+                  }
+                >
+                  Generate Statement
+                </Button>
+              )}
+          </Box>
+          {activeTab === "services" ? (
+            /* Services Table with fixed pagination */
             <Box
-              display="flex"
-              flexDirection={{ xs: "column", sm: "row" }}
-              justifyContent="space-between"
-              gap={2}
+              sx={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 0,
+              }}
               className={isFullScreen ? "no-print" : ""}
             >
-              <Stack direction="row" spacing={1}>
-                {activeTab === "statement" && !isFullScreen && (
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => setActiveTab("services")}
-                  >
-                    Back
-                  </Button>
-                )}
-              </Stack>
-              {activeTab === "services" &&
-                selectedServices.filter((s) => s.isSelected).length > 0 && (
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={generateStatement}
-                    disabled={isGeneratingStatement}
-                    sx={{
-                      backgroundColor: "darkblue",
-                      color: "white",
-                      alignSelf: { xs: "stretch", sm: "center" },
-                    }}
-                    startIcon={
-                      isGeneratingStatement ? (
-                        <CircularProgress size={18} />
-                      ) : null
-                    }
-                  >
-                    Generate Statement
-                  </Button>
-                )}
-            </Box>
-            {activeTab === "services" ? (
-              /* Services Table with fixed pagination */
-              <Box
+              <TableContainer
                 sx={{
                   flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  minHeight: 0,
+                  maxHeight: { xs: "60vh", md: "calc(100vh - 200px)" },
+                  overflowY: "auto",
+                  borderRadius: 2,
+                  border: "1px solid #e0e0e0",
+                  position: "relative",
                 }}
-                className={isFullScreen ? "no-print" : ""}
               >
-                <TableContainer
-                  sx={{
-                    flex: 1,
-                    maxHeight: { xs: "60vh", md: "calc(100vh - 200px)" },
-                    overflowY: "auto",
-                    borderRadius: 2,
-                    border: "1px solid #e0e0e0",
-                    position: "relative",
-                  }}
-                >
-                  {isLoading && (
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        inset: 0,
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        backgroundColor: "rgba(255, 255, 255, 0.7)",
-                        zIndex: 1,
-                      }}
-                    >
-                      <CircularProgress />
-                    </Box>
-                  )}
-                  <Table stickyHeader size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell
-                          padding="checkbox"
-                          sx={{
-                            backgroundColor: "#fafafa",
-                            fontWeight: 600,
-                            fontSize: "0.875rem",
-                            borderBottom: "1px solid #ddd",
-                            width: 60,
-                            textAlign: "center", // <-- Add this
-                            p: 0, // <-- Remove default padding
-                          }}
-                        >
-                          <Checkbox
-                            indeterminate={
-                              selectedServices.some(
-                                (service) => service.isSelected
-                              ) &&
-                              !selectedServices.every(
-                                (service) => service.isSelected
-                              )
-                            }
-                            checked={selectedServices.every(
+                {isLoading && (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      inset: 0,
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      backgroundColor: "rgba(255, 255, 255, 0.7)",
+                      zIndex: 1,
+                    }}
+                  >
+                    <CircularProgress />
+                  </Box>
+                )}
+                <Table stickyHeader size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell
+                        padding="checkbox"
+                        sx={{
+                          backgroundColor: "#fafafa",
+                          fontWeight: 600,
+                          fontSize: "0.875rem",
+                          borderBottom: "1px solid #ddd",
+                          width: 60,
+                          textAlign: "center", // <-- Add this
+                          p: 0, // <-- Remove default padding
+                        }}
+                      >
+                        <Checkbox
+                          indeterminate={
+                            selectedServices.some(
                               (service) => service.isSelected
-                            )}
-                            onChange={handleSelectAll}
-                            disabled={
-                              !serviceList.some(
-                                (service) =>
-                                  service.status === "Terminated" ||
-                                  service.status === "Ended"
-                              )
-                            }
-                            sx={{ m: 0 }} // <-- Remove margin
-                          />
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            backgroundColor: "#fafafa",
-                            fontWeight: 600,
-                            fontSize: "0.875rem",
-                            borderBottom: "1px solid #ddd",
-                            minWidth: 160,
-                            width: 180,
-                          }}
-                        >
-                          Service Name
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            backgroundColor: "#fafafa",
-                            fontWeight: 600,
-                            fontSize: "0.875rem",
-                            borderBottom: "1px solid #ddd",
-                            minWidth: 100,
-                            width: 140,
-                            // pl: 2, // <-- Remove this for better alignment
-                          }}
-                        >
-                          Route
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            backgroundColor: "#fafafa",
-                            fontWeight: 600,
-                            fontSize: "0.875rem",
-                            borderBottom: "1px solid #ddd",
-                            width: 110,
-                            textAlign: "center",
-                          }}
-                        >
-                          Status
-                        </TableCell>
+                            ) &&
+                            !selectedServices.every(
+                              (service) => service.isSelected
+                            )
+                          }
+                          checked={selectedServices.every(
+                            (service) => service.isSelected
+                          )}
+                          onChange={handleSelectAll}
+                          disabled={
+                            !serviceList.some(
+                              (service) =>
+                                service.status === "Terminated" ||
+                                service.status === "Ended"
+                            )
+                          }
+                          sx={{ m: 0 }} // <-- Remove margin
+                        />
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          backgroundColor: "#fafafa",
+                          fontWeight: 600,
+                          fontSize: "0.875rem",
+                          borderBottom: "1px solid #ddd",
+                          minWidth: 160,
+                          width: 180,
+                        }}
+                      >
+                        Service Name
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          backgroundColor: "#fafafa",
+                          fontWeight: 600,
+                          fontSize: "0.875rem",
+                          borderBottom: "1px solid #ddd",
+                          minWidth: 100,
+                          width: 140,
+                          // pl: 2, // <-- Remove this for better alignment
+                        }}
+                      >
+                        Route
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          backgroundColor: "#fafafa",
+                          fontWeight: 600,
+                          fontSize: "0.875rem",
+                          borderBottom: "1px solid #ddd",
+                          width: 110,
+                          textAlign: "center",
+                        }}
+                      >
+                        Status
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={6} align="center"></TableCell>
                       </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {isLoading ? (
-                        <TableRow>
-                          <TableCell colSpan={6} align="center"></TableCell>
-                        </TableRow>
-                      ) : (
-                        serviceList
-                          .slice(
-                            page * rowsPerPage,
-                            page * rowsPerPage + rowsPerPage
-                          )
-                          .map((service) => {
-                            const isSelected =
-                              selectedServices.find((s) => s.id === service.id)
-                                ?.isSelected || false;
+                    ) : (
+                      serviceList
+                        .slice(
+                          page * rowsPerPage,
+                          page * rowsPerPage + rowsPerPage
+                        )
+                        .map((service) => {
+                          const isSelected =
+                            selectedServices.find((s) => s.id === service.id)
+                              ?.isSelected || false;
 
-                            const canSelect =
-                              service.status === "Terminated" ||
-                              service.status === "Ended";
-                            const cannotSelectTooltip =
-                              "Cannot generate statement for services in Started or Created state";
+                          const canSelect =
+                            service.status === "Terminated" ||
+                            service.status === "Ended";
+                          const cannotSelectTooltip =
+                            "Cannot generate statement for services in Started or Created state";
 
-                            const rowContent = (
-                              <>
-                                <TableCell
-                                  padding="checkbox"
-                                  sx={{ textAlign: "center", width: 60, p: 0 }} // <-- Match header
-                                >
-                                  <Checkbox
-                                    checked={canSelect ? isSelected : false}
-                                    onChange={() =>
-                                      canSelect &&
-                                      handleServiceSelection(service.id)
-                                    }
-                                    disabled={!canSelect}
-                                    sx={{ opacity: canSelect ? 1 : 0.5, m: 0 }} // <-- Remove margin
-                                  />
-                                </TableCell>
-                                <TableCell
-                                  align="left"
+                          const rowContent = (
+                            <>
+                              <TableCell
+                                padding="checkbox"
+                                sx={{ textAlign: "center", width: 60, p: 0 }} // <-- Match header
+                              >
+                                <Checkbox
+                                  checked={canSelect ? isSelected : false}
+                                  onChange={() =>
+                                    canSelect &&
+                                    handleServiceSelection(service.id)
+                                  }
+                                  disabled={!canSelect}
+                                  sx={{ opacity: canSelect ? 1 : 0.5, m: 0 }} // <-- Remove margin
+                                />
+                              </TableCell>
+                              <TableCell
+                                align="left"
+                                sx={{
+                                  minWidth: 160,
+                                  width: 180,
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {service.name}
+                              </TableCell>
+                              <TableCell
+                                align="left"
+                                sx={{ minWidth: 100, width: 140 }}
+                              >
+                                {service.routeName}
+                              </TableCell>
+                              <TableCell align="center" sx={{ width: 110 }}>
+                                <Chip
+                                  label={service.status}
+                                  size="small"
                                   sx={{
-                                    minWidth: 160,
-                                    width: 180,
-                                    fontWeight: 500,
+                                    width: 90,
+                                    backgroundColor:
+                                      service.status === "Created"
+                                        ? "rgba(33, 150, 243, 0.12)"
+                                        : service.status === "Started"
+                                        ? "rgba(76, 175, 80, 0.12)"
+                                        : service.status === "Terminated"
+                                        ? "rgba(244, 67, 54, 0.12)"
+                                        : "rgba(158, 158, 158, 0.12)",
+                                    color:
+                                      service.status === "Created"
+                                        ? "#1976D2"
+                                        : service.status === "Started"
+                                        ? "#388E3C"
+                                        : service.status === "Terminated"
+                                        ? "#D32F2F"
+                                        : "#616161",
+                                    fontWeight: 600,
+                                    fontSize: "0.75rem",
+                                    borderRadius: "8px",
                                   }}
-                                >
-                                  {service.name}
-                                </TableCell>
-                                <TableCell
-                                  align="left"
-                                  sx={{ minWidth: 100, width: 140 }}
-                                >
-                                  {service.routeName}
-                                </TableCell>
-                                <TableCell align="center" sx={{ width: 110 }}>
-                                  <Chip
-                                    label={service.status}
-                                    size="small"
-                                    sx={{
-                                      width: 90,
-                                      backgroundColor:
-                                        service.status === "Created"
-                                          ? "rgba(33, 150, 243, 0.12)"
-                                          : service.status === "Started"
-                                          ? "rgba(76, 175, 80, 0.12)"
-                                          : service.status === "Terminated"
-                                          ? "rgba(244, 67, 54, 0.12)"
-                                          : "rgba(158, 158, 158, 0.12)",
-                                      color:
-                                        service.status === "Created"
-                                          ? "#1976D2"
-                                          : service.status === "Started"
-                                          ? "#388E3C"
-                                          : service.status === "Terminated"
-                                          ? "#D32F2F"
-                                          : "#616161",
-                                      fontWeight: 600,
-                                      fontSize: "0.75rem",
-                                      borderRadius: "8px",
-                                    }}
-                                  />
-                                </TableCell>
-                              </>
-                            );
+                                />
+                              </TableCell>
+                            </>
+                          );
 
-                            return canSelect ? (
+                          return canSelect ? (
+                            <TableRow
+                              key={service.id}
+                              hover
+                              sx={{ cursor: "pointer" }}
+                              onClick={() => handleServiceSelection(service.id)}
+                            >
+                              {rowContent}
+                            </TableRow>
+                          ) : (
+                            <Tooltip
+                              title={cannotSelectTooltip}
+                              arrow
+                              placement="top"
+                            >
                               <TableRow
                                 key={service.id}
-                                hover
-                                sx={{ cursor: "pointer" }}
-                                onClick={() =>
-                                  handleServiceSelection(service.id)
-                                }
+                                sx={{
+                                  cursor: "not-allowed",
+                                  backgroundColor: "#f9f9f9",
+                                  "&:hover": { backgroundColor: "#f0f0f0" },
+                                }}
                               >
                                 {rowContent}
                               </TableRow>
-                            ) : (
-                              <Tooltip
-                                title={cannotSelectTooltip}
-                                arrow
-                                placement="top"
-                              >
-                                <TableRow
-                                  key={service.id}
-                                  sx={{
-                                    cursor: "not-allowed",
-                                    backgroundColor: "#f9f9f9",
-                                    "&:hover": { backgroundColor: "#f0f0f0" },
-                                  }}
-                                >
-                                  {rowContent}
-                                </TableRow>
-                              </Tooltip>
-                            );
-                          })
-                      )}
-                    </TableBody>
-                  </Table>
-                  {serviceList.length === 0 && !isLoading && (
-                    <Box sx={{ p: 3, textAlign: "center" }}>
-                      <Typography variant="body1" color="textSecondary">
-                        No services found for the selected bus or date range.
-                      </Typography>
-                    </Box>
-                  )}
-                </TableContainer>
-
-                {/* Fixed Pagination at bottom */}
-                <Box sx={{ p: 1.5, borderTop: 1, borderColor: "divider" }}>
-                  <PaginationControls
-                    page={page}
-                    onPageChange={(newPage) => handleChangePage(null, newPage)}
-                    isLoading={isLoading}
-                    hasNextPage={(page + 1) * rowsPerPage < serviceList.length}
-                  />
-                </Box>
-              </Box>
-            ) : (
-              <Card sx={{ p: 2 }}>
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={2}
-                  alignItems={{ xs: "stretch", sm: "center" }}
-                  justifyContent="space-between"
-                  mb={2}
-                >
-                  <Alert severity="info" sx={{ flex: 1 }}>
-                    Total Collection:{" "}
-                    <strong>₹{totalCollection.toFixed(2)}</strong>
-                  </Alert>
-                  <Button
-                    variant="contained"
-                    onClick={() => setIsOperatorWise((prev) => !prev)}
-                    sx={{ backgroundColor: "darkblue" }}
-                    size="small"
-                    className="no-print"
-                  >
-                    {isOperatorWise ? "Duty wise" : "Operator wise"}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<PrintIcon />}
-                    onClick={handlePrint}
-                    sx={{ backgroundColor: "#9bc1e721" }}
-                    size="small"
-                    className="no-print"
-                  >
-                    Print
-                  </Button>
-                </Stack>
-
-                {isOperatorWise ? (
-                  <Box sx={{ display: "flex", justifyContent: "center" }}>
-                    <TableContainer component={Paper} sx={{ maxWidth: 400 }}>
-                      <Table>
-                        <TableHead>
-                          <TableRow>
-                            <TableCell
-                              sx={{ fontWeight: "bold", textAlign: "center" }}
-                            >
-                              Operator
-                            </TableCell>
-                            <TableCell
-                              sx={{ fontWeight: "bold", textAlign: "center" }}
-                            >
-                              Total Collection (₹)
-                            </TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {operatorTotalsArray.map((op) => (
-                            <TableRow key={op.name}>
-                              <TableCell sx={{ textAlign: "center" }}>
-                                {op.name}
-                              </TableCell>
-                              <TableCell sx={{ textAlign: "center" }}>
-                                <b>
-                                  {op.total !== null &&
-                                  op.total !== undefined &&
-                                  !isNaN(op.total)
-                                    ? op.total.toFixed(2)
-                                    : "Duty Not Finished"}
-                                </b>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
+                            </Tooltip>
+                          );
+                        })
+                    )}
+                  </TableBody>
+                </Table>
+                {serviceList.length === 0 && !isLoading && (
+                  <Box sx={{ p: 3, textAlign: "center" }}>
+                    <Typography variant="body1" color="textSecondary">
+                      No services found for the selected date range.
+                    </Typography>
                   </Box>
-                ) : (
+                )}
+              </TableContainer>
+
+              {/* Fixed Pagination at bottom */}
+              <Box sx={{ p: 1.5, borderTop: 1, borderColor: "divider" }}>
+                <PaginationControls
+                  page={page}
+                  onPageChange={(newPage) => handleChangePage(null, newPage)}
+                  isLoading={isLoading}
+                  hasNextPage={(page + 1) * rowsPerPage < serviceList.length}
+                />
+              </Box>
+            </Box>
+          ) : (
+            <Card sx={{ p: 2 }}>
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={2}
+                alignItems={{ xs: "stretch", sm: "center" }}
+                justifyContent="space-between"
+                mb={2}
+              >
+                <Alert severity="info" sx={{ flex: 1 }}>
+                  Total Collection:{" "}
+                  <strong>₹{totalCollection.toFixed(2)}</strong>
+                </Alert>
+                <Button
+                  variant="contained"
+                  onClick={() => setIsOperatorWise((prev) => !prev)}
+                  sx={{ backgroundColor: "darkblue" }}
+                  size="small"
+                  className="no-print"
+                >
+                  {isOperatorWise ? "Service wise" : "Operator wise"}
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<PrintIcon />}
+                  onClick={handlePrint}
+                  sx={{ backgroundColor: "#9bc1e721" }}
+                  size="small"
+                  className="no-print"
+                >
+                  Print
+                </Button>
+              </Stack>
+
+              {isOperatorWise ? (
+                <Box sx={{ display: "flex", justifyContent: "center" }}>
                   <TableContainer
-                    sx={{
-                      flex: 1,
-                      maxHeight: "400px", // Set a fixed height for scroll
-                      overflowY: "auto",
-                      borderRadius: 2,
-                      border: "1px solid #e0e0e0",
-                      position: "relative",
-                    }}
+                    component={Paper}
+                    sx={{ maxWidth: 400, }}
                   >
-                    <Table stickyHeader>
+                    <Table>
                       <TableHead>
                         <TableRow>
                           <TableCell
-                            sx={{
-                              textAlign: "center",
-                              backgroundColor: "#fafafa",
-                              fontWeight: 600,
-                              fontSize: "0.875rem",
-                              borderBottom: "1px solid #ddd",
-                              position: "sticky",
-                              top: 0,
-                              zIndex: 2,
-                            }}
+                            sx={{ fontWeight: "bold", textAlign: "center" }}
                           >
-                            <b>Operator Name</b>
+                            Operator
                           </TableCell>
                           <TableCell
-                            sx={{
-                              textAlign: "center",
-                              backgroundColor: "#fafafa",
-                              fontWeight: 600,
-                              fontSize: "0.875rem",
-                              borderBottom: "1px solid #ddd",
-                              position: "sticky",
-                              top: 0,
-                              zIndex: 2,
-                            }}
+                            sx={{ fontWeight: "bold", textAlign: "center" }}
                           >
-                            <b>Service ID</b>
-                          </TableCell>
-                          <TableCell
-                            sx={{
-                              textAlign: "center",
-                              backgroundColor: "#fafafa",
-                              fontWeight: 600,
-                              fontSize: "0.875rem",
-                              borderBottom: "1px solid #ddd",
-                              position: "sticky",
-                              top: 0,
-                              zIndex: 2,
-                            }}
-                          >
-                            <b>Duty ID</b>
-                          </TableCell>
-                          <TableCell
-                            sx={{
-                              textAlign: "center",
-                              backgroundColor: "#fafafa",
-                              fontWeight: 600,
-                              fontSize: "0.875rem",
-                              borderBottom: "1px solid #ddd",
-                              position: "sticky",
-                              top: 0,
-                              zIndex: 2,
-                            }}
-                          >
-                            <b>Date</b>
-                          </TableCell>
-                          <TableCell
-                            sx={{
-                              textAlign: "center",
-                              backgroundColor: "#fafafa",
-                              fontWeight: 600,
-                              fontSize: "0.875rem",
-                              borderBottom: "1px solid #ddd",
-                              position: "sticky",
-                              top: 0,
-                              zIndex: 2,
-                            }}
-                            align="right"
-                          >
-                            <b>Collection (₹)</b>
+                            Total Collection (₹)
                           </TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {statementData.map((item) => (
-                          <TableRow key={item.dutyId}>
+                        {operatorTotalsArray.map((op) => (
+                          <TableRow key={op.name}>
                             <TableCell sx={{ textAlign: "center" }}>
-                              {item.operatorName}
+                              {op.name}
                             </TableCell>
                             <TableCell sx={{ textAlign: "center" }}>
-                              {item.serviceId}
-                            </TableCell>
-                            <TableCell sx={{ textAlign: "center" }}>
-                              {item.dutyId}
-                            </TableCell>
-                            <TableCell sx={{ textAlign: "center" }}>
-                              {item.date}
-                            </TableCell>
-                            <TableCell
-                              sx={{ textAlign: "center" }}
-                              align="right"
-                            >
                               <b>
-                                {item.collection !== null &&
-                                item.collection !== undefined &&
-                                !isNaN(item.collection)
-                                  ? item.collection.toFixed(2)
+                                {op.total !== null &&
+                                op.total !== undefined &&
+                                !isNaN(op.total)
+                                  ? op.total.toFixed(2)
                                   : "Duty Not Finished"}
                               </b>
                             </TableCell>
@@ -998,50 +933,113 @@ const handleBack = () => {
                       </TableBody>
                     </Table>
                   </TableContainer>
-                )}
+                </Box>
+              ) : (
+                <TableContainer
+                  sx={{
+                    flex: 1,
+                    maxHeight: "400px", // Set a fixed height for scroll
+                    overflowY: "auto",
+                    borderRadius: 2,
+                    border: "1px solid #e0e0e0",
+                    position: "relative",
+                  }}
+                >
+                  <Table stickyHeader>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell
+                          sx={{
+                            textAlign: "left",
+                            backgroundColor: "#fafafa",
+                            fontWeight: 600,
+                            fontSize: "0.875rem",
+                            borderBottom: "1px solid #ddd",
+                            position: "sticky",
+                            top: 0,
+                            zIndex: 2,
+                          }}
+                        >
+                          <b>Service name</b>
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            textAlign: "left",
+                            backgroundColor: "#fafafa",
+                            fontWeight: 600,
+                            fontSize: "0.875rem",
+                            borderBottom: "1px solid #ddd",
+                            position: "sticky",
+                            top: 0,
+                            zIndex: 2,
+                          }}
+                        >
+                          <b>Route Name</b>
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            textAlign: "center",
+                            backgroundColor: "#fafafa",
+                            fontWeight: 600,
+                            fontSize: "0.875rem",
+                            borderBottom: "1px solid #ddd",
+                            position: "sticky",
+                            top: 0,
+                            zIndex: 2,
+                          }}
+                        >
+                          <b>Date</b>
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            textAlign: "center",
+                            backgroundColor: "#fafafa",
+                            fontWeight: 600,
+                            fontSize: "0.875rem",
+                            borderBottom: "1px solid #ddd",
+                            position: "sticky",
+                            top: 0,
+                            zIndex: 2,
+                          }}
+                          align="right"
+                        >
+                          <b>Collection (₹)</b>
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {serviceWiseArray.map((service, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell sx={{ textAlign: "left" }}>
+                            {service.serviceName}
+                          </TableCell>
 
-                {statementData.length === 0 && (
-                  <Box sx={{ p: 3, textAlign: "center" }}>
-                    <Typography variant="body1" color="textSecondary">
-                      No statement data available.
-                    </Typography>
-                  </Box>
-                )}
-              </Card>
-            )}
-          </>
-        )}
-        {/*************************************************************when no bus is selected*************************************/}
-        {!selectedBus && (
-          <Box
-            flex={1}
-            display="flex"
-            flexDirection="column"
-            justifyContent="center"
-            alignItems="center"
-            textAlign="center"
-            p={3}
-            className={isFullScreen ? "no-print" : ""}
-          >
-            <Box mb={2}>
-              <img
-                src={nodataimage}
-                alt="No data"
-                style={{ width: 120, height: 120, opacity: 0.7 }}
-              />
-            </Box>
-            <Typography variant="h6" gutterBottom>
-              No Statement Available
-            </Typography>
-            <Typography
-              variant="body2"
-              color="textSecondary"
-              sx={{ maxWidth: 400 }}
-            >
-              Please select a bus and date range to generate a statement.
-            </Typography>
-          </Box>
-        )}
+                          <TableCell sx={{ textAlign: "left" }}>
+                            {service.routeName}
+                          </TableCell>
+                          <TableCell sx={{ textAlign: "center" }}>
+                            {service.date}
+                          </TableCell>
+                          <TableCell sx={{ textAlign: "center" }}>
+                            <b>{service.total.toFixed(2)}</b>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+
+              {statementData.length === 0 && (
+                <Box sx={{ p: 3, textAlign: "center" }}>
+                  <Typography variant="body1" color="textSecondary">
+                    No statement data available. Make sure the Duties are finished 
+                  </Typography>
+                </Box>
+              )}
+            </Card>
+          )}
+        </>
       </Box>
     </>
   );

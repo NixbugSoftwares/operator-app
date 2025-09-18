@@ -100,7 +100,7 @@ interface ServiceListParams {
   ticket_mode?: number;
   status?: number;
   status_list?: number[];
-  bus_id?: number;
+  bus_id?: number | null;
   starting_at_ge?: string;
   starting_at_le?: string;
   order_by?: number;
