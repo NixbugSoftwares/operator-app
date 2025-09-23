@@ -49,6 +49,7 @@ import {
 import { Duty, Service, Account, Bus } from "../../types/type";
 import PaginationControls from "../../common/paginationControl";
 import CloseIcon from "@mui/icons-material/Close";
+
 interface SelectedService {
   id: number;
   name: string;
@@ -1068,12 +1069,12 @@ const StatementListingPage = ({
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>⚠️ Partial Statement Generated</DialogTitle>
+        <DialogTitle>Statement Generation Failed</DialogTitle>
         <DialogContent dividers>
           <Typography variant="body1" gutterBottom>
-            Some statements were generated successfully, but the following
-            duties are not finished yet:
-          </Typography>
+      ⚠️ Some duties are still unfinished.  
+      Please complete them before generating the statement.
+    </Typography>
 
           {unfinishedDutiesList.length > 0 ? (
             <Table size="small">
