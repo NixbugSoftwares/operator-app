@@ -113,6 +113,29 @@ const MapComponent = React.forwardRef(
     >([]);
     const [distanceUnit, setDistanceUnit] = useState<"m" | "km">("m");
 
+    const zoomToLandmark = (landmarkId: number) => {
+      if (!mapInstance.current) return;
+      const map = mapInstance.current;
+
+      const feature =
+        allBoundariesSource.current
+          .getFeatures()
+          .find((f) => f.get("id") === landmarkId) ||
+        selectedLandmarksSource.current
+          .getFeatures()
+          .find((f) => f.get("id") === landmarkId);
+
+      if (feature) {
+        const geometry = feature.getGeometry();
+        if (geometry) {
+          map.getView().fit(geometry.getExtent(), {
+            padding: [50, 50, 50, 50],
+            duration: 800,
+          });
+        }
+      }
+    };
+
     // Initialize the map
     const initializeMap = () => {
       if (!mapRef.current) return null;
@@ -146,6 +169,22 @@ const MapComponent = React.forwardRef(
       map.on("pointermove", (event) => {
         const coords = toLonLat(event.coordinate);
         setMousePosition(`${coords[0].toFixed(7)}, ${coords[1].toFixed(7)}`);
+      });
+      map.on("singleclick", (evt) => {
+        map.forEachFeatureAtPixel(evt.pixel, (feature) => {
+          let landmarkId = feature.get("id");
+          // If the feature is a label ("label-123"), extract numeric ID
+          if (
+            typeof landmarkId === "string" &&
+            landmarkId.startsWith("label-")
+          ) {
+            landmarkId = parseInt(landmarkId.replace("label-", ""), 10);
+          }
+
+          if (landmarkId && !isNaN(landmarkId)) {
+            zoomToLandmark(landmarkId);
+          }
+        });
       });
 
       return map;
@@ -591,6 +630,7 @@ const MapComponent = React.forwardRef(
       }
     }, [isEditing]);
 
+    //selected landmark
     useEffect(() => {
       selectedLandmarksSource.current.clear();
       routePathSource.current.clear();
@@ -1087,7 +1127,6 @@ const MapComponent = React.forwardRef(
       return date.getTime();
     };
 
- 
     //Directly get timestamp from landmark fields (in IST)
     const getTimestamp = (
       hour: number,
@@ -1179,7 +1218,6 @@ const MapComponent = React.forwardRef(
       arrivalAmPm,
       arrivalDayOffset,
     ]);
-
 
     //*************************************** map search and map type change **********************************
     const handleSearch = async () => {
