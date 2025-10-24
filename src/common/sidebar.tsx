@@ -18,7 +18,7 @@ import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined
 import Diversity3Icon from "@mui/icons-material/Diversity3";
 import RouteIcon from "@mui/icons-material/Route";
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
-// import ScheduleIcon from "@mui/icons-material/Schedule";
+import ScheduleIcon from "@mui/icons-material/Schedule";
 import PowerSettingsNewIcon from "@mui/icons-material/PowerSettingsNew";
 import AssignmentIndRoundedIcon from "@mui/icons-material/AssignmentIndRounded";
 import AssignmentTurnedInRoundedIcon from "@mui/icons-material/AssignmentTurnedInRounded";
@@ -38,7 +38,6 @@ const Sidebar: React.FC = () => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-
   const companyName = localStorageHelper.getItem("@companyName")?.toLowerCase();
   const sections = [
     {
@@ -58,7 +57,7 @@ const Sidebar: React.FC = () => {
           path: "/service",
           icon: <AssignmentIndRoundedIcon />,
         },
-        // { label: "Schedule", path: "/schedule", icon: <ScheduleIcon /> },
+        { label: "Schedule", path: "/schedule", icon: <ScheduleIcon /> },
         {
           label: "Duty",
           path: "/duty",
@@ -68,7 +67,6 @@ const Sidebar: React.FC = () => {
       ],
     },
   ];
-
   return (
     <>
       {/******************************************  Toggle Button for Small Screens**************************************************/}

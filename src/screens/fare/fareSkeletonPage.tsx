@@ -15,15 +15,15 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Collapse,
+  // Table,
+  // TableBody,
+  // TableCell,
+  // TableHead,
+  // TableRow,
+  // Collapse,
   Stack,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
+// import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -76,7 +76,6 @@ interface FareSkeletonPageProps {
 const defaultTicketTypes = [
   { id: 1, name: "Adult" },
   { id: 2, name: "Child" },
-  { id: 3, name: "Student" },
 ];
 
 const CompanyFareSkeletonPage = ({
@@ -90,7 +89,7 @@ const CompanyFareSkeletonPage = ({
 
   // Initialize with empty string, will be set in useEffect
   const [fareFunction, setFareFunction] = useState("");
-  const [output, setOutput] = useState("");
+  // const [output, setOutput] = useState("");
   const [_fareToDelete, setFareToDelete] = useState<number | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const canUpdateFare = useSelector((state: RootState) =>
@@ -100,43 +99,66 @@ const CompanyFareSkeletonPage = ({
     state.app.permissions.includes("delete_fare")
   );
 
-  const [distanceKm, setDistanceKm] = useState<number | "">(5);
-  const [fareResults, setFareResults] = useState<{
-    distance: number;
-    results: { type: string; fare: number }[];
-    rangeResults?: { distance: string; fares: Record<string, number> }[];
-  } | null>(null);
-  const [showOutput, setShowOutput] = useState(false);
+  // const [distanceKm, setDistanceKm] = useState<number | "">(5);
+  // const [fareResults, setFareResults] = useState<{
+  //   distance: number;
+  //   results: { type: string; fare: number }[];
+  //   rangeResults?: { distance: string; fares: Record<string, number> }[];
+  // } | null>(null);
+  // const [showOutput, setShowOutput] = useState(false);
 
   useEffect(() => {
     if (fareToEdit) {
       setFareFunction(fareToEdit.function);
     } else {
       setFareFunction(`function getFare(ticket_type, distance, extra) {
-  const base_fare_distance = 2.5;
-  const base_fare = 10;
-  const rate_per_km = 1;
-
-  distance = distance / 1000;
-  if (ticket_type == "Student") {
-    if (distance <= 2.5) return 1;
-    else if (distance <= 7.5) return 2;
-    else if (distance <= 17.5) return 3;
-    else if (distance <= 27.5) return 4;
-    else return 5;
+  // Extract starting and ending landmark IDs from the 'extra' object
+  const { startingLandmarkId, endingLandmarkId } = extra || {};
+  // List of all landmark IDs in order (defines stage order)
+  const landmarkIds = [16, 28, 38, 47, 53, 59, 67, 78, 85, 91, 10, 11, 12, 13, 14, 15, 56];
+  // Corresponding fare for each stage distance
+  const stageCosts = [0, 10, 13, 15, 18, 20, 23, 25, 28, 30, 33, 35, 38, 40, 43, 45, 48];
+  // Validate input
+  if (!startingLandmarkId || !endingLandmarkId) {
+    // Missing landmark info
+    return -2;
   }
-
-  if (ticket_type == "Adult") {
-    if (distance <= base_fare_distance) return base_fare;
-    else return base_fare + ((distance - base_fare_distance) * rate_per_km);
+  // Find positions (indexes) of the start and end landmarks
+  const startIndex = landmarkIds.indexOf(startingLandmarkId);
+  const endIndex = landmarkIds.indexOf(endingLandmarkId);
+  // If invalid landmark IDs provided
+  if (startIndex === -1 || endIndex === -1) {
+    // Invalid IDs
+    return -3;
   }
-
-  if (ticket_type == "Child") {
-    if (distance <= base_fare_distance) return base_fare / 2;
-    else return (base_fare + ((distance - base_fare_distance) * rate_per_km)) / 2;
+  // Calculate number of stages (difference between indexes)
+  const distanceStage = Math.abs(endIndex - startIndex);
+  // Get the corresponding adult fare (based on stage distance)
+  const adultFare = stageCosts[Math.min(distanceStage, stageCosts.length - 1)];
+  // --- Ticket Type Handling ---
+  if (ticket_type === "Adult") {
+    return adultFare;
   }
+  if (ticket_type === "Child") {
+    // Calculate half fare
+    let halfFare = adultFare / 2;
+    // Apply minimum fare rule: ₹10
+    if (halfFare <= 10) {
+      return 10;
+    }
+    // Round up to the next higher stage fare if not an exact match
+    for (const cost of stageCosts) {
+      if (halfFare <= cost) {
+        return cost;
+      }
+    }
+    // If fare exceeds all stage costs, return the maximum fare
+    return stageCosts[stageCosts.length - 1];
+  }
+  // Unknown ticket type
   return -1;
-}`);
+}
+`);
     }
   }, [fareToEdit]);
 
@@ -171,101 +193,121 @@ const CompanyFareSkeletonPage = ({
     control,
     name: "attributes.ticket_types",
   });
-  const handleRunCode = () => {
-    setShowOutput(true); // Show output when running code
-    let logs: any[] = [];
-    const customConsole = {
-      log: (...args: any[]) => logs.push(args.join(" ")),
+  // const handleRunCode = () => {
+  //   setShowOutput(true); // Show output when running code
+  //   let logs: any[] = [];
+  //   const customConsole = {
+  //     log: (...args: any[]) => logs.push(args.join(" ")),
+  //   };
+
+  //   try {
+  //     // Check function name
+  //     if (!/function\s+getFare\s*\(/.test(fareFunction)) {
+  //       setOutput("Error: Function name must be 'getFare'");
+  //       setFareResults(null);
+  //       return;
+  //     }
+
+  //     // eslint-disable-next-line no-new-func
+  //     const func = new Function("console", `${fareFunction}; return getFare;`);
+  //     const getFare = func(customConsole);
+
+  //     if (typeof getFare !== "function") {
+  //       setOutput("Error: 'getFare' is not a valid function");
+  //       setFareResults(null);
+  //       return;
+  //     }
+
+  //     // Get current ticket types from form
+  //     const currentTicketTypes = control._formValues.attributes.ticket_types;
+
+  //     // Test the fare function for the specified distance
+  //     const singleResults = currentTicketTypes.map((ticket: TicketType) => {
+  //       try {
+  //         const fare = getFare(ticket.name, Number(distanceKm) * 1000, {}); // distance in meters
+  //         return { type: ticket.name, fare };
+  //       } catch (err: any) {
+  //         return { type: ticket.name, fare: -1 };
+  //       }
+  //     });
+
+  //     // Test the fare function for all distances up to the specified km
+  //     const rangeResults = [];
+  //     for (let km = 1; km <= Number(distanceKm); km++) {
+  //       const rangeFares: Record<string, number> = {};
+  //       currentTicketTypes.forEach((ticket: TicketType) => {
+  //         try {
+  //           rangeFares[ticket.name] = getFare(ticket.name, km * 1000, {});
+  //         } catch (err) {
+  //           rangeFares[ticket.name] = -1;
+  //         }
+  //       });
+  //       rangeResults.push({
+  //         distance: km === 1 ? "1 km" : `${km - 1}-${km} km`,
+  //         fares: rangeFares,
+  //       });
+  //     }
+
+  //     setFareResults({
+  //       distance: Number(distanceKm),
+  //       results: singleResults,
+  //       rangeResults,
+  //     });
+
+  //     let outputText = logs.length > 0 ? logs.join("\n") + "\n" : "";
+  //     outputText += "Fare calculation completed.";
+  //     setOutput(outputText);
+  //   } catch (error) {
+  //     setFareResults(null);
+  //     setOutput(
+  //       `Error: ${error instanceof Error ? error.message : "Invalid code"}`
+  //     );
+  //   }
+  // };
+
+const handleFareCreation: SubmitHandler<FareInputs> = async (data) => {
+  try {
+    setLoading(true);
+
+    // 👀 Step 1: Log raw form data
+    console.log("📝 Raw form data received from form:", data);
+
+    // 👀 Step 2: Log the current fare function content
+    console.log("💡 Fare function code:", fareFunction);
+
+    // 👀 Step 3: Construct payload
+    const fareCreate = {
+      scope: 2,
+      name: data.name,
+      function: fareFunction,
+      attributes: data.attributes,
     };
 
-    try {
-      // Check function name
-      if (!/function\s+getFare\s*\(/.test(fareFunction)) {
-        setOutput("Error: Function name must be 'getFare'");
-        setFareResults(null);
-        return;
-      }
+    // 👀 Step 4: Log final object before API call
+    console.log("🚀 Sending fareCreate payload to API:", JSON.stringify(fareCreate, null, 2));
 
-      // eslint-disable-next-line no-new-func
-      const func = new Function("console", `${fareFunction}; return getFare;`);
-      const getFare = func(customConsole);
+    // Send to API
+    await dispatch(fareCreationApi(fareCreate)).unwrap();
 
-      if (typeof getFare !== "function") {
-        setOutput("Error: 'getFare' is not a valid function");
-        setFareResults(null);
-        return;
-      }
+    // 👀 Step 5: Success log
+    console.log("✅ Fare created successfully:", fareCreate);
 
-      // Get current ticket types from form
-      const currentTicketTypes = control._formValues.attributes.ticket_types;
+    onCancel();
+    refreshList("refresh");
+    showSuccessToast("Fare created successfully");
+  } catch (error: any) {
+    console.error("❌ Error during fare creation:", error);
 
-      // Test the fare function for the specified distance
-      const singleResults = currentTicketTypes.map((ticket: TicketType) => {
-        try {
-          const fare = getFare(ticket.name, Number(distanceKm) * 1000, {}); // distance in meters
-          return { type: ticket.name, fare };
-        } catch (err: any) {
-          return { type: ticket.name, fare: -1 };
-        }
-      });
-
-      // Test the fare function for all distances up to the specified km
-      const rangeResults = [];
-      for (let km = 1; km <= Number(distanceKm); km++) {
-        const rangeFares: Record<string, number> = {};
-        currentTicketTypes.forEach((ticket: TicketType) => {
-          try {
-            rangeFares[ticket.name] = getFare(ticket.name, km * 1000, {});
-          } catch (err) {
-            rangeFares[ticket.name] = -1;
-          }
-        });
-        rangeResults.push({
-          distance: km === 1 ? "1 km" : `${km - 1}-${km} km`,
-          fares: rangeFares,
-        });
-      }
-
-      setFareResults({
-        distance: Number(distanceKm),
-        results: singleResults,
-        rangeResults,
-      });
-
-      let outputText = logs.length > 0 ? logs.join("\n") + "\n" : "";
-      outputText += "Fare calculation completed.";
-      setOutput(outputText);
-    } catch (error) {
-      setFareResults(null);
-      setOutput(
-        `Error: ${error instanceof Error ? error.message : "Invalid code"}`
-      );
+    if (error.status === 409) {
+      showErrorToast("Fare already exists");
+    } else {
+      showErrorToast(error.message || "Fare creation failed");
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const handleFareCreation: SubmitHandler<FareInputs> = async (data) => {
-    try {
-      setLoading(true);
-      const fareCreate = {
-        scope: 2,
-        name: data.name,
-        function: fareFunction,
-        attributes: data.attributes,
-      };
-      await dispatch(fareCreationApi(fareCreate)).unwrap();
-      onCancel();
-      refreshList("refresh");
-      showSuccessToast("Fare created successfully");
-    } catch (error: any) {
-      if (error.status === 409) {
-        showErrorToast("Fare already exists");
-      } else {
-        showErrorToast(error.message || "Fare creation failed");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleFareUpdate: SubmitHandler<FareInputs> = async (data) => {
     try {
@@ -684,7 +726,7 @@ const CompanyFareSkeletonPage = ({
           border: "none",
         }}
       >
-        <Box
+        {/* <Box
           sx={{
             p: 2,
             display: "flex",
@@ -727,7 +769,7 @@ const CompanyFareSkeletonPage = ({
               Calculate
             </Button>
           </Box>
-        </Box>
+        </Box> */}
 
         <Box sx={{ flex: 1, overflow: "hidden" }}>
           <CodeEditor
@@ -736,7 +778,7 @@ const CompanyFareSkeletonPage = ({
             onChange={(value) => setFareFunction(value || "")}
           />
         </Box>
-        <Collapse in={showOutput}>
+        {/* <Collapse in={showOutput}>
           <Box
             sx={{
               height: "300px",
@@ -859,9 +901,8 @@ const CompanyFareSkeletonPage = ({
               )}
             </Paper>
           </Box>
-        </Collapse>
+        </Collapse> */}
       </Paper>
-
       <Dialog
         open={deleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}
